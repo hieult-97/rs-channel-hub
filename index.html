@@ -519,6 +519,7 @@ async function afterLogin(){
   await loadData();
   loadOrderOpts();
   loadProducers();
+  syncSellers();
 }
 
 $('btnIn').onclick=async()=>{
@@ -727,7 +728,7 @@ function renderAll(){
      +'<td>'+(isSD()?'<button class="btn pAppr" style="padding:6px 11px">Duyệt</button>':'<span style="color:var(--muted)">chỉ SD duyệt</span>')+'</td></tr>').join('');
     $('pendEmpty').style.display=pendUsers.length?'none':'block';
     if(isSD())document.querySelectorAll('.pAppr').forEach(b=>b.onclick=approveUser);
-    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap">'+(isSD()?('<select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.role==='Seller'?' <select title="Gán seller của kênh" style="'+SELCSS+'" onchange="linkSeller(\''+p.id+'\',this.value)"><option value="">— gán seller —</option>'+sellers.map(s=>'<option value="'+s.id+'"'+(String(p.seller_id)===String(s.id)?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select>':'')+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')):'<span style="color:var(--muted)">chỉ SD</span>')+'</td></tr>').join('');
+    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap">'+(isSD()?('<select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')):'<span style="color:var(--muted)">chỉ SD</span>')+'</td></tr>').join('');
   }
 }
 function renderCh(){
@@ -832,6 +833,15 @@ window.linkSeller=(id,sid)=>{if(!isSD())return topErr('Chỉ SD được gán se
 function selOpts(opts,cur){return opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('');}
 const SELCSS='background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12px';
 async function ensureSeller(name){name=(name||'Seller').trim();const {data:ex}=await sb.from('sellers').select('id').eq('name',name).maybeSingle();if(ex)return ex.id;const {data:ns,error}=await sb.from('sellers').insert({name}).select('id').single();if(error)throw error;return ns.id;}
+async function syncSellers(){if(!isSD())return;try{
+  const {data:profs}=await sb.from('profiles').select('id,full_name,role,seller_id').eq('role','Seller');
+  const {data:srows}=await sb.from('sellers').select('id,name');const rows=srows||[];let changed=false;
+  for(const p of (profs||[])){if(p.seller_id)continue;const nm=(p.full_name||'').toLowerCase().trim();if(!nm)continue;
+    let sid=null;const match=rows.find(s=>{const sn=(s.name||'').toLowerCase().trim();return sn&&nm.includes(sn);});
+    if(match)sid=match.id;else{const {data:ns,error}=await sb.from('sellers').insert({name:p.full_name}).select('id').single();if(error)continue;sid=ns.id;rows.push({id:sid,name:p.full_name});}
+    await sb.from('profiles').update({seller_id:sid}).eq('id',p.id);changed=true;}
+  if(changed)await loadData();
+}catch(e){}}
 async function approveUser(e){
   const tr=e.target.closest('tr');const id=tr.dataset.id;
   const roleSel=tr.querySelector('.prole').value, sellerSel=tr.querySelector('.pseller').value;
