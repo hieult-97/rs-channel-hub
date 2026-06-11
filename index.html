@@ -284,7 +284,7 @@
           <div><label>Seller</label><select class="field" id="orSeller"></select></div>
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
           <div><label>Loại</label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
-          <div><label>Người sản xuất</label><input class="field" id="orProducer" placeholder="Tên media"></div>
+          <div><label>Người sản xuất</label><select class="field" id="orProducer"></select></div>
           <div><label>Combo</label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
           <div><label>Format</label><select class="field" id="orFormat" onchange="orderOptChange('format',this)"></select></div>
           <div><label>Deadline</label><input class="field" id="orDeadline" type="date"></div>
@@ -518,6 +518,7 @@ async function afterLogin(){
   ['btnAddCh','btnImport'].forEach(id=>{const e=$(id);if(e)e.style.display=isAdmin()?'':'none';});
   await loadData();
   loadOrderOpts();
+  loadProducers();
 }
 
 $('btnIn').onclick=async()=>{
@@ -1102,6 +1103,10 @@ function fillOrderSelects(){
 }
 window.orderOptChange=function(kind,sel){if(sel.value==='__add__'){const v=(prompt('Nhập '+({type:'loại sản phẩm',combo:'combo',format:'format'}[kind])+' mới:')||'').trim();sel.value='';if(v)addOrderOpt(kind,v,sel);}};
 async function addOrderOpt(kind,label,sel){const {error}=await sb.from('order_options').insert({kind,label});if(error){topErr(/order_options/.test(error.message||'')?'Hãy chạy patch-TONG-HOP.sql để bật thêm lựa chọn.':error.message);return;}await logAction('Thêm lựa chọn','order_options',kind+': '+label);await loadOrderOpts();if(sel)sel.value=label;showToast('Đã thêm ✓');}
+async function loadProducers(){try{const {data}=await sb.rpc('list_members');const meds=(data||[]).filter(m=>m.role==='Media');
+  $('orProducer').innerHTML='<option value="">— chọn người sản xuất —</option>'+meds.map(m=>'<option>'+esc(m.full_name||'')+'</option>').join('');
+  if(me&&me.role==='Media'&&me.full_name)$('orProducer').value=me.full_name;
+}catch(e){}}
 
 boot();
 </script>
