@@ -207,7 +207,7 @@
           <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" style="display:none">
         </div></div>
       <div class="card" id="chForm" style="display:none;margin-bottom:14px">
-        <h3>Thêm kênh</h3>
+        <h3 id="chFormTitle">Thêm kênh</h3>
         <div class="form">
           <div><label>URL kênh</label><input class="field" id="ncName" placeholder="@tenkenh"></div>
           <div><label>Sàn</label><select class="field" id="ncPlatform"><option>TikTok</option><option>Etsy</option><option>Khác</option></select></div>
@@ -250,7 +250,7 @@
             <th class="sortable num" data-k="or">Đơn <span class="ar"></span></th>
             <th class="sortable num" data-k="com">GMV ($) <span class="ar"></span></th>
             <th class="sortable num" data-k="upd">Cập nhật <span class="ar"></span></th>
-            <th>Sức khỏe</th>
+            <th>Sức khỏe</th><th></th>
           </tr></thead>
           <tbody id="chBody"></tbody>
         </table>
@@ -290,7 +290,7 @@
       </div>
       <div class="grid kpis" id="orderKpis" style="margin-bottom:14px"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Ngày</th><th>Seller</th><th>Sản phẩm</th><th>Loại</th><th>Người sản xuất</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Ghi chú</th></tr></thead>
+        <table><thead><tr><th>Ngày</th><th>Seller</th><th>Sản phẩm</th><th>Loại</th><th>Người sản xuất</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Ghi chú</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
       </div></div>
@@ -334,7 +334,7 @@
       </div>
       <div class="grid kpis" id="issueKpis" style="margin-bottom:14px"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Vấn đề</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người xử lý</th><th>Trạng thái</th></tr></thead>
+        <table><thead><tr><th>Vấn đề</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người xử lý</th><th>Trạng thái</th><th></th></tr></thead>
         <tbody id="issueBody"></tbody></table>
         <div class="empty" id="issueEmpty" style="display:none">Chưa có vấn đề nào.</div>
       </div></div>
@@ -360,7 +360,17 @@
     </section>
 
     <section class="view" id="roles">
-      <div class="topbar"><div><h1>Phân quyền</h1><div class="sub">Duyệt người dùng &amp; gán vai trò</div></div></div>
+      <div class="topbar"><div><h1>Phân quyền</h1><div class="sub">Duyệt người dùng · gán &amp; đổi vai trò · khóa</div></div></div>
+      <div class="card" style="margin-bottom:14px"><h3>Ai được làm gì</h3><div class="tbl-wrap"><table>
+        <thead><tr><th>Chức năng</th><th>SD</th><th>Leader</th><th>Media</th><th>Seller</th></tr></thead>
+        <tbody>
+          <tr><td>Xem tổng quan toàn bộ</td><td>✔</td><td>✔</td><td>kênh care</td><td>kênh mình</td></tr>
+          <tr><td>Cập nhật số liệu</td><td>✔</td><td>✔</td><td>✔</td><td>✔ đơn/GMV</td></tr>
+          <tr><td>Tạo order &amp; vấn đề</td><td>✔</td><td>✔</td><td>✔</td><td>✔</td></tr>
+          <tr><td>Sửa / xóa order &amp; vấn đề</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+          <tr><td>Thêm / sửa / xóa kênh + Excel</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+          <tr><td>Duyệt / đổi vai trò / khóa người dùng</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+        </tbody></table></div></div>
       <div class="card"><h3>Chờ phê duyệt <span class="tag">gán vai trò + (seller nếu là Seller) rồi Duyệt</span></h3>
         <div class="tbl-wrap"><table>
           <thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Seller (nếu là Seller)</th><th></th></tr></thead>
@@ -369,7 +379,7 @@
         </div>
       </div>
       <div class="card" style="margin-top:14px"><h3>Người dùng đã duyệt</h3>
-        <div class="tbl-wrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th></tr></thead>
+        <div class="tbl-wrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Đổi vai trò / khóa</th></tr></thead>
         <tbody id="userBody"></tbody></table></div>
         <div class="auto" style="color:var(--green);margin-top:12px">✔ Thông tin đăng nhập kênh (mật khẩu/2FA/proxy) KHÔNG lưu trong tool.</div>
       </div>
@@ -420,7 +430,7 @@ const $=id=>document.getElementById(id);
 // ====== STATE ======
 let me=null;            // profile của user đang đăng nhập
 let ch=[], orders=[], issues=[], sellers=[], pendUsers=[], allUsers=[];
-let rawChannels=[], rawSnaps=[], rawMembers=[], asOf=null;
+let rawChannels=[], rawSnaps=[], rawMembers=[], asOf=null, editingId=null;
 let sortK='com',sortDir=-1,obDismissed=false,toastT,healthChart=null,trendDrawn=false,obGoTarget='update',growthChart=null;
 
 // ====== HELPERS ======
@@ -512,10 +522,10 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {d:(o.created_at||'').slice(5,10).replace('-','/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',who:o.producer||'—',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:(o.created_at||'').slice(5,10).replace('-','/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',who:o.producer||'—',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
-      return {t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'—'};});
+      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'—'};});
     if(isAdmin()){
       const {data:profs}=await sb.from('profiles').select('*').order('created_at');
       allUsers=profs||[];pendUsers=allUsers.filter(p=>p.status==='pending');
@@ -624,12 +634,19 @@ function renderAll(){
   // orders
   const oc={idea:['rgba(91,140,255,.16)','var(--brand)'],edit:['rgba(242,193,78,.16)','var(--amber)'],wait:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)']};
   $('orderKpis').innerHTML=[['Order',orders.length,''],['Đang làm',orders.filter(o=>o.st[0]=='edit').length,'amber'],['Chờ nghiệm thu',orders.filter(o=>o.st[0]=='wait').length,'brand'],['Done',orders.filter(o=>o.st[0]=='done').length,'green']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
-  $('orderBody').innerHTML=orders.map(o=>'<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+o.p+'</b></td><td style="color:var(--muted)">'+o.t+'</td><td>'+o.who+'</td><td><span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span></td><td>'+(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>')+'</td><td style="color:var(--amber);white-space:normal;max-width:240px">'+(o.note||'')+'</td></tr>').join('');
+  $('orderBody').innerHTML=orders.map(o=>{
+    const stCell=isAdmin()?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts([['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']],o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>';
+    const ngCell=isAdmin()?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
+    const act=isAdmin()?'<span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'';
+    return '<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+esc(o.p)+'</b></td><td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+esc(o.who)+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td style="color:var(--amber);white-space:normal;max-width:240px">'+esc(o.note||'')+'</td><td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=orders.length?'none':'block';
   // issues
   $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
   const ic={hi:['rgba(240,106,106,.16)','var(--red)'],mid:['rgba(242,193,78,.16)','var(--amber)'],lo:['#2a2f3e','var(--muted)']},ist={open:['rgba(240,106,106,.16)','var(--red)'],doing:['rgba(242,193,78,.16)','var(--amber)'],done:['rgba(62,207,142,.16)','var(--green)']};
-  $('issueBody').innerHTML=issues.map(i=>'<tr><td><b>'+i.t+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+i.ch+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td>'+i.who+'</td><td><span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span></td></tr>').join('');
+  $('issueBody').innerHTML=issues.map(i=>{
+    const stCell=isAdmin()?'<select style="'+SELCSS+'" onchange="setIssueStatus('+i.id+',this.value)">'+selOpts([['open','Mới'],['doing','Đang xử lý'],['done','Đã đóng']],i.scode)+'</select>':'<span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span>';
+    const act=isAdmin()?'<span title="Xóa vấn đề" style="cursor:pointer" onclick="deleteIssue('+i.id+')">🗑️</span>':'';
+    return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+esc(i.ch)+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td>'+esc(i.who)+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('issueEmpty').style.display=issues.length?'none':'block';
   $('navIssues').textContent=issues.filter(i=>i.st[0]!='done').length||'';
   // by seller (toàn bộ kênh)
@@ -657,7 +674,7 @@ function renderAll(){
      +'<td><button class="btn pAppr" style="padding:6px 11px">Duyệt</button></td></tr>').join('');
     $('pendEmpty').style.display=pendUsers.length?'none':'block';
     document.querySelectorAll('.pAppr').forEach(b=>b.onclick=approveUser);
-    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+(p.full_name||'')+'</b></td><td>'+p.email+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td></tr>').join('');
+    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap"><select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')+'</td></tr>').join('');
   }
 }
 function renderCh(){
@@ -666,7 +683,7 @@ function renderCh(){
   if(fN.options.length<=1){[...new Set(ch.map(c=>c.niche))].forEach(n=>fN.innerHTML+='<option>'+n+'</option>');}
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH.value||c.h===fH.value));
   rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
-  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td>'+hdot(c.h)+'</td></tr>').join('');
+  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td>'+hdot(c.h)+'</td><td style="white-space:nowrap">'+(isAdmin()?'<span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span><span title="Xóa kênh" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>').join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
   document.querySelectorAll('#channels th.sortable').forEach(th=>{th.querySelector('.ar').textContent=th.dataset.k===sortK?(sortDir<0?'▼':'▲'):'';});
@@ -721,13 +738,34 @@ $('btnSaveCh').onclick=async()=>{
   $('btnSaveCh').disabled=true;
   try{
     if(newSeller){const {data,error}=await sb.from('sellers').insert({name:newSeller}).select().single();if(error)throw error;sid=data.id;}
-    const {error}=await sb.from('channels').insert({name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:$('ncCare').value.trim()||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,violations:Number($('ncViol').value)||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null});
-    if(error)throw error;
-    showToast('Đã thêm kênh ✓');$('chForm').style.display='none';['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncViol','ncNote','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');
+    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:$('ncCare').value.trim()||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,violations:Number($('ncViol').value)||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
+    if(editingId){const {error}=await sb.from('channels').update(rec).eq('id',editingId);if(error)throw error;showToast('Đã lưu thay đổi ✓');}
+    else{const {error}=await sb.from('channels').insert(rec);if(error)throw error;showToast('Đã thêm kênh ✓');}
+    $('chForm').style.display='none';resetChForm();
     await loadData();
   }catch(e){topErr(e.message||String(e));}
   $('btnSaveCh').disabled=false;
 };
+function resetChForm(){editingId=null;$('chFormTitle').textContent='Thêm kênh';$('btnSaveCh').textContent='Lưu kênh';
+  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncViol','ncNote','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');}
+function editChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;editingId=id;
+  $('chFormTitle').textContent='Sửa kênh: '+c.name;$('btnSaveCh').textContent='Lưu thay đổi';
+  $('ncName').value=c.name||'';$('ncPlatform').value=c.platform||'TikTok';$('ncSeller').value=c.seller_id||'';$('ncCare').value=c.care||'';$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncViol').value=c.violations!=null?c.violations:'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
+  $('chForm').style.display='block';selectView('channels');try{$('chForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
+window.editChannel=editChannel;
+async function delRow(table,id,msg){if(!confirm(msg))return;const {error}=await sb.from(table).delete().eq('id',id);if(error)return topErr(error.message);showToast('Đã xóa ✓');await loadData();}
+async function updRow(table,id,patch){const {error}=await sb.from(table).update(patch).eq('id',id);if(error)return topErr(error.message);showToast('Đã cập nhật ✓');await loadData();}
+function deleteChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;delRow('channels',id,'Xóa kênh "'+c.name+'"? Snapshot của kênh cũng bị xóa.');}
+window.deleteChannel=deleteChannel;
+window.setOrderStatus=(id,v)=>updRow('orders',id,{status:v});
+window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
+window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
+window.setIssueStatus=(id,v)=>updRow('issues',id,{status:v});
+window.deleteIssue=(id)=>delRow('issues',id,'Xóa vấn đề này?');
+window.changeUserRole=(id,v)=>updRow('profiles',id,{role:v});
+window.disableUser=(id)=>{if(confirm('Khóa người dùng này (không cho đăng nhập nữa)?'))updRow('profiles',id,{status:'rejected'});};
+function selOpts(opts,cur){return opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('');}
+const SELCSS='background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12px';
 async function approveUser(e){
   const tr=e.target.closest('tr');const id=tr.dataset.id;
   const roleSel=tr.querySelector('.prole').value, sellerSel=tr.querySelector('.pseller').value;
@@ -837,8 +875,8 @@ $('btnAddOrder').onclick=()=>{const f=$('orderForm');f.style.display=f.style.dis
 $('btnCancelOrder').onclick=()=>$('orderForm').style.display='none';
 $('btnAddIssue').onclick=()=>{const f=$('issueForm');f.style.display=f.style.display=='none'?'block':'none';};
 $('btnCancelIssue').onclick=()=>$('issueForm').style.display='none';
-$('btnAddCh').onclick=()=>{const f=$('chForm');f.style.display=f.style.display=='none'?'block':'none';};
-$('btnCancelCh').onclick=()=>$('chForm').style.display='none';
+$('btnAddCh').onclick=()=>{const f=$('chForm');const show=f.style.display=='none';if(show)resetChForm();f.style.display=show?'block':'none';};
+$('btnCancelCh').onclick=()=>{$('chForm').style.display='none';resetChForm();};
 $('obGo').onclick=()=>selectView(obGoTarget);
 $('dashSeller').onchange=renderAll;
 $('dashChannel').onchange=renderAll;
@@ -882,7 +920,7 @@ async function renderTeam(){const grid=$('teamGrid');grid.innerHTML='<div class=
   if(error){grid.innerHTML='<div class="empty">'+error.message+'</div>';}
   else grid.innerHTML=(data||[]).map(m=>{const av=m.avatar||(m.full_name||'?')[0].toUpperCase();
     const rc=m.role==='SD'?'chip ok':m.role==='Leader'?'chip blue':m.role==='Seller'?'chip due':'chip mut';
-    return '<div class="card" style="text-align:center"><div style="width:56px;height:56px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 10px">'+av+'</div><b>'+esc(m.full_name)||'(chưa đặt tên)'+'</b><div style="margin:6px 0"><span class="'+rc+'">'+m.role+'</span></div><div style="color:var(--muted);font-size:12.5px;min-height:18px">'+(m.bio?esc(m.bio):'<span style="opacity:.5">chưa có bio</span>')+'</div></div>';
+    return '<div class="card" style="text-align:center"><div style="width:56px;height:56px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 10px">'+av+'</div><b>'+(esc(m.full_name)||'(chưa đặt tên)')+'</b><div style="margin:6px 0"><span class="'+rc+'">'+m.role+'</span></div><div style="color:var(--muted);font-size:12.5px;min-height:18px">'+(m.bio?esc(m.bio):'<span style="opacity:.5">chưa có bio</span>')+'</div></div>';
   }).join('')||'<div class="empty">Chưa có thành viên nào được duyệt.</div>';
   // shoutout feed
   try{const {data:sh,error:se}=await sb.from('shoutouts').select('*').order('created_at',{ascending:false});
