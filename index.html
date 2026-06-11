@@ -160,6 +160,7 @@
       <a data-view="bySeller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> Theo seller</a>
       <a data-view="byOwner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg> Theo người quản lý</a>
       <a data-view="roles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Phân quyền</a>
+      <a data-view="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Thành viên</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
     <div class="note">RS Channel Hub · dữ liệu lưu trên Supabase. Ưu tiên cập nhật hằng ngày (tối đa 3 ngày/kênh).</div>
@@ -169,9 +170,12 @@
     <div class="toperr" id="topErr"></div>
 
     <section class="view active" id="dash">
-      <div class="topbar"><div><h1>Tổng quan</h1><div class="sub" id="dashSub"></div></div></div>
+      <div class="topbar"><div><h1>Tổng quan</h1><div class="sub" id="dashSub"></div></div>
+        <button class="btn ghost" id="btnReport">⇩ Xuất báo cáo Excel</button></div>
       <div class="filters" style="margin-bottom:14px">
         <select id="dashSeller"><option value="">Tất cả seller</option></select>
+        <select id="dashPlatform"><option value="">Tất cả sàn</option></select>
+        <select id="dashNiche"><option value="">Tất cả niche</option></select>
         <select id="dashChannel"><option value="">Tất cả kênh</option></select>
         <label style="color:var(--muted);font-size:12px;display:flex;align-items:center;gap:6px">Tính đến ngày <input type="date" id="dashDate" style="background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 10px;color:var(--text);font-size:13px"></label>
         <button class="btn ghost" id="dashReset" style="padding:8px 12px">Xóa lọc</button>
@@ -263,7 +267,7 @@
       <div class="card"><h3>Xu hướng theo thời gian <span class="tag" id="grTag"></span></h3><canvas id="grChart"></canvas>
         <div class="empty" id="grChartEmpty" style="display:none">Chưa có dữ liệu theo thời gian. Cập nhật số liệu vài lần để thấy đường tăng trưởng.</div></div>
       <div class="card" style="padding:0;margin-top:14px"><div class="tbl-wrap"><table>
-        <thead><tr><th>Kênh</th><th class="num">Follower đầu</th><th class="num">Follower nay</th><th class="num">Tăng</th><th class="num">% tăng</th><th class="num">Đơn nay</th><th class="num">GMV ($)</th><th>Xu hướng</th></tr></thead>
+        <thead><tr><th>Kênh</th><th class="num">Follower đầu</th><th class="num">Follower nay</th><th class="num">Tăng</th><th class="num">% tăng</th><th class="num">% mục tiêu</th><th class="num">Đơn nay</th><th class="num">GMV ($)</th><th>Xu hướng</th></tr></thead>
         <tbody id="grBody"></tbody></table>
         <div class="empty" id="grEmpty" style="display:none">Chưa có kênh nào.</div>
       </div></div>
@@ -351,7 +355,7 @@
     <section class="view" id="byOwner">
       <div class="topbar"><div><h1>Theo người quản lý</h1><div class="sub">Ai quản kênh nào · kỷ luật cập nhật</div></div></div>
       <div class="card" style="padding:0"><div class="tbl-wrap"><table>
-        <thead><tr><th>Người quản lý</th><th class="num">Số kênh</th><th class="num">Follower QL</th><th class="num">Đơn kỳ</th><th class="num">Đúng hạn</th><th class="num">Quá hạn</th></tr></thead>
+        <thead><tr><th>#</th><th>Người quản lý</th><th class="num">Số kênh</th><th class="num">Follower QL</th><th class="num">Tổng view</th><th class="num">Đơn kỳ</th><th class="num">Đúng hạn</th><th class="num">Quá hạn</th></tr></thead>
         <tbody id="ownerBody"></tbody></table></div></div>
     </section>
 
@@ -369,6 +373,15 @@
         <tbody id="userBody"></tbody></table></div>
         <div class="auto" style="color:var(--green);margin-top:12px">✔ Thông tin đăng nhập kênh (mật khẩu/2FA/proxy) KHÔNG lưu trong tool.</div>
       </div>
+    </section>
+
+    <section class="view" id="team">
+      <div class="topbar"><div><h1>Thành viên</h1><div class="sub">Cả team RS · ai cũng xem được avatar &amp; bio của nhau 👋</div></div></div>
+      <div class="card" style="margin-bottom:14px"><h3>💬 Bảng khen ngợi · shoutout</h3>
+        <div style="display:flex;gap:8px"><input id="shInput" class="field" style="flex:1;font-weight:500" placeholder="Gửi lời khen / ghi nhận tới đồng đội..." maxlength="240"><button class="btn" id="shSend">Gửi</button></div>
+        <div id="shFeed" style="margin-top:12px"></div>
+      </div>
+      <div class="grid" id="teamGrid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))"></div>
     </section>
 
     <section class="view" id="profile">
@@ -447,10 +460,10 @@ async function afterLogin(){
   $('uName').textContent=me.full_name||me.email;
   $('uRole').textContent=me.role+(me.role==='SD'?' · Admin':'');
   // ẩn menu theo vai trò
-  const allow={SD:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','profile'],
-   Leader:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','profile'],
-   Media:['dash','channels','growth','orders','update','issues','profile'],
-   Seller:['dash','channels','growth','orders','update','issues','profile']}[me.role]||['dash','profile'];
+  const allow={SD:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','team','profile'],
+   Leader:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','team','profile'],
+   Media:['dash','channels','growth','orders','update','issues','team','profile'],
+   Seller:['dash','channels','growth','orders','update','issues','team','profile']}[me.role]||['dash','profile'];
   document.querySelectorAll('.nav a').forEach(a=>a.style.display=allow.includes(a.dataset.view)?'':'none');
   // chỉ admin được thêm/nhập kênh (RLS cũng chặn ở server)
   ['btnAddCh','btnImport'].forEach(id=>{const e=$(id);if(e)e.style.display=isAdmin()?'':'none';});
@@ -527,10 +540,10 @@ function buildCh(asOfDate){
     const upd=latest?daysSince(latest.period_date):999;
     const orP=prev?Number(prev.orders)||0:0,comP=prev?(Number(prev.gmv_usd)||0)/1000:0,vP=prev?Number(prev.views)||0:0;
     const care=(c.care&&String(c.care).trim())?String(c.care).trim():chOwnerOf(c.id);
-    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',violations:Number(c.violations)||0,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(d,upd,vid,c.acc_status)};
+    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',violations:Number(c.violations)||0,goal:Number(c.follower_goal)||0,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(d,upd,vid,c.acc_status)};
   });
 }
-function dashScope(){let r=ch;const se=$('dashSeller')?$('dashSeller').value:'',cn=$('dashChannel')?$('dashChannel').value:'';if(se)r=r.filter(c=>c.s===se);if(cn)r=r.filter(c=>String(c.id)===String(cn));return r;}
+function dashScope(){let r=ch;const se=$('dashSeller')?$('dashSeller').value:'',cn=$('dashChannel')?$('dashChannel').value:'',pl=$('dashPlatform')?$('dashPlatform').value:'',ni=$('dashNiche')?$('dashNiche').value:'';if(se)r=r.filter(c=>c.s===se);if(pl)r=r.filter(c=>c.plat===pl);if(ni)r=r.filter(c=>c.niche===ni);if(cn)r=r.filter(c=>String(c.id)===String(cn));return r;}
 function fillSel(id,allLabel,items){const el=$(id);if(!el)return;const cur=el.value;el.innerHTML='<option value="">'+allLabel+'</option>'+items.map(i=>'<option value="'+i.v+'">'+i.t+'</option>').join('');el.value=cur;}
 function rebuild(){ch=buildCh(asOf);renderAll();}
 function drawGauge(canvasId,txtId,pct,label,color){pct=Math.max(0,Math.min(100,Number(pct)||0));
@@ -543,6 +556,8 @@ function monthlyAgg(scIds){const m={};(rawSnaps||[]).forEach(s=>{if(scIds&&!scId
 // ====== RENDER ======
 function renderAll(){
   fillSel('dashSeller','Tất cả seller',[...new Set(ch.map(c=>c.s))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
+  fillSel('dashPlatform','Tất cả sàn',[...new Set(ch.map(c=>c.plat))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
+  fillSel('dashNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('dashChannel','Tất cả kênh',ch.map(c=>({v:c.id,t:c.n})));
   const sc=dashScope();
   $('dashSub').textContent=sc.length+'/'+ch.length+' kênh · '+sellers.length+' seller'+(asOf?' · tính đến '+asOf:'')+' · 1$=26.000₫';
@@ -598,6 +613,8 @@ function renderAll(){
   sc.filter(c=>c.upd>3).forEach(c=>alerts.push({lv:'hi',ic:'⏰',t:c.n+' — '+(c.upd>=999?'chưa từng cập nhật':'quá hạn '+c.upd+' ngày'),w:'Người QL: '+c.o}));
   sc.filter(c=>c.d<0).forEach(c=>alerts.push({lv:'hi',ic:'▼',t:c.n+' — follower giảm '+(-c.d),w:'Kênh đang tụt'}));
   sc.filter(c=>c.vid<=2&&c.upd<999).forEach(c=>alerts.push({lv:'mid',ic:'⊘',t:c.n+' — chỉ '+c.vid+' video trong kỳ',w:'Dưới ngưỡng'}));
+  sc.filter(c=>c.vP>0&&c.v<c.vP*0.7).forEach(c=>alerts.push({lv:'hi',ic:'📉',t:c.n+' — bay view '+Math.round((1-c.v/c.vP)*100)+'% so kỳ trước',w:'View '+fmtK(c.vP)+' → '+fmtK(c.v)}));
+  sc.filter(c=>c.violations>0).forEach(c=>alerts.push({lv:'mid',ic:'⚠',t:c.n+' — '+c.violations+' vi phạm',w:'Rủi ro kênh · '+c.o}));
   const ord={hi:0,mid:1,lo:2};alerts.sort((a,b)=>ord[a.lv]-ord[b.lv]);
   const aHTML=a=>'<div class="alert '+a.lv+'"><div class="ic">'+a.ic+'</div><div><b>'+a.t+'</b><div class="who">'+a.w+'</div></div></div>';
   $('alertList').innerHTML=alerts.map(aHTML).join('')||'<div class="empty">Không có cảnh báo 🎉</div>';
@@ -618,10 +635,12 @@ function renderAll(){
   // by seller (toàn bộ kênh)
   const sl=[...new Set(ch.map(c=>c.s))].map(s=>{const g=ch.filter(c=>c.s===s);return {s,n:g.length,f:g.reduce((a,c)=>a+c.f,0),or:g.reduce((a,c)=>a+c.or,0),com:g.reduce((a,c)=>a+c.com,0),red:g.filter(c=>c.h=='r').length};});
   $('sellerBody').innerHTML=sl.map(s=>'<tr><td><b>'+s.s+'</b></td><td class="num">'+s.n+'</td><td class="num">'+fmtK(s.f)+'</td><td class="num">'+s.or+'</td><td class="num" style="color:var(--green);font-weight:700">$'+s.com.toFixed(1)+'K</td><td class="num" style="color:var(--muted)">'+fmtVnd(s.com)+'</td><td class="num">'+(s.red?'<span class="neg">'+s.red+'</span>':'0')+'</td><td>'+hdot(s.red>=2?'r':s.red==1?'a':'g')+'</td></tr>').join('')||'<tr><td class="empty" colspan="8">Chưa có dữ liệu</td></tr>';
-  // by owner (toàn bộ kênh)
+  // by owner — bảng thi đua (toàn bộ kênh)
   const owAll=[...new Set(ch.flatMap(c=>c.o==='—'?[]:c.o.split(',').map(x=>x.trim())))];
-  $('ownerBody').innerHTML=owAll.map(o=>{const g=ch.filter(c=>c.o.split(',').map(x=>x.trim()).includes(o));const late=g.filter(c=>c.upd>3).length;const ontime=g.length?Math.round((g.length-late)/g.length*100):0;
-   return '<tr><td><b>'+o+'</b></td><td class="num">'+g.length+'</td><td class="num">'+fmtK(g.reduce((a,c)=>a+c.f,0))+'</td><td class="num">'+g.reduce((a,c)=>a+c.or,0)+'</td><td class="num" style="color:'+(ontime>=80?'var(--green)':ontime>=60?'var(--amber)':'var(--red)')+';font-weight:700">'+ontime+'%</td><td class="num">'+(late||'0')+'</td></tr>';}).join('')||'<tr><td class="empty" colspan="6">Chưa gán người quản lý kênh</td></tr>';
+  const owRows=owAll.map(o=>{const g=ch.filter(c=>c.o.split(',').map(x=>x.trim()).includes(o));const late=g.filter(c=>c.upd>3).length;const ontime=g.length?Math.round((g.length-late)/g.length*100):0;
+   return {o,n:g.length,f:g.reduce((a,c)=>a+c.f,0),v:g.reduce((a,c)=>a+c.v,0),or:g.reduce((a,c)=>a+c.or,0),ontime,late};}).sort((a,b)=>b.or-a.or||b.v-a.v);
+  const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+  $('ownerBody').innerHTML=owRows.map((r,i)=>'<tr><td style="font-weight:700">'+medal(i)+'</td><td><b>'+r.o+'</b></td><td class="num">'+r.n+'</td><td class="num">'+fmtK(r.f)+'</td><td class="num">'+fmtK(r.v)+'</td><td class="num" style="font-weight:700">'+r.or+'</td><td class="num" style="color:'+(r.ontime>=80?'var(--green)':r.ontime>=60?'var(--amber)':'var(--red)')+';font-weight:700">'+r.ontime+'%</td><td class="num">'+(r.late||'0')+'</td></tr>').join('')||'<tr><td class="empty" colspan="8">Chưa gán người quản lý kênh</td></tr>';
   // history
   renderHist();
   // dropdowns
@@ -755,9 +774,9 @@ async function importChannels(file){
   if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
   topErr('');
   try{
-    const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-    if(!rows.length)return showToast('File trống');
+    const buf=await file.arrayBuffer();const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+    if(!rows.length)return showToast('File trống (kiểm tra dòng tiêu đề ở hàng đầu)');
     const map={};sellers.forEach(s=>map[s.name.toLowerCase()]=s.id);
     const today=new Date().toISOString().slice(0,10);
     let ok=0,fail=0,seeded=0,lastErr='';
@@ -798,8 +817,8 @@ async function importChannels(file){
       }catch(e){fail++;lastErr=e.message||String(e);}
     }
     showToast('Nhập '+ok+' kênh'+(seeded?' · seed '+seeded+' follower':'')+(fail?' · '+fail+' lỗi':''));
-    if(fail)topErr('Một số dòng lỗi: '+lastErr);
-    await loadData();
+    if(fail){if(/schema cache|column|does not exist/i.test(lastErr))topErr('Thiếu cột trong database — hãy chạy file patch2-them-truong-kenh.sql trong Supabase rồi nhập lại. (Chi tiết: '+lastErr+')');else topErr('Một số dòng lỗi: '+lastErr);}
+    if(ok)await loadData();
   }catch(e){topErr(e.message||String(e));}
 }
 
@@ -808,7 +827,7 @@ $('btnExport').onclick=exportChannels;
 $('btnTemplate').onclick=downloadTemplate;
 $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{if(e.target.files[0])importChannels(e.target.files[0]);e.target.value='';};
-function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
+function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(v==='team')renderTeam();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
 ['fSearch','fSeller','fNiche','fHealth'].forEach(id=>$(id).addEventListener('input',renderCh));
 document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche')?1:-1;}renderCh();});
@@ -823,9 +842,13 @@ $('btnCancelCh').onclick=()=>$('chForm').style.display='none';
 $('obGo').onclick=()=>selectView(obGoTarget);
 $('dashSeller').onchange=renderAll;
 $('dashChannel').onchange=renderAll;
+$('dashPlatform').onchange=renderAll;
+$('dashNiche').onchange=renderAll;
 $('dashDate').onchange=e=>{asOf=e.target.value||null;rebuild();};
-$('dashReset').onclick=()=>{$('dashSeller').value='';$('dashChannel').value='';$('dashDate').value='';asOf=null;rebuild();};
+$('dashReset').onclick=()=>{['dashSeller','dashChannel','dashPlatform','dashNiche','dashDate'].forEach(i=>$(i).value='');asOf=null;rebuild();};
 $('grChannel').onchange=renderGrowth;$('grMetric').onchange=renderGrowth;
+$('btnReport').onclick=exportChannels;
+$('shSend').onclick=async()=>{const m=$('shInput').value.trim();if(!m)return;$('shSend').disabled=true;const {error}=await sb.from('shoutouts').insert({author:me.full_name||me.email,message:m});$('shSend').disabled=false;if(error)return topErr(/shoutouts/.test(error.message)?'Hãy chạy patch5-shoutout.sql trước.':error.message);$('shInput').value='';showToast('Đã gửi 🎉');renderTeam();};
 $('obX').onclick=()=>{obDismissed=true;$('onboard').style.display='none';};
 function syncSide(){$('side').classList.toggle('collapsed',window.innerWidth<=760);}
 window.addEventListener('resize',syncSide);syncSide();
@@ -847,10 +870,25 @@ function renderGrowth(){
   if(growthChart){growthChart.destroy();growthChart=null;}
   if(has&&window.Chart){const gx={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b92a7'},grid:{color:'rgba(140,150,170,.15)'}},y:{ticks:{color:'#8b92a7'},grid:{color:'rgba(140,150,170,.15)'}}}};
     growthChart=new Chart($('grChart'),{type:'line',data:{labels,datasets:[{label:mLabel,data:values,borderColor:'#5b8cff',backgroundColor:'rgba(91,140,255,.12)',fill:true,tension:.35,pointRadius:3}]},options:gx});}
-  const rows=ch.map(c=>{const ss=snapsAsc(c.id);if(!ss.length)return null;const f0=Number(ss[0].followers)||0,f1=Number(ss[ss.length-1].followers)||0,delta=f1-f0,pct=f0?(delta/f0*100):0;return {n:c.n,f0,f1,delta,pct,or:c.or,com:c.com};}).filter(Boolean).sort((a,b)=>b.pct-a.pct);
-  $('grBody').innerHTML=rows.map(r=>'<tr><td><b>'+r.n+'</b></td><td class="num">'+fmtK(r.f0)+'</td><td class="num">'+fmtK(r.f1)+'</td><td class="num">'+sign(r.delta)+'</td><td class="num" style="color:'+(r.pct>0?'var(--green)':r.pct<0?'var(--red)':'var(--muted)')+';font-weight:700">'+(r.pct>0?'+':'')+r.pct.toFixed(1)+'%</td><td class="num">'+r.or+'</td><td class="num">$'+r.com.toFixed(1)+'K</td><td>'+(r.pct>0?'<span class="pos">▲ tốt lên</span>':r.pct<0?'<span class="neg">▼ giảm</span>':'<span style="color:var(--muted)">— đi ngang</span>')+'</td></tr>').join('');
+  const rows=ch.map(c=>{const ss=snapsAsc(c.id);if(!ss.length)return null;const f0=Number(ss[0].followers)||0,f1=Number(ss[ss.length-1].followers)||0,delta=f1-f0,pct=f0?(delta/f0*100):0,gp=c.goal?(f1/c.goal*100):0;return {n:c.n,f0,f1,delta,pct,gp,goal:c.goal,or:c.or,com:c.com};}).filter(Boolean).sort((a,b)=>b.pct-a.pct);
+  $('grBody').innerHTML=rows.map(r=>'<tr><td><b>'+r.n+'</b></td><td class="num">'+fmtK(r.f0)+'</td><td class="num">'+fmtK(r.f1)+'</td><td class="num">'+sign(r.delta)+'</td><td class="num" style="color:'+(r.pct>0?'var(--green)':r.pct<0?'var(--red)':'var(--muted)')+';font-weight:700">'+(r.pct>0?'+':'')+r.pct.toFixed(1)+'%</td><td class="num">'+(r.goal?'<span style="color:'+(r.gp>=100?'var(--green)':r.gp>=60?'var(--amber)':'var(--muted)')+';font-weight:600">'+Math.round(r.gp)+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+r.or+'</td><td class="num">$'+r.com.toFixed(1)+'K</td><td>'+(r.pct>0?'<span class="pos">▲ tốt lên</span>':r.pct<0?'<span class="neg">▼ giảm</span>':'<span style="color:var(--muted)">— đi ngang</span>')+'</td></tr>').join('');
   $('grEmpty').style.display=rows.length?'none':'block';
 }
+
+// team
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+async function renderTeam(){const grid=$('teamGrid');grid.innerHTML='<div class="empty">Đang tải...</div>';
+  const {data,error}=await sb.rpc('list_members');
+  if(error){grid.innerHTML='<div class="empty">'+error.message+'</div>';}
+  else grid.innerHTML=(data||[]).map(m=>{const av=m.avatar||(m.full_name||'?')[0].toUpperCase();
+    const rc=m.role==='SD'?'chip ok':m.role==='Leader'?'chip blue':m.role==='Seller'?'chip due':'chip mut';
+    return '<div class="card" style="text-align:center"><div style="width:56px;height:56px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 10px">'+av+'</div><b>'+esc(m.full_name)||'(chưa đặt tên)'+'</b><div style="margin:6px 0"><span class="'+rc+'">'+m.role+'</span></div><div style="color:var(--muted);font-size:12.5px;min-height:18px">'+(m.bio?esc(m.bio):'<span style="opacity:.5">chưa có bio</span>')+'</div></div>';
+  }).join('')||'<div class="empty">Chưa có thành viên nào được duyệt.</div>';
+  // shoutout feed
+  try{const {data:sh,error:se}=await sb.from('shoutouts').select('*').order('created_at',{ascending:false});
+    if(se){$('shFeed').innerHTML='<div class="empty" style="font-size:12px">'+(/shoutouts/.test(se.message)?'Hãy chạy patch5-shoutout.sql để bật tính năng này.':se.message)+'</div>';}
+    else $('shFeed').innerHTML=(sh||[]).slice(0,40).map(s=>'<div style="padding:9px 2px;border-bottom:1px solid var(--line)"><b>'+esc(s.author||'Ẩn danh')+'</b> <span style="color:var(--muted);font-size:11px">'+String(s.created_at||'').slice(0,16).replace('T',' ')+'</span><div style="font-size:13px;margin-top:2px">'+esc(s.message)+'</div></div>').join('')||'<div class="empty" style="font-size:12px">Chưa có lời nào. Hãy là người đầu tiên 🎉</div>';
+  }catch(e){}}
 
 // profile
 let pfAvatar='';
