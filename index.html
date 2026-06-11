@@ -161,7 +161,7 @@
       <a data-view="byOwner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg> Theo người quản lý</a>
       <a data-view="roles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Phân quyền</a>
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
-      <a data-view="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Thành viên</a>
+      <a data-view="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Bảng tin</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
     <div class="note">RS Channel Hub · dữ liệu lưu trên Supabase. Ưu tiên cập nhật hằng ngày (tối đa 3 ngày/kênh).</div>
@@ -330,12 +330,14 @@
           <div><label>Nguồn</label><select class="field" id="isSource"><option>Media</option><option>Seller</option></select></div>
           <div><label>Kênh liên quan</label><select class="field" id="isChannel"></select></div>
           <div><label>Mức độ</label><select class="field" id="isSev"><option value="hi">Cao</option><option value="mid">Trung bình</option><option value="lo">Thấp</option></select></div>
+          <div><label>Người phát hiện</label><input class="field" id="isReporter" placeholder="Tên người báo"></div>
+          <div><label>Người xử lý</label><input class="field" id="isAssignee" placeholder="Gán cho ai (tùy chọn)"></div>
         </div>
         <div style="margin-top:12px"><button class="btn" id="btnSaveIssue">Lưu</button> <button class="btn ghost" id="btnCancelIssue">Hủy</button></div>
       </div>
       <div class="grid kpis" id="issueKpis" style="margin-bottom:14px"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Vấn đề</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người xử lý</th><th>Trạng thái</th><th></th></tr></thead>
+        <table><thead><tr><th>Vấn đề</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người phát hiện</th><th>Người xử lý</th><th>Trạng thái</th><th></th></tr></thead>
         <tbody id="issueBody"></tbody></table>
         <div class="empty" id="issueEmpty" style="display:none">Chưa có vấn đề nào.</div>
       </div></div>
@@ -372,7 +374,7 @@
           <tr><td>Thêm / sửa kênh + Nhập/Xuất Excel</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
           <tr><td>Xóa kênh</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
           <tr><td>Duyệt / đổi vai trò / khóa người dùng</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
-          <tr><td>Xem nhật ký hoạt động</td><td>✔</td><td>✔</td><td>—</td><td>—</td></tr>
+          <tr><td>Xem nhật ký hoạt động</td><td>✔</td><td>—</td><td>—</td><td>—</td></tr>
         </tbody></table></div></div>
       <div class="card"><h3>Chờ phê duyệt <span class="tag">gán vai trò + (seller nếu là Seller) rồi Duyệt</span></h3>
         <div class="tbl-wrap"><table>
@@ -389,7 +391,7 @@
     </section>
 
     <section class="view" id="log">
-      <div class="topbar"><div><h1>Nhật ký hoạt động</h1><div class="sub">Ai chỉnh sửa gì · lưu lại để kiểm tra (SD/Leader xem)</div></div>
+      <div class="topbar"><div><h1>Nhật ký hoạt động</h1><div class="sub">Ai chỉnh sửa gì · lưu lại để kiểm tra (chỉ SD xem)</div></div>
         <button class="btn ghost" id="logRefresh">↻ Tải lại</button></div>
       <div class="card" style="padding:0"><div class="tbl-wrap"><table>
         <thead><tr><th>Thời gian</th><th>Người làm</th><th>Hành động</th><th>Đối tượng</th><th>Chi tiết</th></tr></thead>
@@ -399,12 +401,11 @@
     </section>
 
     <section class="view" id="team">
-      <div class="topbar"><div><h1>Thành viên</h1><div class="sub">Cả team RS · ai cũng xem được avatar &amp; bio của nhau 👋</div></div></div>
-      <div class="card" style="margin-bottom:14px"><h3>💬 Bảng khen ngợi · shoutout</h3>
-        <div style="display:flex;gap:8px"><input id="shInput" class="field" style="flex:1;font-weight:500" placeholder="Gửi lời khen / ghi nhận tới đồng đội..." maxlength="240"><button class="btn" id="shSend">Gửi</button></div>
-        <div id="shFeed" style="margin-top:12px"></div>
-      </div>
-      <div class="grid" id="teamGrid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))"></div>
+      <div class="topbar"><div><h1>Bảng tin</h1><div class="sub">Đăng bài &amp; bình luận · cả team xem được</div></div></div>
+      <div class="card" style="margin-bottom:14px"><div style="display:flex;gap:8px"><input id="postInput" class="field" style="flex:1;font-weight:500" placeholder="Chia sẻ điều gì đó với team..." maxlength="1000"><button class="btn" id="postSend">Đăng</button></div></div>
+      <div id="feedList"></div>
+      <h3 style="margin:20px 0 10px;font-size:15px">Thành viên</h3>
+      <div class="grid" id="teamGrid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))"></div>
     </section>
 
     <section class="view" id="profile">
@@ -487,7 +488,7 @@ async function afterLogin(){
   $('uRole').textContent=me.role+(me.role==='SD'?' · Admin':'');
   // ẩn menu theo vai trò
   const allow={SD:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','log','team','profile'],
-   Leader:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','log','team','profile'],
+   Leader:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','roles','team','profile'],
    Media:['dash','channels','growth','orders','update','issues','team','profile'],
    Seller:['dash','channels','growth','orders','update','issues','team','profile']}[me.role]||['dash','profile'];
   document.querySelectorAll('.nav a').forEach(a=>a.style.display=allow.includes(a.dataset.view)?'':'none');
@@ -541,7 +542,7 @@ async function loadData(){
       return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:(o.created_at||'').slice(5,10).replace('-','/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',who:o.producer||'—',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
-      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'—'};});
+      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—'};});
     if(isAdmin()){
       const {data:profs}=await sb.from('profiles').select('*').order('created_at');
       allUsers=profs||[];pendUsers=allUsers.filter(p=>p.status==='pending');
@@ -661,8 +662,9 @@ function renderAll(){
   const ic={hi:['rgba(240,106,106,.16)','var(--red)'],mid:['rgba(242,193,78,.16)','var(--amber)'],lo:['#2a2f3e','var(--muted)']},ist={open:['rgba(240,106,106,.16)','var(--red)'],doing:['rgba(242,193,78,.16)','var(--amber)'],done:['rgba(62,207,142,.16)','var(--green)']};
   $('issueBody').innerHTML=issues.map(i=>{
     const stCell=isAdmin()?'<select style="'+SELCSS+'" onchange="setIssueStatus('+i.id+',this.value)">'+selOpts([['open','Mới'],['doing','Đang xử lý'],['done','Đã đóng']],i.scode)+'</select>':'<span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span>';
+    const whoCell=isAdmin()?'<input value="'+esc(i.who)+'" placeholder="gán..." style="'+SELCSS+';width:110px" onchange="setIssueAssignee('+i.id+',this.value)">':(i.who?esc(i.who):'<span style="color:var(--muted)">—</span>');
     const act=isAdmin()?'<span title="Xóa vấn đề" style="cursor:pointer" onclick="deleteIssue('+i.id+')">🗑️</span>':'';
-    return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+esc(i.ch)+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td>'+esc(i.who)+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
+    return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+esc(i.ch)+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td style="color:var(--muted)">'+esc(i.reporter)+'</td><td>'+whoCell+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('issueEmpty').style.display=issues.length?'none':'block';
   $('navIssues').textContent=issues.filter(i=>i.st[0]!='done').length||'';
   // by seller (toàn bộ kênh)
@@ -745,12 +747,13 @@ $('btnSaveOrder').onclick=async()=>{
 $('btnSaveIssue').onclick=async()=>{
   const cid=$('isChannel').value;const rc=(rawChannels||[]).find(x=>String(x.id)===String(cid));
   const row={title:$('isTitle').value.trim(),source:$('isSource').value,channel_id:cid?Number(cid):null,
-    seller_id:rc?rc.seller_id:null,severity:$('isSev').value,status:'open',created_by:me.id};
+    seller_id:rc?rc.seller_id:null,severity:$('isSev').value,status:'open',
+    reporter:$('isReporter').value.trim()||(me.full_name||me.email),assignee:$('isAssignee').value.trim()||null,created_by:me.id};
   if(!row.title)return showToast('Nhập tiêu đề');
   $('btnSaveIssue').disabled=true;const {error}=await sb.from('issues').insert(row);$('btnSaveIssue').disabled=false;
   if(error)return topErr(error.message);
   await logAction('Ghi nhận vấn đề','issues',row.title);
-  showToast('Đã ghi nhận vấn đề ✓');$('issueForm').style.display='none';$('isTitle').value='';
+  showToast('Đã ghi nhận vấn đề ✓');$('issueForm').style.display='none';['isTitle','isReporter','isAssignee'].forEach(i=>$(i).value='');
   await loadData();
 };
 $('btnSaveCh').onclick=async()=>{
@@ -783,6 +786,7 @@ window.setOrderStatus=(id,v)=>updRow('orders',id,{status:v});
 window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
 window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
 window.setIssueStatus=(id,v)=>updRow('issues',id,{status:v});
+window.setIssueAssignee=(id,v)=>updRow('issues',id,{assignee:v.trim()||null});
 window.deleteIssue=(id)=>delRow('issues',id,'Xóa vấn đề này?');
 window.changeUserRole=(id,v)=>{if(!isSD())return topErr('Chỉ SD được đổi vai trò');updRow('profiles',id,{role:v});};
 window.disableUser=(id)=>{if(!isSD())return topErr('Chỉ SD được khóa người dùng');if(confirm('Khóa người dùng này (không cho đăng nhập nữa)?'))updRow('profiles',id,{status:'rejected'});};
@@ -896,7 +900,7 @@ $('updCh').onchange=updMeta;
 $('hamb').onclick=()=>$('side').classList.toggle('collapsed');
 $('btnAddOrder').onclick=()=>{const f=$('orderForm');f.style.display=f.style.display=='none'?'block':'none';};
 $('btnCancelOrder').onclick=()=>$('orderForm').style.display='none';
-$('btnAddIssue').onclick=()=>{const f=$('issueForm');f.style.display=f.style.display=='none'?'block':'none';};
+$('btnAddIssue').onclick=()=>{const f=$('issueForm');const show=f.style.display=='none';if(show&&!$('isReporter').value)$('isReporter').value=me.full_name||me.email;f.style.display=show?'block':'none';};
 $('btnCancelIssue').onclick=()=>$('issueForm').style.display='none';
 $('btnAddCh').onclick=()=>{const f=$('chForm');const show=f.style.display=='none';if(show)resetChForm();f.style.display=show?'block':'none';};
 $('btnCancelCh').onclick=()=>{$('chForm').style.display='none';resetChForm();};
@@ -910,7 +914,7 @@ $('dashReset').onclick=()=>{['dashSeller','dashChannel','dashPlatform','dashNich
 $('grChannel').onchange=renderGrowth;$('grMetric').onchange=renderGrowth;
 $('logRefresh').onclick=renderLog;
 $('btnReport').onclick=exportChannels;
-$('shSend').onclick=async()=>{const m=$('shInput').value.trim();if(!m)return;$('shSend').disabled=true;const {error}=await sb.from('shoutouts').insert({author:me.full_name||me.email,message:m});$('shSend').disabled=false;if(error)return topErr(/shoutouts/.test(error.message)?'Hãy chạy patch5-shoutout.sql trước.':error.message);$('shInput').value='';showToast('Đã gửi 🎉');renderTeam();};
+$('postSend').onclick=async()=>{const b=$('postInput').value.trim();if(!b)return;$('postSend').disabled=true;const {error}=await sb.from('posts').insert({author_id:me.id,author:me.full_name||me.email,avatar:me.avatar||null,body:b});$('postSend').disabled=false;if(error)return topErr(/posts/.test(error.message)?'Hãy chạy patch-TONG-HOP.sql trước.':error.message);$('postInput').value='';showToast('Đã đăng ✓');renderFeed();};
 $('obX').onclick=()=>{obDismissed=true;$('onboard').style.display='none';};
 function syncSide(){$('side').classList.toggle('collapsed',window.innerWidth<=760);}
 window.addEventListener('resize',syncSide);syncSide();
@@ -945,19 +949,30 @@ async function renderLog(){const b=$('logBody');b.innerHTML='<tr><td class="empt
   b.innerHTML=(data||[]).map(l=>'<tr><td style="white-space:nowrap">'+String(l.created_at||'').slice(0,16).replace('T',' ')+'</td><td>'+esc(l.actor)+'</td><td><span class="chip blue">'+esc(l.action)+'</span></td><td style="color:var(--muted)">'+esc(l.entity)+'</td><td style="color:var(--muted);font-size:12px;white-space:normal;max-width:320px">'+esc(l.detail)+'</td></tr>').join('');
   $('logEmpty').style.display=(data&&data.length)?'none':'block';}
 
-// team
-async function renderTeam(){const grid=$('teamGrid');grid.innerHTML='<div class="empty">Đang tải...</div>';
+// team + bảng tin
+function tfmt(t){return String(t||'').slice(0,16).replace('T',' ');}
+function favat(name,avatar,big){return '<div style="width:'+(big?38:26)+'px;height:'+(big?38:26)+'px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:'+(big?16:11)+'px;flex-shrink:0">'+(avatar||(name||'?')[0].toUpperCase())+'</div>';}
+async function renderTeam(){renderFeed();const grid=$('teamGrid');grid.innerHTML='<div class="empty">Đang tải...</div>';
   const {data,error}=await sb.rpc('list_members');
-  if(error){grid.innerHTML='<div class="empty">'+error.message+'</div>';}
-  else grid.innerHTML=(data||[]).map(m=>{const av=m.avatar||(m.full_name||'?')[0].toUpperCase();
+  if(error){grid.innerHTML='<div class="empty">'+error.message+'</div>';return;}
+  grid.innerHTML=(data||[]).map(m=>{const av=m.avatar||(m.full_name||'?')[0].toUpperCase();
     const rc=m.role==='SD'?'chip ok':m.role==='Leader'?'chip blue':m.role==='Seller'?'chip due':'chip mut';
-    return '<div class="card" style="text-align:center"><div style="width:56px;height:56px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 10px">'+av+'</div><b>'+(esc(m.full_name)||'(chưa đặt tên)')+'</b><div style="margin:6px 0"><span class="'+rc+'">'+m.role+'</span></div><div style="color:var(--muted);font-size:12.5px;min-height:18px">'+(m.bio?esc(m.bio):'<span style="opacity:.5">chưa có bio</span>')+'</div></div>';
-  }).join('')||'<div class="empty">Chưa có thành viên nào được duyệt.</div>';
-  // shoutout feed
-  try{const {data:sh,error:se}=await sb.from('shoutouts').select('*').order('created_at',{ascending:false});
-    if(se){$('shFeed').innerHTML='<div class="empty" style="font-size:12px">'+(/shoutouts/.test(se.message)?'Hãy chạy patch5-shoutout.sql để bật tính năng này.':se.message)+'</div>';}
-    else $('shFeed').innerHTML=(sh||[]).slice(0,40).map(s=>'<div style="padding:9px 2px;border-bottom:1px solid var(--line)"><b>'+esc(s.author||'Ẩn danh')+'</b> <span style="color:var(--muted);font-size:11px">'+String(s.created_at||'').slice(0,16).replace('T',' ')+'</span><div style="font-size:13px;margin-top:2px">'+esc(s.message)+'</div></div>').join('')||'<div class="empty" style="font-size:12px">Chưa có lời nào. Hãy là người đầu tiên 🎉</div>';
-  }catch(e){}}
+    return '<div class="card" style="text-align:center"><div style="width:48px;height:48px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 8px">'+av+'</div><b>'+(esc(m.full_name)||'(chưa đặt tên)')+'</b><div style="margin:5px 0"><span class="'+rc+'">'+m.role+'</span></div><div style="color:var(--muted);font-size:12px;min-height:16px">'+(m.bio?esc(m.bio):'<span style="opacity:.5">chưa có bio</span>')+'</div></div>';
+  }).join('')||'<div class="empty">Chưa có thành viên nào được duyệt.</div>';}
+async function renderFeed(){const wrap=$('feedList');if(!wrap)return;wrap.innerHTML='<div class="empty">Đang tải...</div>';
+  const [pR,cR]=await Promise.all([sb.from('posts').select('*').order('created_at',{ascending:false}).limit(50),sb.from('comments').select('*').order('created_at',{ascending:true})]);
+  if(pR.error){wrap.innerHTML='<div class="empty">'+(/posts/.test(pR.error.message)?'Hãy chạy patch-TONG-HOP.sql để bật Bảng tin.':pR.error.message)+'</div>';return;}
+  const posts=pR.data||[],comments=cR.error?[]:(cR.data||[]);
+  const byPost={};comments.forEach(c=>{(byPost[c.post_id]=byPost[c.post_id]||[]).push(c);});
+  const canDel=o=>isSD();
+  wrap.innerHTML=posts.map(p=>{
+    const cs=(byPost[p.id]||[]).map(c=>'<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--line)">'+favat(c.author,c.avatar)+'<div style="flex:1"><b style="font-size:12.5px">'+esc(c.author)+'</b> <span style="color:var(--muted);font-size:10.5px">'+tfmt(c.created_at)+'</span>'+(canDel(c)?' <span style="cursor:pointer;color:var(--muted);font-size:11px" onclick="delComment('+c.id+')">✕</span>':'')+'<div style="font-size:12.5px;white-space:pre-wrap">'+esc(c.body)+'</div></div></div>').join('');
+    return '<div class="card" style="margin-bottom:12px"><div style="display:flex;gap:10px">'+favat(p.author,p.avatar,1)+'<div style="flex:1"><b>'+esc(p.author)+'</b> <span style="color:var(--muted);font-size:11px">'+tfmt(p.created_at)+'</span>'+(canDel(p)?'<span style="cursor:pointer;color:var(--muted);float:right" title="Xóa bài" onclick="delPost('+p.id+')">🗑️</span>':'')+'<div style="margin:6px 0;white-space:pre-wrap">'+esc(p.body)+'</div></div></div><div style="margin-top:6px">'+cs+'<div style="display:flex;gap:8px;margin-top:8px"><input id="cmt-'+p.id+'" class="field" style="flex:1;font-weight:500;padding:7px 10px;font-size:13px" placeholder="Viết bình luận..."><button class="btn ghost" style="padding:7px 12px" onclick="sendComment('+p.id+')">Gửi</button></div></div></div>';
+  }).join('')||'<div class="empty">Chưa có bài nào. Hãy đăng bài đầu tiên 🎉</div>';}
+async function feedDel(table,id){if(!confirm('Xóa mục này?'))return;const {error}=await sb.from(table).delete().eq('id',id);if(error)return topErr(error.message);await logAction('Xóa',table,'id='+id);renderFeed();}
+window.delPost=id=>{if(!isSD())return topErr('Chỉ SD được xóa bài');feedDel('posts',id);};
+window.delComment=id=>{if(!isSD())return topErr('Chỉ SD được xóa bình luận');feedDel('comments',id);};
+window.sendComment=async id=>{const el=$('cmt-'+id);const b=(el&&el.value||'').trim();if(!b)return;const {error}=await sb.from('comments').insert({post_id:id,author_id:me.id,author:me.full_name||me.email,avatar:me.avatar||null,body:b});if(error)return topErr(error.message);renderFeed();};
 
 // profile
 let pfAvatar='';
