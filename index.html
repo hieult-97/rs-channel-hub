@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RS Channel Hub</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{--bg:#0f1117;--panel:#171a23;--panel2:#1e2230;--line:#2a2f3e;--text:#e6e8ee;--muted:#8b92a7;
+    --brand:#5b8cff;--brand2:#3f6fe0;--green:#3ecf8e;--amber:#f2c14e;--red:#f06a6a;--purple:#9b7bff;--radius:12px;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  .app{display:flex;min-height:100vh}
+  .side{width:235px;background:var(--panel);border-right:1px solid var(--line);padding:16px 14px;position:sticky;top:0;height:100vh;flex-shrink:0;display:flex;flex-direction:column}
+  .logo{display:flex;align-items:center;gap:10px;padding:6px 8px 12px}
+  .logo .dot{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+  .logo b{font-size:15px}.logo small{display:block;color:var(--muted);font-size:11px}
+  .user{display:flex;align-items:center;gap:9px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:12px}
+  .user .av{width:28px;height:28px;border-radius:50%;background:var(--brand2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+  .user b{font-size:12.5px}.user small{display:block;color:var(--muted);font-size:11px}
+  .user .out{margin-left:auto;color:var(--muted);cursor:pointer;font-size:14px}
+  .nav{display:flex;flex-direction:column}
+  .nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:var(--muted);text-decoration:none;cursor:pointer;font-weight:500;margin-bottom:2px;white-space:nowrap}
+  .nav a:hover{background:var(--panel2);color:var(--text)}
+  .nav a.active{background:var(--brand);color:#fff}
+  .nav a svg{width:17px;height:17px;flex-shrink:0}
+  .nav .bell{margin-left:auto;background:var(--red);color:#fff;border-radius:20px;font-size:10px;padding:1px 7px;font-weight:700}
+  .side .note{margin-top:auto;font-size:11px;color:var(--muted);background:var(--panel2);padding:10px;border-radius:9px;border:1px solid var(--line)}
+  .main{flex:1;padding:22px 26px;max-width:1320px;width:100%}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .topbar h1{font-size:20px}.topbar .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .btn{background:var(--brand);color:#fff;border:none;padding:9px 14px;border-radius:9px;font-weight:600;cursor:pointer;font-size:13px}
+  .btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .view{display:none}.view.active{display:block}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .kpi .label{color:var(--muted);font-size:12px}
+  .kpi .val{font-size:25px;font-weight:800;margin-top:6px}
+  .kpi .delta{font-size:11.5px;margin-top:4px;color:var(--muted)}
+  .up{color:var(--green)}.down{color:var(--red)}
+  .row2{grid-template-columns:1.5fr 1fr;margin-top:14px}
+  .row2b{grid-template-columns:1fr 1fr;margin-top:14px}
+  .card h3{font-size:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card h3 .tag{font-size:11px;color:var(--muted);font-weight:500}
+  canvas{max-height:230px}
+  .tbl-wrap{overflow:auto;border-radius:var(--radius)}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px 11px;border-bottom:1px solid var(--line);font-size:12.5px;white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:var(--text)}
+  th .ar{opacity:.6;font-size:9px}
+  tr:hover td{background:var(--panel2)}
+  td.num,th.num{text-align:right}
+  .dot-h{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .g{background:var(--green)}.a{background:var(--amber)}.r{background:var(--red)}
+  .chip{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-block}
+  .chip.ok{background:rgba(62,207,142,.16);color:var(--green)}
+  .chip.late{background:rgba(240,106,106,.16);color:var(--red)}
+  .chip.due{background:rgba(242,193,78,.16);color:var(--amber)}
+  .chip.mut{background:#2a2f3e;color:var(--muted)}
+  .chip.blue{background:rgba(91,140,255,.16);color:var(--brand)}
+  .pos{color:var(--green);font-weight:600}.neg{color:var(--red);font-weight:600}
+  .filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .filters input,.filters select{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 11px;color:var(--text);font-size:13px}
+  .filters input{min-width:200px;flex:1}
+  .filters .cnt{margin-left:auto;color:var(--muted);font-size:12px}
+  .empty{padding:34px;text-align:center;color:var(--muted)}
+  .alert{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--panel)}
+  .alert .ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+  .alert.hi .ic{background:rgba(240,106,106,.16);color:var(--red)}
+  .alert.mid .ic{background:rgba(242,193,78,.16);color:var(--amber)}
+  .alert.lo .ic{background:#2a2f3e;color:var(--muted)}
+  .alert b{font-size:13px}.alert .who{font-size:11.5px;color:var(--muted)}
+  .form{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .form label{font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px}
+  .form .field{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-size:15px;font-weight:600;width:100%}
+  .auto{font-size:11px;color:var(--purple);margin-top:5px}
+  .hint{font-size:12px;color:var(--brand);background:rgba(91,140,255,.08);border:1px solid rgba(91,140,255,.25);padding:8px 12px;border-radius:8px;margin-bottom:14px}
+  .onboard{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(91,140,255,.14),rgba(155,123,255,.08));border:1px solid rgba(91,140,255,.3);border-radius:11px;padding:13px 15px;margin-bottom:16px}
+  .onboard .ob-ic{font-size:20px}.onboard b{font-size:13.5px}.onboard p{font-size:12px;color:var(--muted);margin-top:2px}.onboard .go{margin-left:auto;white-space:nowrap}.onboard .x{color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}
+  .help{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:9px;cursor:help;margin-left:5px;vertical-align:middle}
+  .hamb{display:none}
+  .ov{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+  .ov.hide{display:none}
+  .box{width:380px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px}
+  .box .lg{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+  .box .dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+  .tabs{display:flex;gap:6px;margin:18px 0 4px}
+  .tabs span{flex:1;text-align:center;padding:9px;border-radius:9px;background:var(--panel2);color:var(--muted);cursor:pointer;font-size:13px;font-weight:600}
+  .tabs span.on{background:var(--brand);color:#fff}
+  .box label{font-size:12px;color:var(--muted);display:block;margin:13px 0 5px}
+  .box input,.box select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-size:14px}
+  .box .full{width:100%;margin-top:18px}
+  .msg{margin-top:14px;font-size:12.5px;line-height:1.5;padding:11px 13px;border-radius:9px;display:none}
+  .msg.err{display:block;color:var(--red);background:rgba(240,106,106,.1);border:1px solid rgba(240,106,106,.3)}
+  .msg.warn{display:block;color:var(--amber);background:rgba(242,193,78,.1);border:1px solid rgba(242,193,78,.3)}
+  .msg.okk{display:block;color:var(--green);background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.3)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#06231a;font-weight:700;padding:12px 20px;border-radius:11px;font-size:13.5px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:.32s;z-index:80;pointer-events:none}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toperr{background:rgba(240,106,106,.12);border:1px solid rgba(240,106,106,.35);color:var(--red);padding:9px 13px;border-radius:9px;font-size:12.5px;margin-bottom:14px;display:none}
+  @media(max-width:980px){.kpis{grid-template-columns:repeat(2,1fr)}.row2,.row2b{grid-template-columns:1fr}.form{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:760px){.app{flex-direction:column}.side{width:100%;height:auto;position:relative;flex-direction:column}.side.collapsed .nav,.side.collapsed .note,.side.collapsed .user{display:none}.nav{flex-direction:row;flex-wrap:wrap;gap:4px}.nav a{padding:8px 10px;font-size:13px}.side .note{display:none}.hamb{display:block;margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 11px;cursor:pointer}.main{padding:16px 14px}.form{grid-template-columns:1fr}.filters input{min-width:140px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN / REGISTER -->
+<div class="ov" id="login">
+  <div class="box">
+    <div class="lg"><div class="dot">R</div><div><b>RS Channel Hub</b><small style="color:var(--muted);display:block">TikTok Shop US</small></div></div>
+    <div class="tabs"><span class="on" data-t="in">Đăng nhập</span><span data-t="up">Đăng ký</span></div>
+    <div id="tIn">
+      <label>Email</label><input id="inEmail" type="email" placeholder="ban@rs.vn">
+      <label>Mật khẩu</label><input id="inPass" type="password" placeholder="••••••">
+      <button class="btn full" id="btnIn">Đăng nhập</button>
+    </div>
+    <div id="tUp" style="display:none">
+      <label>Họ tên</label><input id="upName" placeholder="Nguyễn Văn A">
+      <label>Email</label><input id="upEmail" type="email" placeholder="ban@rs.vn">
+      <label>Mật khẩu (tối thiểu 6 ký tự)</label><input id="upPass" type="password" placeholder="Tạo mật khẩu">
+      <button class="btn full" id="btnUp">Gửi đăng ký</button>
+    </div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- PENDING -->
+<div class="ov hide" id="pending">
+  <div class="box" style="text-align:center">
+    <div class="lg" style="justify-content:center"><div class="dot">R</div></div>
+    <h3 style="margin:10px 0 8px">Tài khoản đang chờ duyệt</h3>
+    <p style="color:var(--muted);font-size:13px;line-height:1.6">Đăng ký của bạn đã được ghi nhận. Quản trị viên (SD/Leader) cần phê duyệt và gán quyền trước khi bạn vào được. Vui lòng liên hệ quản trị viên.</p>
+    <button class="btn ghost full" id="btnPendOut" style="margin-top:18px">Đăng xuất</button>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <aside class="side collapsed" id="side">
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · TikTok Shop US</small></div>
+      <button class="hamb" id="hamb">☰</button></div>
+    <div class="user"><div class="av" id="uAv">?</div><div><b id="uName">—</b><small id="uRole">—</small></div><div class="out" id="btnOut" title="Đăng xuất">⎋</div></div>
+    <nav class="nav" id="nav">
+      <a data-view="dash" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Tổng quan</a>
+      <a data-view="channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></svg> Kênh <span class="bell" id="navOverdue"></span></a>
+      <a data-view="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4l1.5 5M14 4l1.5 5"/></svg> Order sản xuất</a>
+      <a data-view="update"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Cập nhật số liệu</a>
+      <a data-view="issues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.2 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Vấn đề <span class="bell" id="navIssues"></span></a>
+      <a data-view="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> Cảnh báo <span class="bell" id="navAlerts"></span></a>
+      <a data-view="bySeller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> Theo seller</a>
+      <a data-view="byOwner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg> Theo người quản lý</a>
+      <a data-view="roles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Phân quyền</a>
+    </nav>
+    <div class="note">RS Channel Hub · dữ liệu lưu trên Supabase. Cập nhật mỗi 3 ngày/kênh.</div>
+  </aside>
+
+  <main class="main">
+    <div class="toperr" id="topErr"></div>
+
+    <section class="view active" id="dash">
+      <div class="topbar"><div><h1>Tổng quan</h1><div class="sub" id="dashSub"></div></div></div>
+      <div class="onboard" id="onboard" style="display:none"><div class="ob-ic">👋</div><div><b id="obTitle"></b><p id="obText"></p></div><button class="btn go" id="obGo">Vào cập nhật ngay</button><span class="x" id="obX">✕</span></div>
+      <div class="grid kpis" id="kpis"></div>
+      <div class="grid row2">
+        <div class="card"><h3>Đơn &amp; GMV theo kỳ <span class="tag">10 kỳ gần nhất</span></h3><canvas id="trend"></canvas></div>
+        <div class="card"><h3>Sức khỏe kênh <span class="tag" id="healthTot"></span></h3><canvas id="health"></canvas><div id="healthLegend" style="display:flex;justify-content:space-around;margin-top:12px;font-size:12px"></div></div>
+      </div>
+      <div class="grid row2b">
+        <div class="card"><h3>Top kênh theo GMV <span class="tag">kỳ này</span></h3><div class="tbl-wrap"><table><tbody id="topCh"></tbody></table></div></div>
+        <div class="card"><h3>Cần chú ý ngay <span class="tag">cảnh báo cao</span></h3><div id="dashAlerts"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="channels">
+      <div class="topbar"><div><h1>Kênh</h1><div class="sub">Bấm tiêu đề cột để sắp xếp</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" id="btnTemplate">⤓ Form mẫu</button>
+          <button class="btn ghost" id="btnImport">⤴ Nhập Excel</button>
+          <button class="btn ghost" id="btnExport">⇩ Xuất Excel</button>
+          <button class="btn" id="btnAddCh">+ Thêm kênh</button>
+          <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" style="display:none">
+        </div></div>
+      <div class="card" id="chForm" style="display:none;margin-bottom:14px">
+        <h3>Thêm kênh</h3>
+        <div class="form">
+          <div><label>Tên kênh</label><input class="field" id="ncName" placeholder="@tenkenh"></div>
+          <div><label>Seller</label><select class="field" id="ncSeller"></select></div>
+          <div><label>Niche</label><input class="field" id="ncNiche" placeholder="Clothing..."></div>
+          <div><label>Trạng thái TK</label><select class="field" id="ncAcc"><option value="shop">Đã bật shop</option><option value="buff">Chưa · buff</option></select></div>
+          <div><label>Mục tiêu follower</label><input class="field" id="ncGoal" type="number" placeholder="50000"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" id="btnSaveCh">Lưu kênh</button> <button class="btn ghost" id="btnCancelCh">Hủy</button>
+          <span style="font-size:11.5px;color:var(--muted);margin-left:8px">Seller mới? Thêm ở mục Phân quyền hoặc gõ tên mới bên dưới.</span>
+          <input class="field" id="ncNewSeller" placeholder="(tùy chọn) tên seller mới" style="margin-top:10px;max-width:300px;font-size:13px;font-weight:500">
+        </div>
+      </div>
+      <div class="filters">
+        <input id="fSearch" placeholder="Tìm theo tên kênh...">
+        <select id="fSeller"><option value="">Tất cả seller</option></select>
+        <select id="fNiche"><option value="">Tất cả niche</option></select>
+        <select id="fHealth"><option value="">Mọi sức khỏe</option><option value="g">🟢 Tốt</option><option value="a">🟠 Chú ý</option><option value="r">🔴 Vấn đề</option></select>
+        <span class="cnt" id="chCount"></span>
+      </div>
+      <div class="card" style="padding:0"><div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th class="sortable" data-k="n">Kênh <span class="ar"></span></th>
+            <th class="sortable" data-k="niche">Niche <span class="ar"></span></th>
+            <th>Tài khoản</th><th>Seller</th><th>Người QL</th>
+            <th class="sortable num" data-k="f">Follower <span class="ar"></span></th>
+            <th class="sortable num" data-k="d">Δ kỳ <span class="ar"></span></th>
+            <th class="sortable num" data-k="or">Đơn <span class="ar"></span></th>
+            <th class="sortable num" data-k="com">GMV ($) <span class="ar"></span></th>
+            <th class="sortable num" data-k="upd">Cập nhật <span class="ar"></span></th>
+            <th>Sức khỏe</th>
+          </tr></thead>
+          <tbody id="chBody"></tbody>
+        </table>
+        <div class="empty" id="chEmpty" style="display:none">Chưa có kênh nào. Bấm "+ Thêm kênh" để bắt đầu.</div>
+      </div></div>
+    </section>
+
+    <section class="view" id="orders">
+      <div class="topbar"><div><h1>Order sản xuất</h1><div class="sub">Đầu việc làm video · trạng thái + nghiệm thu</div></div>
+        <button class="btn" id="btnAddOrder">+ Tạo order</button></div>
+      <div class="card" id="orderForm" style="display:none;margin-bottom:14px">
+        <h3>Tạo order sản xuất</h3>
+        <div class="form">
+          <div><label>Seller</label><select class="field" id="orSeller"></select></div>
+          <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
+          <div><label>Loại</label><input class="field" id="orType" placeholder="T-shirt"></div>
+          <div><label>Người sản xuất</label><input class="field" id="orProducer" placeholder="Tên media"></div>
+          <div><label>Combo / Format</label><input class="field" id="orCombo" placeholder="Review / UGC..."></div>
+          <div><label>Deadline</label><input class="field" id="orDeadline" type="date"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" id="btnSaveOrder">Lưu order</button> <button class="btn ghost" id="btnCancelOrder">Hủy</button></div>
+      </div>
+      <div class="grid kpis" id="orderKpis" style="margin-bottom:14px"></div>
+      <div class="card" style="padding:0"><div class="tbl-wrap">
+        <table><thead><tr><th>Ngày</th><th>Seller</th><th>Sản phẩm</th><th>Loại</th><th>Người sản xuất</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Ghi chú</th></tr></thead>
+        <tbody id="orderBody"></tbody></table>
+        <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
+      </div></div>
+    </section>
+
+    <section class="view" id="update">
+      <div class="topbar"><div><h1>Cập nhật số liệu</h1><div class="sub">Nhập số thô mỗi 3 ngày · hệ thống tự tính phần còn lại</div></div></div>
+      <div class="card" style="max-width:780px">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+          <select id="updCh" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--text);font-size:14px;font-weight:600"></select>
+          <span id="updMeta" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <div class="form">
+          <div><label>Follower hiện tại</label><input class="field" id="upFollower" type="number" placeholder="0"></div>
+          <div><label>View trong kỳ</label><input class="field" id="upViews" type="number" placeholder="0"></div>
+          <div><label>Số video đăng</label><input class="field" id="upVideos" type="number" placeholder="0"></div>
+          <div><label>Đơn từ kênh</label><input class="field" id="upOrders" type="number" placeholder="0"></div>
+          <div><label>GMV ($)</label><input class="field" id="upGmv" type="number" placeholder="0"><div class="auto" id="gmvVnd"></div></div>
+          <div><label>Hoa hồng ($) — tùy chọn</label><input class="field" id="upComm" type="number" placeholder="—"></div>
+        </div>
+        <div style="margin-top:16px"><button class="btn" id="btnSaveUpd">Lưu cập nhật</button></div>
+      </div>
+      <div class="card" style="margin-top:14px"><h3>Lịch sử cập nhật gần đây</h3>
+        <div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Kênh</th><th class="num">Follower</th><th class="num">Đơn</th><th class="num">GMV ($)</th></tr></thead>
+        <tbody id="histBody"></tbody></table>
+        <div class="empty" id="histEmpty" style="display:none">Chưa có lần cập nhật nào.</div></div></div>
+    </section>
+
+    <section class="view" id="issues">
+      <div class="topbar"><div><h1>Vấn đề / Sự cố</h1><div class="sub">Ghi nhận → gán người xử lý → đóng</div></div>
+        <button class="btn" id="btnAddIssue">+ Ghi nhận vấn đề</button></div>
+      <div class="card" id="issueForm" style="display:none;margin-bottom:14px">
+        <h3>Ghi nhận vấn đề</h3>
+        <div class="form" style="grid-template-columns:repeat(2,1fr)">
+          <div><label>Tiêu đề</label><input class="field" id="isTitle" placeholder="VD: kênh bay view, file lỗi..."></div>
+          <div><label>Nguồn</label><select class="field" id="isSource"><option>Media</option><option>Seller</option></select></div>
+          <div><label>Kênh liên quan</label><select class="field" id="isChannel"></select></div>
+          <div><label>Mức độ</label><select class="field" id="isSev"><option value="hi">Cao</option><option value="mid">Trung bình</option><option value="lo">Thấp</option></select></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" id="btnSaveIssue">Lưu</button> <button class="btn ghost" id="btnCancelIssue">Hủy</button></div>
+      </div>
+      <div class="grid kpis" id="issueKpis" style="margin-bottom:14px"></div>
+      <div class="card" style="padding:0"><div class="tbl-wrap">
+        <table><thead><tr><th>Vấn đề</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người xử lý</th><th>Trạng thái</th></tr></thead>
+        <tbody id="issueBody"></tbody></table>
+        <div class="empty" id="issueEmpty" style="display:none">Chưa có vấn đề nào.</div>
+      </div></div>
+    </section>
+
+    <section class="view" id="alerts">
+      <div class="topbar"><div><h1>Cảnh báo</h1><div class="sub">Tự sinh từ dữ liệu · ưu tiên cao xuống thấp</div></div></div>
+      <div id="alertList"></div>
+    </section>
+
+    <section class="view" id="bySeller">
+      <div class="topbar"><div><h1>Theo seller</h1><div class="sub">Gộp toàn bộ kênh của mỗi seller</div></div></div>
+      <div class="card" style="padding:0"><div class="tbl-wrap"><table>
+        <thead><tr><th>Seller</th><th class="num">Số kênh</th><th class="num">Follower</th><th class="num">Đơn kỳ</th><th class="num">GMV ($)</th><th class="num">GMV (₫)</th><th class="num">Kênh đỏ</th><th>Sức khỏe</th></tr></thead>
+        <tbody id="sellerBody"></tbody></table></div></div>
+    </section>
+
+    <section class="view" id="byOwner">
+      <div class="topbar"><div><h1>Theo người quản lý</h1><div class="sub">Ai quản kênh nào · kỷ luật cập nhật</div></div></div>
+      <div class="card" style="padding:0"><div class="tbl-wrap"><table>
+        <thead><tr><th>Người quản lý</th><th class="num">Số kênh</th><th class="num">Follower QL</th><th class="num">Đơn kỳ</th><th class="num">Đúng hạn</th><th class="num">Quá hạn</th></tr></thead>
+        <tbody id="ownerBody"></tbody></table></div></div>
+    </section>
+
+    <section class="view" id="roles">
+      <div class="topbar"><div><h1>Phân quyền</h1><div class="sub">Duyệt người dùng &amp; gán vai trò</div></div></div>
+      <div class="card"><h3>Chờ phê duyệt <span class="tag">gán vai trò + (seller nếu là Seller) rồi Duyệt</span></h3>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Seller (nếu là Seller)</th><th></th></tr></thead>
+          <tbody id="pendBody"></tbody></table>
+          <div class="empty" id="pendEmpty" style="display:none">Không có đăng ký nào chờ duyệt.</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px"><h3>Người dùng đã duyệt</h3>
+        <div class="tbl-wrap"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th></tr></thead>
+        <tbody id="userBody"></tbody></table></div>
+        <div class="auto" style="color:var(--green);margin-top:12px">✔ Thông tin đăng nhập kênh (mật khẩu/2FA/proxy) KHÔNG lưu trong tool.</div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== CẤU HÌNH SUPABASE ======
+const SUPABASE_URL='https://nsshylgcbhvdninpfdoi.supabase.co';
+const SUPABASE_KEY='sb_publishable_QlOwXKni4rpY4uw_KEwXOg_TQorVISg';
+const RATE=26000;
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+
+// ====== STATE ======
+let me=null;            // profile của user đang đăng nhập
+let ch=[], orders=[], issues=[], sellers=[], pendUsers=[], allUsers=[];
+let sortK='com',sortDir=-1,obDismissed=false,toastT,healthChart=null,trendDrawn=false;
+
+// ====== HELPERS ======
+const fmtK=x=>{x=Number(x)||0;return x>=1000?(x/1000).toFixed(1)+'K':''+x;};
+const fmtVnd=usdK=>{const v=(Number(usdK)||0)*1000*RATE;return v>=1e9?(v/1e9).toFixed(2)+' tỷ₫':v>=1e6?(v/1e6).toFixed(0)+' tr₫':Math.round(v).toLocaleString('vi')+'₫';};
+const sign=x=>x>0?'<span class="pos">▲'+fmtK(x)+'</span>':x<0?'<span class="neg">▼'+fmtK(-x)+'</span>':'<span style="color:var(--muted)">—</span>';
+const hLabel={g:'Tốt',a:'Chú ý',r:'Vấn đề'};
+const hdot=h=>'<span class="dot-h '+h+'"></span>'+(hLabel[h]||'');
+const updChip=u=>u>=999?'<span class="chip late">chưa nhập</span>':u>3?'<span class="chip late">trễ '+u+'n</span>':u==3?'<span class="chip due">đến hạn</span>':'<span class="chip ok">'+(u==0?'hôm nay':u+'n trước')+'</span>';
+const accChip=a=>a==='shop'?'<span class="chip ok">Đã bật shop</span>':'<span class="chip mut">Chưa · buff</span>';
+function showToast(m){const t=$('toast');t.textContent=m||'Đã lưu ✓';t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+function topErr(m){const e=$('topErr');if(m){e.textContent='Lỗi: '+m;e.style.display='block';}else e.style.display='none';}
+function daysSince(dateStr){if(!dateStr)return 999;const d=new Date(dateStr);const t=new Date();return Math.floor((t-d)/86400000);}
+function healthRule(d,upd,vid,acc){if(upd>5||d<0||vid<=2)return 'r';if(upd>3||d===0||acc!=='shop')return 'a';return 'g';}
+const isAdmin=()=>me&&(me.role==='SD'||me.role==='Leader');
+
+// ====== AUTH ======
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){showLogin();return;}
+  await afterLogin();
+}
+function showLogin(){$('login').classList.remove('hide');$('pending').classList.add('hide');$('app').style.display='none';}
+function showPending(){$('login').classList.add('hide');$('pending').classList.remove('hide');$('app').style.display='none';}
+function showApp(){$('login').classList.add('hide');$('pending').classList.add('hide');$('app').style.display='flex';}
+
+async function afterLogin(){
+  // lấy profile của mình
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){showLogin();return;}
+  const {data:prof,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+  if(error){topErr(error.message);}
+  me=prof||{id:user.id,email:user.email,role:'pending',status:'pending'};
+  if(me.status!=='approved'){showPending();return;}
+  showApp();
+  $('uAv').textContent=(me.full_name||me.email||'?')[0].toUpperCase();
+  $('uName').textContent=me.full_name||me.email;
+  $('uRole').textContent=me.role+(me.role==='SD'?' · Admin':'');
+  // ẩn menu theo vai trò
+  const allow={SD:['dash','channels','orders','update','issues','alerts','bySeller','byOwner','roles'],
+   Leader:['dash','channels','orders','update','issues','alerts','bySeller','byOwner','roles'],
+   Media:['dash','channels','orders','update','issues'],
+   Seller:['dash','channels','orders','update','issues']}[me.role]||['dash'];
+  document.querySelectorAll('.nav a').forEach(a=>a.style.display=allow.includes(a.dataset.view)?'':'none');
+  // chỉ admin được thêm/nhập kênh (RLS cũng chặn ở server)
+  ['btnAddCh','btnImport'].forEach(id=>{const e=$(id);if(e)e.style.display=isAdmin()?'':'none';});
+  await loadData();
+}
+
+$('btnIn').onclick=async()=>{
+  $('loginMsg').className='msg';
+  const email=$('inEmail').value.trim(),pass=$('inPass').value;
+  if(!email||!pass){return setMsg('err','Nhập email và mật khẩu.');}
+  $('btnIn').disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  $('btnIn').disabled=false;
+  if(error)return setMsg('err',error.message);
+  await afterLogin();
+};
+$('btnUp').onclick=async()=>{
+  $('loginMsg').className='msg';
+  const name=$('upName').value.trim(),email=$('upEmail').value.trim(),pass=$('upPass').value;
+  if(!name||!email||pass.length<6){return setMsg('err','Điền họ tên, email và mật khẩu ≥ 6 ký tự.');}
+  $('btnUp').disabled=true;
+  const {error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+  $('btnUp').disabled=false;
+  if(error)return setMsg('err',error.message);
+  setMsg('okk','✓ Đăng ký xong! Tài khoản đang chờ admin duyệt. Sau khi được duyệt, đăng nhập lại để vào.');
+};
+function setMsg(t,m){const e=$('loginMsg');e.className='msg '+t;e.textContent=m;}
+document.querySelectorAll('.tabs span').forEach(s=>s.onclick=()=>{document.querySelectorAll('.tabs span').forEach(x=>x.classList.remove('on'));s.classList.add('on');$('tIn').style.display=s.dataset.t=='in'?'block':'none';$('tUp').style.display=s.dataset.t=='up'?'block':'none';$('loginMsg').className='msg';});
+$('btnOut').onclick=async()=>{await sb.auth.signOut();location.reload();};
+$('btnPendOut').onclick=async()=>{await sb.auth.signOut();location.reload();};
+
+// ====== LOAD DATA ======
+async function loadData(){
+  topErr('');
+  try{
+    const [chR,snR,orR,isR,seR]=await Promise.all([
+      sb.from('channels').select('*'),
+      sb.from('snapshots').select('*').order('period_date',{ascending:false}),
+      sb.from('orders').select('*').order('created_at',{ascending:false}),
+      sb.from('issues').select('*').order('created_at',{ascending:false}),
+      sb.from('sellers').select('*').order('name'),
+    ]);
+    for(const r of [chR,snR,orR,isR,seR]) if(r.error) topErr(r.error.message);
+    sellers=seR.data||[];
+    const sellerName=id=>{const s=sellers.find(x=>x.id===id);return s?s.name:'—';};
+    // members (người quản lý) — có thể lỗi nếu chưa có, bọc riêng
+    let members=[];
+    try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
+    const ownerOf=cid=>{const ns=members.filter(m=>m.channel_id===cid).map(m=>m.profiles&&m.profiles.full_name).filter(Boolean);return ns.length?ns.join(', '):'—';};
+    const snaps=snR.data||[];
+    ch=(chR.data||[]).map(c=>{
+      const ss=snaps.filter(s=>s.channel_id===c.id); // đã sort desc theo ngày
+      const latest=ss[0],prev=ss[1];
+      const f=latest?Number(latest.followers)||0:0;
+      const d=(latest&&prev)?(Number(latest.followers)||0)-(Number(prev.followers)||0):0;
+      const vid=latest?Number(latest.videos)||0:0;
+      const or=latest?Number(latest.orders)||0:0;
+      const com=latest?(Number(latest.gmv_usd)||0)/1000:0;
+      const v=latest?Number(latest.views)||0:0;
+      const upd=latest?daysSince(latest.period_date):999;
+      return {id:c.id,n:c.name,s:sellerName(c.seller_id),o:ownerOf(c.id),niche:c.niche||'—',acc:c.acc_status||'buff',f,d,v,vid,or,com,upd,h:healthRule(d,upd,vid,c.acc_status)};
+    });
+    orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
+      return {d:(o.created_at||'').slice(5,10).replace('-','/'),s:sellerName(o.seller_id),p:o.product,t:o.ptype||'—',who:o.producer||'—',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
+    issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],done:['done','Đã đóng']};
+      const c=(chR.data||[]).find(x=>x.id===i.channel_id);
+      return {t:i.title,src:i.source||'—',ch:c?c.name:'—',s:sellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'—'};});
+    // admin: users + pending
+    if(isAdmin()){
+      const {data:profs}=await sb.from('profiles').select('*').order('created_at');
+      allUsers=profs||[];pendUsers=allUsers.filter(p=>p.status==='pending');
+    }
+    renderAll();
+  }catch(e){topErr(e.message||String(e));}
+}
+
+// ====== RENDER ======
+function renderAll(){
+  const sc=ch;
+  $('dashSub').textContent=sc.length+' kênh · '+sellers.length+' seller · tỷ giá 1$ = 26.000₫';
+  const totF=sc.reduce((a,c)=>a+c.f,0),totD=sc.reduce((a,c)=>a+c.d,0),totOr=sc.reduce((a,c)=>a+c.or,0),totCom=sc.reduce((a,c)=>a+c.com,0);
+  const overdue=sc.filter(c=>c.upd>3).length,dueToday=sc.filter(c=>c.upd===3).length;
+  $('kpis').innerHTML=[
+   ['Tổng follower',fmtK(totF),'<span class="up">▲'+fmtK(totD)+'</span> kỳ này'],
+   ['Đơn kỳ này',totOr.toLocaleString('vi'),sc.length+' kênh'],
+   ['GMV kỳ này<span class="help" title="Tổng giá trị đơn (USD) trong kỳ. Tự quy ra VND theo tỷ giá 26.000.">?</span>','$'+totCom.toFixed(1)+'K','≈ '+fmtVnd(totCom)],
+   ['Cập nhật quá hạn<span class="help" title="Mỗi kênh cập nhật 3 ngày/lần. Quá 3 ngày = quá hạn.">?</span>','<span style="color:var(--red)">'+overdue+'</span> /'+sc.length,'+'+dueToday+' đến hạn hôm nay'],
+  ].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val">'+k[1]+'</div><div class="delta">'+k[2]+'</div></div>').join('');
+  $('navOverdue').textContent=overdue||'';
+  // onboarding
+  const due=overdue+dueToday,ob=$('onboard');
+  if(due>0&&!obDismissed){ob.style.display='flex';$('obTitle').textContent='Có '+due+' kênh cần cập nhật số liệu';$('obText').textContent='Nhập số mới để giữ dữ liệu & cảnh báo chính xác.';}else ob.style.display='none';
+  // health
+  const hc={g:sc.filter(c=>c.h=='g').length,a:sc.filter(c=>c.h=='a').length,r:sc.filter(c=>c.h=='r').length};
+  $('healthTot').textContent=sc.length+' kênh';
+  $('healthLegend').innerHTML='<span><span class="dot-h g"></span>Tốt '+hc.g+'</span><span><span class="dot-h a"></span>Chú ý '+hc.a+'</span><span><span class="dot-h r"></span>Vấn đề '+hc.r+'</span>';
+  if(healthChart)healthChart.destroy();
+  if(window.Chart)healthChart=new Chart($('health'),{type:'doughnut',data:{labels:['Tốt','Chú ý','Vấn đề'],datasets:[{data:[hc.g,hc.a,hc.r],backgroundColor:['#3ecf8e','#f2c14e','#f06a6a'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'66%'}});
+  $('topCh').innerHTML=[...sc].sort((a,b)=>b.com-a.com).slice(0,5).map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.s+'</td><td class="num" style="color:var(--green);font-weight:700">$'+c.com.toFixed(1)+'K</td><td class="num">'+sign(c.d)+'</td></tr>').join('')||'<tr><td class="empty">Chưa có dữ liệu</td></tr>';
+  // alerts
+  const alerts=[];
+  sc.filter(c=>c.upd>3).forEach(c=>alerts.push({lv:'hi',ic:'⏰',t:c.n+' — '+(c.upd>=999?'chưa từng cập nhật':'quá hạn '+c.upd+' ngày'),w:'Người QL: '+c.o}));
+  sc.filter(c=>c.d<0).forEach(c=>alerts.push({lv:'hi',ic:'▼',t:c.n+' — follower giảm '+(-c.d),w:'Kênh đang tụt'}));
+  sc.filter(c=>c.vid<=2&&c.upd<999).forEach(c=>alerts.push({lv:'mid',ic:'⊘',t:c.n+' — chỉ '+c.vid+' video trong kỳ',w:'Dưới ngưỡng'}));
+  sc.filter(c=>c.upd===3).forEach(c=>alerts.push({lv:'mid',ic:'⏳',t:c.n+' — đến hạn cập nhật hôm nay',w:'Người QL: '+c.o}));
+  const ord={hi:0,mid:1,lo:2};alerts.sort((a,b)=>ord[a.lv]-ord[b.lv]);
+  const aHTML=a=>'<div class="alert '+a.lv+'"><div class="ic">'+a.ic+'</div><div><b>'+a.t+'</b><div class="who">'+a.w+'</div></div></div>';
+  $('alertList').innerHTML=alerts.map(aHTML).join('')||'<div class="empty">Không có cảnh báo 🎉</div>';
+  $('dashAlerts').innerHTML=alerts.filter(a=>a.lv=='hi').slice(0,3).map(aHTML).join('')||'<div class="empty">Không có cảnh báo cao</div>';
+  $('navAlerts').textContent=alerts.filter(a=>a.lv!='lo').length||'';
+  renderCh();
+  // orders
+  const oc={idea:['rgba(91,140,255,.16)','var(--brand)'],edit:['rgba(242,193,78,.16)','var(--amber)'],wait:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)']};
+  $('orderKpis').innerHTML=[['Order',orders.length,''],['Đang làm',orders.filter(o=>o.st[0]=='edit').length,'amber'],['Chờ nghiệm thu',orders.filter(o=>o.st[0]=='wait').length,'brand'],['Done',orders.filter(o=>o.st[0]=='done').length,'green']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
+  $('orderBody').innerHTML=orders.map(o=>'<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+o.p+'</b></td><td style="color:var(--muted)">'+o.t+'</td><td>'+o.who+'</td><td><span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span></td><td>'+(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>')+'</td><td style="color:var(--amber);white-space:normal;max-width:240px">'+(o.note||'')+'</td></tr>').join('');
+  $('orderEmpty').style.display=orders.length?'none':'block';
+  // issues
+  $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
+  const ic={hi:['rgba(240,106,106,.16)','var(--red)'],mid:['rgba(242,193,78,.16)','var(--amber)'],lo:['#2a2f3e','var(--muted)']},ist={open:['rgba(240,106,106,.16)','var(--red)'],doing:['rgba(242,193,78,.16)','var(--amber)'],done:['rgba(62,207,142,.16)','var(--green)']};
+  $('issueBody').innerHTML=issues.map(i=>'<tr><td><b>'+i.t+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+i.ch+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td>'+i.who+'</td><td><span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span></td></tr>').join('');
+  $('issueEmpty').style.display=issues.length?'none':'block';
+  $('navIssues').textContent=issues.filter(i=>i.st[0]!='done').length||'';
+  // by seller
+  const sl=[...new Set(sc.map(c=>c.s))].map(s=>{const g=sc.filter(c=>c.s===s);return {s,n:g.length,f:g.reduce((a,c)=>a+c.f,0),or:g.reduce((a,c)=>a+c.or,0),com:g.reduce((a,c)=>a+c.com,0),red:g.filter(c=>c.h=='r').length};});
+  $('sellerBody').innerHTML=sl.map(s=>'<tr><td><b>'+s.s+'</b></td><td class="num">'+s.n+'</td><td class="num">'+fmtK(s.f)+'</td><td class="num">'+s.or+'</td><td class="num" style="color:var(--green);font-weight:700">$'+s.com.toFixed(1)+'K</td><td class="num" style="color:var(--muted)">'+fmtVnd(s.com)+'</td><td class="num">'+(s.red?'<span class="neg">'+s.red+'</span>':'0')+'</td><td>'+hdot(s.red>=2?'r':s.red==1?'a':'g')+'</td></tr>').join('')||'<tr><td class="empty" colspan="8">Chưa có dữ liệu</td></tr>';
+  // by owner
+  const owAll=[...new Set(sc.flatMap(c=>c.o==='—'?[]:c.o.split(',').map(x=>x.trim())))];
+  $('ownerBody').innerHTML=owAll.map(o=>{const g=sc.filter(c=>c.o.split(',').map(x=>x.trim()).includes(o));const late=g.filter(c=>c.upd>3).length;const ontime=g.length?Math.round((g.length-late)/g.length*100):0;
+   return '<tr><td><b>'+o+'</b></td><td class="num">'+g.length+'</td><td class="num">'+fmtK(g.reduce((a,c)=>a+c.f,0))+'</td><td class="num">'+g.reduce((a,c)=>a+c.or,0)+'</td><td class="num" style="color:'+(ontime>=80?'var(--green)':ontime>=60?'var(--amber)':'var(--red)')+';font-weight:700">'+ontime+'%</td><td class="num">'+(late||'0')+'</td></tr>';}).join('')||'<tr><td class="empty" colspan="6">Chưa gán người quản lý kênh</td></tr>';
+  // history
+  renderHist();
+  // dropdowns
+  const opt=arr=>arr.map(x=>'<option value="'+x.id+'">'+x.n+'</option>').join('');
+  $('updCh').innerHTML=opt(ch);updMeta();
+  $('isChannel').innerHTML=opt(ch);
+  $('orSeller').innerHTML=sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
+  $('ncSeller').innerHTML='<option value="">— chọn seller —</option>'+sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
+  // admin tables
+  if(isAdmin()){
+    $('pendBody').innerHTML=pendUsers.map(p=>'<tr data-id="'+p.id+'"><td><b>'+(p.full_name||'')+'</b></td><td>'+p.email+'</td>'
+     +'<td><select class="prole" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px"><option>Media</option><option>Seller</option><option>Leader</option><option>SD</option></select></td>'
+     +'<td><select class="pseller" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px"><option value="">—</option>'+sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('')+'</select></td>'
+     +'<td><button class="btn pAppr" style="padding:6px 11px">Duyệt</button></td></tr>').join('');
+    $('pendEmpty').style.display=pendUsers.length?'none':'block';
+    document.querySelectorAll('.pAppr').forEach(b=>b.onclick=approveUser);
+    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+(p.full_name||'')+'</b></td><td>'+p.email+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td></tr>').join('');
+  }
+  // trend chart (once)
+  if(!trendDrawn&&window.Chart){trendDrawn=true;
+    const gx={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b92a7',boxWidth:12}}},scales:{x:{ticks:{color:'#8b92a7'},grid:{color:'#2a2f3e'}},y:{ticks:{color:'#8b92a7'},grid:{color:'#2a2f3e'}}}};
+    new Chart($('trend'),{data:{labels:['k1','k2','k3','k4','k5','k6','k7','k8','k9','k10'],datasets:[
+     {type:'bar',label:'Đơn',data:[0,0,0,0,0,0,0,0,0,totOr],backgroundColor:'#3f6fe0',borderRadius:5,yAxisID:'y'},
+     {type:'line',label:'GMV ($K)',data:[0,0,0,0,0,0,0,0,0,Math.round(totCom)],borderColor:'#3ecf8e',backgroundColor:'transparent',tension:.35,yAxisID:'y1'}
+    ]},options:{...gx,scales:{...gx.scales,y1:{position:'right',ticks:{color:'#3ecf8e'},grid:{display:false}}}}});
+  }
+}
+function renderCh(){
+  const fS=$('fSearch'),fSe=$('fSeller'),fN=$('fNiche'),fH=$('fHealth');
+  if(fSe.options.length<=1){[...new Set(ch.map(c=>c.s))].forEach(s=>fSe.innerHTML+='<option>'+s+'</option>');}
+  if(fN.options.length<=1){[...new Set(ch.map(c=>c.niche))].forEach(n=>fN.innerHTML+='<option>'+n+'</option>');}
+  let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH.value||c.h===fH.value));
+  rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
+  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td>'+hdot(c.h)+'</td></tr>').join('');
+  $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
+  $('chEmpty').style.display=ch.length?'none':'block';
+  document.querySelectorAll('#channels th.sortable').forEach(th=>{th.querySelector('.ar').textContent=th.dataset.k===sortK?(sortDir<0?'▼':'▲'):'';});
+}
+function renderHist(){
+  // lịch sử = các snapshot gần nhất (đã có trong ch? cần riêng) — đơn giản: bỏ qua nếu rỗng
+}
+function updMeta(){const id=$('updCh').value;const c=ch.find(x=>String(x.id)===String(id));if(!c){$('updMeta').textContent='';return;}
+  const due=c.upd>=999?'chưa từng cập nhật':c.upd>3?'QUÁ HẠN '+c.upd+' ngày':c.upd==3?'đến hạn hôm nay':'kỳ tới: còn '+(3-c.upd)+' ngày';
+  $('updMeta').innerHTML='Người QL: <b>'+c.o+'</b> · '+(c.upd>=3?'<span style="color:var(--red)">'+due+'</span>':due);}
+
+// ====== ACTIONS ======
+$('btnSaveUpd').onclick=async()=>{
+  const id=$('updCh').value;if(!id)return showToast('Chưa có kênh để nhập');
+  const row={channel_id:Number(id),period_date:new Date().toISOString().slice(0,10),
+    followers:Number($('upFollower').value)||0,views:Number($('upViews').value)||0,videos:Number($('upVideos').value)||0,
+    orders:Number($('upOrders').value)||0,gmv_usd:Number($('upGmv').value)||0,
+    commission_usd:$('upComm').value?Number($('upComm').value):null,created_by:me.id};
+  $('btnSaveUpd').disabled=true;
+  const {error}=await sb.from('snapshots').insert(row);
+  $('btnSaveUpd').disabled=false;
+  if(error)return topErr(error.message);
+  showToast('Đã lưu cập nhật ✓');['upFollower','upViews','upVideos','upOrders','upGmv','upComm'].forEach(i=>$(i).value='');
+  await loadData();
+};
+$('upGmv').oninput=()=>{const g=Number($('upGmv').value)||0;$('gmvVnd').textContent=g?'≈ '+fmtVnd(g/1000):'';};
+
+$('btnSaveOrder').onclick=async()=>{
+  const row={seller_id:$('orSeller').value?Number($('orSeller').value):null,product:$('orProduct').value.trim(),
+    ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),
+    status:'edit',deadline:$('orDeadline').value||null,created_by:me.id};
+  if(!row.product)return showToast('Nhập tên sản phẩm');
+  $('btnSaveOrder').disabled=true;const {error}=await sb.from('orders').insert(row);$('btnSaveOrder').disabled=false;
+  if(error)return topErr(error.message);
+  showToast('Đã tạo order ✓');$('orderForm').style.display='none';['orProduct','orType','orProducer','orCombo','orDeadline'].forEach(i=>$(i).value='');
+  await loadData();
+};
+$('btnSaveIssue').onclick=async()=>{
+  const cid=$('isChannel').value;const c=ch.find(x=>String(x.id)===String(cid));
+  const row={title:$('isTitle').value.trim(),source:$('isSource').value,channel_id:cid?Number(cid):null,
+    seller_id:null,severity:$('isSev').value,status:'open',created_by:me.id};
+  if(!row.title)return showToast('Nhập tiêu đề');
+  $('btnSaveIssue').disabled=true;const {error}=await sb.from('issues').insert(row);$('btnSaveIssue').disabled=false;
+  if(error)return topErr(error.message);
+  showToast('Đã ghi nhận vấn đề ✓');$('issueForm').style.display='none';$('isTitle').value='';
+  await loadData();
+};
+$('btnSaveCh').onclick=async()=>{
+  let sid=$('ncSeller').value?Number($('ncSeller').value):null;
+  const newSeller=$('ncNewSeller').value.trim();
+  if(!$('ncName').value.trim())return showToast('Nhập tên kênh');
+  $('btnSaveCh').disabled=true;
+  try{
+    if(newSeller){const {data,error}=await sb.from('sellers').insert({name:newSeller}).select().single();if(error)throw error;sid=data.id;}
+    const {error}=await sb.from('channels').insert({name:$('ncName').value.trim(),seller_id:sid,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,follower_goal:Number($('ncGoal').value)||null});
+    if(error)throw error;
+    showToast('Đã thêm kênh ✓');$('chForm').style.display='none';['ncName','ncNiche','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');
+    await loadData();
+  }catch(e){topErr(e.message||String(e));}
+  $('btnSaveCh').disabled=false;
+};
+async function approveUser(e){
+  const tr=e.target.closest('tr');const id=tr.dataset.id;
+  const roleSel=tr.querySelector('.prole').value, sellerSel=tr.querySelector('.pseller').value;
+  e.target.disabled=true;
+  const {error}=await sb.from('profiles').update({role:roleSel,status:'approved',seller_id:sellerSel?Number(sellerSel):null}).eq('id',id);
+  e.target.disabled=false;
+  if(error)return topErr(error.message);
+  showToast('Đã duyệt người dùng ✓');await loadData();
+}
+
+// ====== EXCEL export / import / template ======
+function exportChannels(){
+  if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau vài giây.');
+  const rows=ch.map(c=>({'Tên kênh':c.n,'Seller':c.s,'Niche':c.niche,'Trạng thái':c.acc==='shop'?'Đã bật shop':'Chưa/buff','Follower':c.f,'Δ kỳ':c.d,'Đơn':c.or,'GMV (USD)':Math.round(c.com*1000),'Cập nhật (ngày)':c.upd>=999?'chưa':c.upd,'Sức khỏe':hLabel[c.h]}));
+  if(!rows.length)return showToast('Chưa có kênh để xuất');
+  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Kenh');
+  XLSX.writeFile(wb,'RS-kenh-'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+function downloadTemplate(){
+  if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau.');
+  const ws=XLSX.utils.json_to_sheet([
+    {'Tên kênh':'@vidu_kenh_1','Seller':'Anna','Niche':'Clothing','Trạng thái (shop/buff)':'shop','Mục tiêu follower':50000},
+    {'Tên kênh':'@vidu_kenh_2','Seller':'Bình','Niche':'Phone case','Trạng thái (shop/buff)':'buff','Mục tiêu follower':30000},
+  ]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Mau');
+  XLSX.writeFile(wb,'RS-form-mau-nhap-kenh.xlsx');
+}
+async function importChannels(file){
+  if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
+  topErr('');
+  try{
+    const buf=await file.arrayBuffer();const wb=XLSX.read(buf);const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws);
+    if(!rows.length)return showToast('File trống');
+    const map={};sellers.forEach(s=>map[s.name.toLowerCase()]=s.id);
+    let ok=0,fail=0,lastErr='';
+    for(const r of rows){
+      try{
+        const name=(r['Tên kênh']||r['Ten kenh']||r['name']||'').toString().trim();if(!name)continue;
+        const sname=(r['Seller']||r['seller']||'').toString().trim();
+        let sid=null;
+        if(sname){const k=sname.toLowerCase();
+          if(!map[k]){const {data,error}=await sb.from('sellers').insert({name:sname}).select().single();if(error)throw error;map[k]=data.id;}
+          sid=map[k];}
+        const niche=(r['Niche']||r['niche']||'').toString().trim()||null;
+        const accRaw=(r['Trạng thái (shop/buff)']||r['Trạng thái']||r['acc']||'').toString().toLowerCase();
+        const acc=accRaw.includes('shop')?'shop':'buff';
+        const goal=Number(r['Mục tiêu follower']||r['goal'])||null;
+        const {error}=await sb.from('channels').insert({name,seller_id:sid,niche,acc_status:acc,follower_goal:goal});
+        if(error)throw error;ok++;
+      }catch(e){fail++;lastErr=e.message||String(e);}
+    }
+    showToast('Nhập xong: '+ok+' kênh'+(fail?' · '+fail+' lỗi':''));
+    if(fail)topErr(lastErr);
+    await loadData();
+  }catch(e){topErr(e.message||String(e));}
+}
+
+// ====== UI events ======
+$('btnExport').onclick=exportChannels;
+$('btnTemplate').onclick=downloadTemplate;
+$('btnImport').onclick=()=>$('fileImport').click();
+$('fileImport').onchange=e=>{if(e.target.files[0])importChannels(e.target.files[0]);e.target.value='';};
+function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
+document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
+['fSearch','fSeller','fNiche','fHealth'].forEach(id=>$(id).addEventListener('input',renderCh));
+document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche')?1:-1;}renderCh();});
+$('updCh').onchange=updMeta;
+$('hamb').onclick=()=>$('side').classList.toggle('collapsed');
+$('btnAddOrder').onclick=()=>{const f=$('orderForm');f.style.display=f.style.display=='none'?'block':'none';};
+$('btnCancelOrder').onclick=()=>$('orderForm').style.display='none';
+$('btnAddIssue').onclick=()=>{const f=$('issueForm');f.style.display=f.style.display=='none'?'block':'none';};
+$('btnCancelIssue').onclick=()=>$('issueForm').style.display='none';
+$('btnAddCh').onclick=()=>{const f=$('chForm');f.style.display=f.style.display=='none'?'block':'none';};
+$('btnCancelCh').onclick=()=>$('chForm').style.display='none';
+$('obGo').onclick=()=>selectView('update');
+$('obX').onclick=()=>{obDismissed=true;$('onboard').style.display='none';};
+function syncSide(){$('side').classList.toggle('collapsed',window.innerWidth<=760);}
+window.addEventListener('resize',syncSide);syncSide();
+
+boot();
+</script>
+</body>
+</html>
