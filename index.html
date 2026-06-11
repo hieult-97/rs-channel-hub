@@ -555,10 +555,11 @@ async function loadData(){
       sb.from('snapshots').select('*').order('period_date',{ascending:false}),
       sb.from('orders').select('*').order('created_at',{ascending:false}),
       sb.from('issues').select('*').order('created_at',{ascending:false}),
-      sb.from('sellers').select('*').order('name'),
+      sb.rpc('list_sellers'),
     ]);
     for(const r of [chR,snR,orR,isR,seR]) if(r.error) topErr(r.error.message);
     sellers=seR.data||[];
+    if(seR.error){const f=await sb.from('sellers').select('*').order('name');sellers=f.data||[];} // fallback nếu chưa chạy patch list_sellers
     let members=[];
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
@@ -726,7 +727,7 @@ function renderAll(){
      +'<td>'+(isSD()?'<button class="btn pAppr" style="padding:6px 11px">Duyệt</button>':'<span style="color:var(--muted)">chỉ SD duyệt</span>')+'</td></tr>').join('');
     $('pendEmpty').style.display=pendUsers.length?'none':'block';
     if(isSD())document.querySelectorAll('.pAppr').forEach(b=>b.onclick=approveUser);
-    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap">'+(isSD()?('<select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')):'<span style="color:var(--muted)">chỉ SD</span>')+'</td></tr>').join('');
+    $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap">'+(isSD()?('<select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.role==='Seller'?' <select title="Gán seller của kênh" style="'+SELCSS+'" onchange="linkSeller(\''+p.id+'\',this.value)"><option value="">— gán seller —</option>'+sellers.map(s=>'<option value="'+s.id+'"'+(String(p.seller_id)===String(s.id)?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select>':'')+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')):'<span style="color:var(--muted)">chỉ SD</span>')+'</td></tr>').join('');
   }
 }
 function renderCh(){
@@ -823,19 +824,27 @@ window.deleteSnapshot=(id)=>delRow('snapshots',id,'Xóa lần cập nhật này?
 window.setIssueStatus=(id,v)=>updRow('issues',id,{status:v});
 window.setIssueAssignee=(id,v)=>updRow('issues',id,{assignee:v.trim()||null});
 window.deleteIssue=(id)=>delRow('issues',id,'Xóa vấn đề này?');
-window.changeUserRole=(id,v)=>{if(!isSD())return topErr('Chỉ SD được đổi vai trò');updRow('profiles',id,{role:v});};
+window.changeUserRole=async(id,v)=>{if(!isSD())return topErr('Chỉ SD được đổi vai trò');let patch={role:v};
+  if(v==='Seller'){const u=(allUsers||[]).find(p=>p.id===id)||{};if(!u.seller_id){try{patch.seller_id=await ensureSeller(u.full_name||u.email);}catch(e){return topErr(e.message);}}}
+  updRow('profiles',id,patch);};
 window.disableUser=(id)=>{if(!isSD())return topErr('Chỉ SD được khóa người dùng');if(confirm('Khóa người dùng này (không cho đăng nhập nữa)?'))updRow('profiles',id,{status:'rejected'});};
+window.linkSeller=(id,sid)=>{if(!isSD())return topErr('Chỉ SD được gán seller');updRow('profiles',id,{seller_id:sid?Number(sid):null});};
 function selOpts(opts,cur){return opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('');}
 const SELCSS='background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12px';
+async function ensureSeller(name){name=(name||'Seller').trim();const {data:ex}=await sb.from('sellers').select('id').eq('name',name).maybeSingle();if(ex)return ex.id;const {data:ns,error}=await sb.from('sellers').insert({name}).select('id').single();if(error)throw error;return ns.id;}
 async function approveUser(e){
   const tr=e.target.closest('tr');const id=tr.dataset.id;
   const roleSel=tr.querySelector('.prole').value, sellerSel=tr.querySelector('.pseller').value;
   e.target.disabled=true;
-  const {error}=await sb.from('profiles').update({role:roleSel,status:'approved',seller_id:sellerSel?Number(sellerSel):null}).eq('id',id);
+  try{
+    let sid=sellerSel?Number(sellerSel):null;
+    if(roleSel==='Seller'&&!sid){const u=(pendUsers||[]).find(p=>p.id===id)||{};sid=await ensureSeller(u.full_name||u.email);}
+    const {error}=await sb.from('profiles').update({role:roleSel,status:'approved',seller_id:sid}).eq('id',id);
+    if(error)throw error;
+    await logAction('Duyệt người dùng','profiles',roleSel+' · '+id);
+    showToast('Đã duyệt ✓ (seller tự thêm vào danh sách)');await loadData();
+  }catch(err){topErr(err.message||String(err));}
   e.target.disabled=false;
-  if(error)return topErr(error.message);
-  await logAction('Duyệt người dùng','profiles',roleSel+' · '+id);
-  showToast('Đã duyệt người dùng ✓');await loadData();
 }
 
 // ====== EXCEL export / import / template ======
@@ -1023,16 +1032,7 @@ async function renderCat(){const w=$('catWrap');w.innerHTML='<div class="empty">
   const sec=(kind,title)=>'<div class="card" style="margin-bottom:14px"><h3>'+title+' <span class="tag">'+g[kind].length+' mục</span></h3>'
     +'<div style="display:flex;gap:8px;margin-bottom:10px"><input id="catNew-'+kind+'" class="field" style="flex:1;font-weight:500" placeholder="Thêm '+esc(title.toLowerCase())+' mới..."><button class="btn" onclick="addCat(\''+kind+'\')">Thêm</button></div>'
     +'<div class="tbl-wrap"><table><tbody>'+(g[kind].map(o=>'<tr><td>'+esc(o.label)+'</td><td style="text-align:right;white-space:nowrap"><span style="cursor:pointer;margin-right:12px" title="Sửa" onclick="renameCat('+o.id+')">✏️</span><span style="cursor:pointer" title="Xóa" onclick="delCat('+o.id+')">🗑️</span></td></tr>').join('')||'<tr><td class="empty" colspan="2">Chưa có mục nào</td></tr>')+'</tbody></table></div></div>';
-  // Seller (từ bảng sellers) — đổi tên cho khớp tài khoản đăng ký
-  const seR=await sb.from('sellers').select('*').order('name');const srows=seR.error?[]:(seR.data||[]);sMap={};srows.forEach(s=>sMap[s.id]=s.name);
-  const sellerSec='<div class="card" style="margin-bottom:14px"><h3>Seller <span class="tag">'+srows.length+' · nên đặt khớp tên tài khoản đăng ký</span></h3>'
-    +'<div style="display:flex;gap:8px;margin-bottom:10px"><input id="sellerNew" class="field" style="flex:1;font-weight:500" placeholder="Thêm seller mới..."><button class="btn" onclick="addSeller()">Thêm</button></div>'
-    +'<div class="tbl-wrap"><table><tbody>'+(srows.map(s=>'<tr><td>'+esc(s.name)+'</td><td style="text-align:right;white-space:nowrap"><span style="cursor:pointer;margin-right:12px" title="Sửa tên" onclick="renameSeller('+s.id+')">✏️</span><span style="cursor:pointer" title="Xóa" onclick="delSeller('+s.id+')">🗑️</span></td></tr>').join('')||'<tr><td class="empty" colspan="2">Chưa có seller</td></tr>')+'</tbody></table></div></div>';
-  w.innerHTML=sellerSec+sec('type','Loại sản phẩm')+sec('combo','Combo')+sec('format','Format');}
-let sMap={};
-window.addSeller=async()=>{const v=($('sellerNew').value||'').trim();if(!v)return;const {error}=await sb.from('sellers').insert({name:v});if(error)return topErr(error.message);await logAction('Thêm seller','sellers',v);await loadData();renderCat();showToast('Đã thêm ✓');};
-window.renameSeller=async id=>{const cur=sMap[id]||'';const v=(prompt('Sửa tên seller (đặt khớp tên tài khoản):',cur)||'').trim();if(!v||v===cur)return;const {error}=await sb.from('sellers').update({name:v}).eq('id',id);if(error)return topErr(error.message);await logAction('Sửa seller','sellers',id+' → '+v);await loadData();renderCat();showToast('Đã lưu ✓');};
-window.delSeller=async id=>{if(!confirm('Xóa seller "'+(sMap[id]||'')+'"?'))return;const {error}=await sb.from('sellers').delete().eq('id',id);if(error)return topErr(/foreign key|violates/i.test(error.message||'')?'Không xóa được: seller đang gắn với kênh. Hãy đổi seller của kênh trước.':error.message);await logAction('Xóa seller','sellers','id='+id);await loadData();renderCat();showToast('Đã xóa ✓');};
+  w.innerHTML=sec('type','Loại sản phẩm')+sec('combo','Combo')+sec('format','Format');}
 window.addCat=async kind=>{const el=$('catNew-'+kind);const v=(el&&el.value||'').trim();if(!v)return;const {error}=await sb.from('order_options').insert({kind,label:v});if(error)return topErr(error.message);await logAction('Thêm danh mục','order_options',kind+': '+v);await loadOrderOpts();renderCat();showToast('Đã thêm ✓');};
 window.delCat=async id=>{if(!confirm('Xóa mục "'+(catMap[id]||'')+'"?'))return;const {error}=await sb.from('order_options').delete().eq('id',id);if(error)return topErr(error.message);await logAction('Xóa danh mục','order_options','id='+id);await loadOrderOpts();renderCat();showToast('Đã xóa ✓');};
 window.renameCat=async id=>{const cur=catMap[id]||'';const v=(prompt('Sửa tên:',cur)||'').trim();if(!v||v===cur)return;const {error}=await sb.from('order_options').update({label:v}).eq('id',id);if(error)return topErr(error.message);await logAction('Sửa danh mục','order_options',id+' → '+v);await loadOrderOpts();renderCat();showToast('Đã lưu ✓');};
