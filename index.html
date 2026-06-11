@@ -282,9 +282,10 @@
         <div class="form">
           <div><label>Seller</label><select class="field" id="orSeller"></select></div>
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
-          <div><label>Loại</label><input class="field" id="orType" placeholder="T-shirt"></div>
+          <div><label>Loại</label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
           <div><label>Người sản xuất</label><input class="field" id="orProducer" placeholder="Tên media"></div>
-          <div><label>Combo / Format</label><input class="field" id="orCombo" placeholder="Review / UGC..."></div>
+          <div><label>Combo</label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
+          <div><label>Format</label><select class="field" id="orFormat" onchange="orderOptChange('format',this)"></select></div>
           <div><label>Deadline</label><input class="field" id="orDeadline" type="date"></div>
         </div>
         <div style="margin-top:12px"><button class="btn" id="btnSaveOrder">Lưu order</button> <button class="btn ghost" id="btnCancelOrder">Hủy</button></div>
@@ -503,6 +504,7 @@ async function afterLogin(){
   // chỉ admin được thêm/nhập kênh (RLS cũng chặn ở server)
   ['btnAddCh','btnImport'].forEach(id=>{const e=$(id);if(e)e.style.display=isAdmin()?'':'none';});
   await loadData();
+  loadOrderOpts();
 }
 
 $('btnIn').onclick=async()=>{
@@ -547,7 +549,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:(o.created_at||'').slice(5,10).replace('-','/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',who:o.producer||'—',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:(o.created_at||'').slice(5,10).replace('-','/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—'};});
@@ -665,7 +667,8 @@ function renderAll(){
     const stCell=isAdmin()?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts([['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']],o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>';
     const ngCell=isAdmin()?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
     const act=isAdmin()?'<span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'';
-    return '<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+esc(o.p)+'</b></td><td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+esc(o.who)+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td style="color:var(--amber);white-space:normal;max-width:240px">'+esc(o.note||'')+'</td><td>'+act+'</td></tr>';}).join('');
+    const sub=[o.combo,o.format].filter(Boolean).join(' · ');
+    return '<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+esc(o.p)+'</b>'+(sub?'<div style="font-size:10.5px;color:var(--muted);white-space:normal;max-width:220px">'+esc(sub)+'</div>':'')+'</td><td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+esc(o.who)+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td style="color:var(--amber);white-space:normal;max-width:220px">'+esc(o.note||'')+'</td><td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=orders.length?'none':'block';
   // issues
   $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
@@ -745,13 +748,13 @@ $('upGmv').oninput=()=>{const g=Number($('upGmv').value)||0;$('gmvVnd').textCont
 
 $('btnSaveOrder').onclick=async()=>{
   const row={seller_id:$('orSeller').value?Number($('orSeller').value):null,product:$('orProduct').value.trim(),
-    ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),
+    ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),format:$('orFormat').value.trim(),
     status:'edit',deadline:$('orDeadline').value||null,created_by:me.id};
   if(!row.product)return showToast('Nhập tên sản phẩm');
   $('btnSaveOrder').disabled=true;const {error}=await sb.from('orders').insert(row);$('btnSaveOrder').disabled=false;
   if(error)return topErr(error.message);
   await logAction('Tạo order','orders',row.product);
-  showToast('Đã tạo order ✓');$('orderForm').style.display='none';['orProduct','orType','orProducer','orCombo','orDeadline'].forEach(i=>$(i).value='');
+  showToast('Đã tạo order ✓');$('orderForm').style.display='none';['orProduct','orType','orProducer','orCombo','orFormat','orDeadline'].forEach(i=>$(i).value='');
   await loadData();
 };
 $('btnSaveIssue').onclick=async()=>{
@@ -1037,6 +1040,29 @@ $('uAv').onclick=()=>selectView('profile');
 function applyTheme(t){document.body.classList.toggle('light',t==='light');try{localStorage.setItem('rs_theme',t);}catch(e){}}
 $('btnTheme').onclick=()=>applyTheme(document.body.classList.contains('light')?'dark':'light');
 try{applyTheme(localStorage.getItem('rs_theme')||'light');}catch(e){applyTheme('light');}
+
+// danh mục Order (chọn sẵn, đỡ gõ lại)
+const ORDER_TYPES={Clothing:['T-shirt','Pajamas','Polo','Jersey','Hawaii','Bikini','Pants','Hoodie','Pet Shirt'],Accessories:['Sash-Stole-Scarf','Towel','Table Runner','Badana','Poster','Tapestry','Flag','Tote bag','Mug/Tumbler','Car Hanging','Pillow Cover','Phone Cases','Graduation Fan','Graduation Cap','Baseballs','Clipboard','keychain','Headband']};
+const ORDER_COMBOS=['Combo 12 templates - 1','Combo 12 templates - 2','Combo 12 templates - 3','Combo 12 templates - 4','Combo lẻ - 5','Combo lẻ - 6','Combo lẻ - 7','Order lẻ'];
+const ORDER_FORMATS=['1. Format Mix & Match - group','2. Format Promotion - Giới thiệu màu mới','3. Format Story - Quote - Dry Joke','4. Format Product demo - focus - unfolding','5. Format Product demo - focus - zooming trasition','6. Format Product demo - focus - zooming','7. Format Product demo - focus - quay cận 1 sản phẩm','8. Format Product demo - focus - quay cận 2 sản phẩm','9. Format Outfit Check - single female model 1','10. Format Outfit Check - single male model 1','11. Format Outfit Check - single female model 2','12. Format Outfit Check - single male model 2','13. Format Outfit Check - Couple Model','14. Format UGC - Reaction 1','15. Format Review mặc hàng ngày - single model (Consistent character) 1','16. Format Review mặc hàng ngày - single model (Consistent character) 2','17. Format Mix & match đi trên máy chạy bộ - single model (Consistent character)','18. Format Outfit Check - single female model 3','19. Format UGC - Reaction 2','20. Format Outfit Check - single female model 4','21. Format Promotion - multi scene (Script)','22. Format Outfit Check mirror selfie - single model (Consistent character)','23. Format GRWM','24. Format BTS Photoshoot','25. Format BTS quá trình sản xuất','26. Format Review deep dive sản phẩm','27. Format Review trên mannequin','28. Format Sale campaign','29. Format Packaging - unboxing','30. Format Mix & Match theo palette','31. Format Mix & Match phụ kiện','32. Format Mix & Match 4 cách T‑shirt & phụ kiện','33. Format Outfit Check - Áo Hoodie','34. Format BTS gói đơn hàng','35. Format Micro‑vlog','36. Format Trend - Challenge'];
+let orderOpts={type:[],combo:[],format:[]};
+function flattenTypes(){const a=[];for(const g in ORDER_TYPES)ORDER_TYPES[g].forEach(t=>a.push(g+' - '+t));return a;}
+async function loadOrderOpts(){
+  try{const {data,error}=await sb.from('order_options').select('*').order('id');
+    if(error||!data||!data.length){orderOpts={type:flattenTypes(),combo:ORDER_COMBOS.slice(),format:ORDER_FORMATS.slice()};}
+    else{orderOpts={type:[],combo:[],format:[]};data.forEach(o=>{if(orderOpts[o.kind])orderOpts[o.kind].push(o.label);});
+      if(!orderOpts.type.length)orderOpts.type=flattenTypes();if(!orderOpts.combo.length)orderOpts.combo=ORDER_COMBOS.slice();if(!orderOpts.format.length)orderOpts.format=ORDER_FORMATS.slice();}
+  }catch(e){orderOpts={type:flattenTypes(),combo:ORDER_COMBOS.slice(),format:ORDER_FORMATS.slice()};}
+  fillOrderSelects();
+}
+function fillOrderSelects(){
+  const groups={};orderOpts.type.forEach(l=>{const g=String(l).split(' - ')[0];(groups[g]=groups[g]||[]).push(l);});
+  let h='<option value="">— chọn loại —</option>';for(const g in groups){h+='<optgroup label="'+esc(g)+'">'+groups[g].map(l=>'<option>'+esc(l)+'</option>').join('')+'</optgroup>';}h+='<option value="__add__">＋ Thêm loại mới...</option>';$('orType').innerHTML=h;
+  $('orCombo').innerHTML='<option value="">— chọn combo —</option>'+orderOpts.combo.map(c=>'<option>'+esc(c)+'</option>').join('')+'<option value="__add__">＋ Thêm combo mới...</option>';
+  $('orFormat').innerHTML='<option value="">— chọn format —</option>'+orderOpts.format.map(f=>'<option>'+esc(f)+'</option>').join('')+'<option value="__add__">＋ Thêm format mới...</option>';
+}
+window.orderOptChange=function(kind,sel){if(sel.value==='__add__'){const v=(prompt('Nhập '+({type:'loại sản phẩm',combo:'combo',format:'format'}[kind])+' mới:')||'').trim();sel.value='';if(v)addOrderOpt(kind,v,sel);}};
+async function addOrderOpt(kind,label,sel){const {error}=await sb.from('order_options').insert({kind,label});if(error){topErr(/order_options/.test(error.message||'')?'Hãy chạy patch-TONG-HOP.sql để bật thêm lựa chọn.':error.message);return;}await logAction('Thêm lựa chọn','order_options',kind+': '+label);await loadOrderOpts();if(sel)sel.value=label;showToast('Đã thêm ✓');}
 
 boot();
 </script>
