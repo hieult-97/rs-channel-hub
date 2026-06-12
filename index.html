@@ -444,16 +444,16 @@
 
     <section class="view" id="kpi">
       <div class="topbar"><div><h1>KPI nhân sự</h1><div class="sub">Định nghĩa "xong việc": Thực hiện / Mục tiêu · Đạt cả 4 tiêu chí = Đạt</div></div>
-        <select id="kpiPeriod" style="margin-left:auto">
-          <option value="7">Kỳ: 7 ngày</option><option value="30" selected>Kỳ: 30 ngày</option><option value="90">Kỳ: 90 ngày</option>
-          <option value="month">Kỳ: Tháng này</option><option value="quarter">Kỳ: Quý này</option><option value="all">Kỳ: Tất cả</option>
+        <select id="kpiPeriod" style="margin-left:auto" title="Khoảng thời gian đang xem. Định mức tự quy đổi theo khoảng này.">
+          <option value="7">Xem: 7 ngày</option><option value="30" selected>Xem: 30 ngày</option><option value="90">Xem: 90 ngày</option>
+          <option value="month">Xem: Tháng này</option><option value="quarter">Xem: Quý này</option><option value="all">Xem: Tất cả</option>
         </select>
       </div>
       <div class="card" id="kpiCfgCard" style="margin-bottom:14px">
         <h3>Set KPI <span class="tag">SD chỉnh — quy định thế nào là "xong việc"</span></h3>
         <div style="font-size:12.5px;font-weight:700;color:var(--brand);margin:6px 0 8px">🎬 KPI Media (người sản xuất)</div>
         <div class="form" style="grid-template-columns:repeat(4,1fr)">
-          <div><label>Định mức video / kỳ (mỗi media)</label><input class="field" id="cfgQuota" type="number" placeholder="20"></div>
+          <div><label>Định mức video (mỗi media)</label><div style="display:flex;gap:8px"><input class="field" id="cfgQuota" type="number" placeholder="20" style="flex:1"><select class="field" id="cfgQuotaUnit" style="flex:1.2"><option value="day">/ ngày</option><option value="week">/ tuần</option><option value="month">/ tháng</option></select></div></div>
           <div><label>Ngưỡng tỉ lệ giao (%)</label><input class="field" id="cfgHit" type="number" placeholder="90"></div>
           <div><label>Ngưỡng đúng hạn (%)</label><input class="field" id="cfgOntime" type="number" placeholder="90"></div>
           <div><label>Ngưỡng chất lượng (%)</label><input class="field" id="cfgQuality" type="number" placeholder="90"></div>
@@ -1089,7 +1089,7 @@ function drillKPI(key){
 }
 window.drillKPI=drillKPI;
 // ===== KPI nhân sự (scorecard) =====
-const KPI_DEFAULT={media:{quota:20,hit:90,ontime:90,quality:90},seller:{ontime:90,maxViol:0,orderTarget:0,gmvTarget:0}};
+const KPI_DEFAULT={media:{quota:20,quotaUnit:'month',hit:90,ontime:90,quality:90},seller:{ontime:90,maxViol:0,orderTarget:0,gmvTarget:0}};
 let kpiConfig=JSON.parse(JSON.stringify(KPI_DEFAULT));
 async function loadKpiConfig(){try{const {data}=await sb.from('app_settings').select('value').eq('key','kpi_config').maybeSingle();const v=data&&data.value;if(v){
   const m=v.media||(('quota'in v)?v:{});// tương thích bản cũ (phẳng) → media
@@ -1097,7 +1097,7 @@ async function loadKpiConfig(){try{const {data}=await sb.from('app_settings').se
 }}catch(e){}}
 window.saveKpiConfig=async function(){
   const n=(id,d)=>Number($(id).value)||d;
-  kpiConfig={media:{quota:n('cfgQuota',20),hit:n('cfgHit',90),ontime:n('cfgOntime',90),quality:n('cfgQuality',90)},
+  kpiConfig={media:{quota:n('cfgQuota',20),quotaUnit:($('cfgQuotaUnit')&&$('cfgQuotaUnit').value)||'month',hit:n('cfgHit',90),ontime:n('cfgOntime',90),quality:n('cfgQuality',90)},
     seller:{ontime:n('cfgSOntime',90),maxViol:n('cfgSViol',0),orderTarget:n('cfgSOrder',0),gmvTarget:n('cfgSGmv',0)}};
   const {error}=await sb.from('app_settings').upsert({key:'kpi_config',value:kpiConfig});
   if(error)return topErr(error.message);
@@ -1115,13 +1115,20 @@ function renderKPI(){
   if($('kpiSellerCard'))$('kpiSellerCard').style.display=(staff||(me&&me.role==='Seller'))?'':'none';
   const M=kpiConfig.media,S=kpiConfig.seller;
   $('cfgQuota').value=M.quota;$('cfgHit').value=M.hit;$('cfgOntime').value=M.ontime;$('cfgQuality').value=M.quality;
+  if($('cfgQuotaUnit'))$('cfgQuotaUnit').value=M.quotaUnit||'month';
   if($('cfgSOntime'))$('cfgSOntime').value=S.ontime;if($('cfgSViol'))$('cfgSViol').value=S.maxViol;if($('cfgSOrder'))$('cfgSOrder').value=S.orderTarget;if($('cfgSGmv'))$('cfgSGmv').value=S.gmvTarget;
-  ['cfgQuota','cfgHit','cfgOntime','cfgQuality','cfgSOntime','cfgSViol','cfgSOrder','cfgSGmv'].forEach(i=>{if($(i))$(i).disabled=!sd;});
+  ['cfgQuota','cfgQuotaUnit','cfgHit','cfgOntime','cfgQuality','cfgSOntime','cfgSViol','cfgSOrder','cfgSGmv'].forEach(i=>{if($(i))$(i).disabled=!sd;});
   $('kpiCfgSave').innerHTML=sd?'<button class="btn" onclick="saveKpiConfig()">Lưu KPI</button>':'<span style="color:var(--muted);font-size:12px">Chỉ SD được set KPI (đây là quy định "xong việc" chung).</span>';
   const pv=$('kpiPeriod')?$('kpiPeriod').value:'30';
   const win=pv==='all'?null:periodWindow(pv,todayStr());
   const today=todayStr();
   const ords=orders.filter(o=>!win||(o.cdate&&o.cdate>=win.start&&o.cdate<=win.end));
+  // Số ngày của khoảng đang xem → quy đổi định mức (đặt theo ngày/tuần/tháng)
+  let winDays;
+  if(win){winDays=Math.max(1,Math.round((new Date(win.end+'T00:00:00')-new Date(win.start+'T00:00:00'))/86400000)+1);}
+  else{const ds=orders.map(o=>o.cdate).filter(Boolean).sort();winDays=ds.length?Math.max(1,Math.round((new Date(today+'T00:00:00')-new Date(ds[0]+'T00:00:00'))/86400000)+1):30;}
+  const perDay=M.quotaUnit==='day'?M.quota:(M.quotaUnit==='week'?M.quota/7:M.quota/30);
+  const target=Math.max(1,Math.round(perDay*winDays));// định mức quy đổi cho khoảng xem
   // ---- Media ----
   let names=[...new Set(ords.map(o=>o.who).filter(x=>x&&x!=='—'))];
   if(!staff&&me&&me.role==='Media')names=names.filter(n=>n===myName);
@@ -1131,9 +1138,9 @@ function renderKPI(){
     const late=g.filter(o=>o.scode!=='done'&&o.deadline&&String(o.deadline)<today).length;
     const reworked=g.filter(o=>o.scode==='done'&&o.rework>0).length;
     const hit=req?done/req*100:0,ontime=req?(req-late)/req*100:0;
-    const quotaPct=M.quota?done/M.quota*100:0;
+    const quotaPct=target?done/target*100:0;
     const quality=done?(done-reworked)/done*100:100;
-    const pass=hit>=M.hit&&ontime>=M.ontime&&done>=M.quota&&quality>=M.quality;
+    const pass=hit>=M.hit&&ontime>=M.ontime&&done>=target&&quality>=M.quality;
     return {nm,req,done,late,hit,ontime,quotaPct,quality,pass};
   }).sort((a,b)=>(b.pass-a.pass)||b.hit-a.hit||b.done-a.done);
   const okChip='<span class="chip ok">✓ Đạt</span>',noChip='<span class="chip" style="background:rgba(240,106,106,.16);color:var(--red)">Chưa đạt</span>';
@@ -1142,7 +1149,7 @@ function renderKPI(){
     '<td class="num"><b>'+r.done+'</b> / '+r.req+'</td>'+
     '<td class="num">'+kpiPct(r.hit,M.hit)+'</td>'+
     '<td class="num">'+kpiPct(r.ontime,M.ontime)+(r.late?' <span style="color:var(--red);font-size:11px">('+r.late+' trễ)</span>':'')+'</td>'+
-    '<td class="num">'+r.done+'/'+M.quota+' · '+kpiPct(r.quotaPct,100)+'</td>'+
+    '<td class="num">'+r.done+'/'+target+' · '+kpiPct(r.quotaPct,100)+'</td>'+
     '<td class="num">'+kpiPct(r.quality,M.quality)+'</td>'+
     '<td>'+(r.pass?okChip:noChip)+'</td></tr>').join('');
   $('kpiMediaEmpty').style.display=mrows.length?'none':'block';
