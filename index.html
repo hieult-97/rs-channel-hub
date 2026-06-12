@@ -371,7 +371,7 @@
       </div>
       <div class="grid kpis" id="orderKpis" style="margin-bottom:14px"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Ngày</th><th>Seller</th><th>Sản phẩm &amp; chi tiết</th><th>Link SP</th><th>Loại</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Ghi chú</th><th></th></tr></thead>
+        <table><thead><tr><th>Ngày order</th><th>Seller</th><th>Sản phẩm &amp; chi tiết</th><th>Link SP</th><th>Loại</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Ghi chú</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
       </div></div>
@@ -1012,7 +1012,7 @@ $('btnSaveOrder').onclick=async()=>{
     channel_id:$('orChannel')&&$('orChannel').value?Number($('orChannel').value):null,image_url:orderImageUrl||null,
     deadline:$('orDeadline').value||null};
   if(!row.product)return showToast('Nhập tên sản phẩm');
-  if(!editingOrderId&&row.deadline&&row.deadline<todayStr())return showToast('Deadline không được ở quá khứ');
+  {const oc=editingOrderId?(orders.find(x=>String(x.id)===String(editingOrderId))||{}).cdate:todayStr();if(row.deadline&&oc&&row.deadline<oc)return showToast('Deadline không được trước ngày order ('+vnDate(oc)+')');}
   $('btnSaveOrder').disabled=true;
   let error;
   if(editingOrderId){({error}=await sb.from('orders').update(row).eq('id',editingOrderId));}
@@ -1258,7 +1258,7 @@ function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)r
   if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu thay đổi';
   $('orSeller').value=o.seller_id||'';if($('orChannel'))$('orChannel').value=o.channel_id||'';
   $('orProduct').value=o.p||'';$('orType').value=(o.t&&o.t!=='—')?o.t:'';$('orProducer').value=(o.who&&o.who!=='—')?o.who:'';
-  $('orCombo').value=o.combo||'';$('orFormat').value=o.format||'';$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min='';
+  $('orCombo').value=o.combo||'';$('orFormat').value=o.format||'';$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min=o.cdate||'';
   $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';$('orNote').value=o.note||'';
   orderImageUrl=o.img||null;$('orImgPrev').innerHTML=o.img?'<img src="'+esc(o.img)+'" style="max-height:130px;border-radius:8px;vertical-align:middle"> <span style="cursor:pointer;color:var(--red);font-size:12px" onclick="clearOrderImg()">✕ bỏ ảnh</span>':'';
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
