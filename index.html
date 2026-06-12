@@ -870,7 +870,7 @@ function renderAll(){
     const canAccept=isAdmin()||me.role==='Seller';     // seller order → nghiệm thu
     const stCell=canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts([['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']],o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>';
     const acceptCtrl=canAccept?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
-    const delDisp=o.dlink?'<a href="'+esc(o.dlink)+'" target="_blank" title="Mở bài đã làm" style="color:var(--green);font-size:11px;font-weight:600;white-space:nowrap">✅ Bài làm</a>':'';
+    const delDisp=o.dlink?'<span style="white-space:nowrap">'+(/^https?:\/\//i.test(o.dlink)?'<a href="'+esc(o.dlink)+'" target="_blank" title="Mở bài đã làm" style="color:var(--green);font-size:11px;font-weight:600">✅ Bài làm</a> ':'')+'<span title="Copy link nghiệm thu" style="cursor:pointer;font-size:11px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'dlink\')">📋</span></span>':'';
     const delBtn=(isAdmin()||me.role==='Media')?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap" onclick="setDeliveryLink('+o.id+')">'+(o.dlink?'✏️':'＋ link')+'</span>':'';
     const ngCell='<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">'+((delDisp||delBtn)?'<div style="display:flex;gap:6px;align-items:center">'+delDisp+delBtn+'</div>':'')+acceptCtrl+'</div>';
     const canProducer=isAdmin()||me.role==='Media';   // media → tự nhận / đổi người sản xuất
@@ -888,7 +888,7 @@ function renderAll(){
         else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';}
       dlCell='<div'+((!done&&rem<0)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const prodCell='<td style="max-width:360px;white-space:normal"><b>'+esc(o.p)+'</b>'+(sub?'<div style="font-size:10.5px;color:var(--muted)">'+esc(sub)+'</div>':'')+refLine+'</td>';
-    const linkCell=o.plink?'<td style="white-space:nowrap"><a href="'+esc(o.plink)+'" target="_blank" title="Mở link sản phẩm" style="color:var(--brand);font-size:12px">🔗 Mở</a></td>':'<td style="color:var(--muted)">—</td>';
+    const linkCell=o.plink?'<td style="white-space:nowrap">'+(/^https?:\/\//i.test(o.plink)?'<a href="'+esc(o.plink)+'" target="_blank" title="Mở link sản phẩm" style="color:var(--brand);font-size:12px">🔗 Mở</a> ':'')+'<span title="Copy link sản phẩm" style="cursor:pointer;font-size:12px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'plink\')">📋 Copy</span></td>':'<td style="color:var(--muted)">—</td>';
     const noteCell=o.note?'<td style="white-space:nowrap"><span style="color:var(--amber);cursor:pointer;font-size:12px;text-decoration:underline" onclick="viewOrderNote('+o.id+')">📝 Xem</span></td>':'<td style="color:var(--muted)">—</td>';
     return '<tr><td style="white-space:nowrap">'+o.d+'</td><td>'+o.s+'</td>'+prodCell+linkCell+'<td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+noteCell+'<td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=orders.length?'none':'block';
@@ -1250,6 +1250,9 @@ window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
+function fallbackCopy(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Đã copy link ✓');}catch(e){prompt('Copy link (Ctrl+C):',t);}ta.remove();}
+function copyTxt(t){if(!t)return;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>showToast('Đã copy link ✓'),()=>fallbackCopy(t));}else fallbackCopy(t);}
+window.copyOrderLink=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const t=o?o[field]:'';if(!t){showToast('Chưa có link');return;}copyTxt(t);};
 let mediaNames=[];
 function producerOpts(sel){const base=(window.gProducerNames&&window.gProducerNames.length)?window.gProducerNames:mediaNames;const names=base.slice();if(sel&&sel!=='—'&&!names.includes(sel))names.unshift(sel);return '<option value="">— chưa gán —</option>'+names.map(n=>'<option'+(n===sel?' selected':'')+'>'+esc(n)+'</option>').join('');}
 let editingOrderId=null;
