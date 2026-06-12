@@ -277,7 +277,13 @@
 
     <section class="view" id="orders">
       <div class="topbar"><div><h1>Order sản xuất</h1><div class="sub">Đầu việc làm video · trạng thái + nghiệm thu</div></div>
-        <button class="btn" id="btnAddOrder">+ Tạo order</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" id="btnOrderTemplate">⤓ Form mẫu</button>
+          <button class="btn ghost" id="btnOrderImport">⤴ Nhập file</button>
+          <button class="btn ghost" id="btnOrderExport">⇩ Xuất Excel</button>
+          <button class="btn" id="btnAddOrder">+ Tạo order</button>
+          <input type="file" id="orderListFile" accept=".xlsx,.xls,.csv,.txt" style="display:none">
+        </div></div>
       <div class="card" id="orderForm" style="display:none;margin-bottom:14px">
         <h3>Tạo order sản xuất</h3>
         <div class="form">
@@ -289,7 +295,7 @@
           <div><label>Format</label><select class="field" id="orFormat" onchange="orderOptChange('format',this)"></select></div>
           <div><label>Deadline</label><input class="field" id="orDeadline" type="date"></div>
         </div>
-        <div style="margin-top:12px"><button class="btn" id="btnSaveOrder">Lưu order</button> <button class="btn ghost" id="btnCancelOrder">Hủy</button></div>
+        <div style="margin-top:12px"><button class="btn" id="btnSaveOrder">Lưu order (lẻ)</button> <button class="btn ghost" id="btnCancelOrder">Hủy</button></div>
       </div>
       <div class="grid kpis" id="orderKpis" style="margin-bottom:14px"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
@@ -563,6 +569,7 @@ async function loadData(){
     for(const r of [chR,snR,orR,isR,seR]) if(r.error) topErr(r.error.message);
     sellers=seR.data||[];
     if(seR.error){const f=await sb.from('sellers').select('*').order('name');sellers=f.data||[];} // fallback nếu chưa chạy patch list_sellers
+    try{const rs=await sb.from('sellers').select('id,name');rawSellerMap={};(rs.data||[]).forEach(s=>rawSellerMap[s.id]=s.name);}catch(e){}
     let members=[];
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
@@ -578,7 +585,8 @@ async function loadData(){
     rebuild();
   }catch(e){topErr(e.message||String(e));}
 }
-function chSellerName(id){const s=sellers.find(x=>x.id===id);return s?s.name:'—';}
+let rawSellerMap={};
+function chSellerName(id){const s=sellers.find(x=>x.id===id);if(s)return s.name;if(rawSellerMap[id])return rawSellerMap[id];return '—';}
 function chOwnerOf(cid){const ns=rawMembers.filter(m=>m.channel_id===cid).map(m=>m.profiles&&m.profiles.full_name).filter(Boolean);return ns.length?ns.join(', '):'';}
 function buildCh(asOfDate){
   return (rawChannels||[]).map(c=>{
@@ -964,6 +972,45 @@ $('btnAddOrder').onclick=()=>{const f=$('orderForm');const show=f.style.display=
     if(me.role==='Media'&&!$('orProducer').value)$('orProducer').value=me.full_name||'';
   }
   f.style.display=show?'block':'none';};
+$('btnOrderImport').onclick=()=>$('orderListFile').click();
+$('orderListFile').onchange=e=>{if(e.target.files[0])importOrderList(e.target.files[0]);e.target.value='';};
+$('btnOrderTemplate').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
+  const ws=XLSX.utils.json_to_sheet([
+    {'Seller':'Tạ Huệ','Title':'Funny Goose Tee','Loại sản phẩm':'Clothing - T-shirt','Combo':'Combo lẻ - 5','Format':'23. Format GRWM','Người sản xuất':'Huyền','Nghiệm thu':'','Note':'','Đối tượng':'Unisex','Deadline':'2026-06-20'},
+    {'Seller':'Tạ Huệ','Title':'Mama Goose Shirt','Loại sản phẩm':'Clothing - T-shirt','Combo':'Order lẻ','Format':'','Người sản xuất':'Linh','Nghiệm thu':'Done','Note':'','Đối tượng':'Nữ','Deadline':''}
+  ]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-form-mau-order.xlsx');};
+$('btnOrderExport').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
+  const rows=orders.map(o=>({'Ngày':o.d,'Seller':o.s,'Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Deadline':o.deadline||'','Ghi chú':o.note||''}));
+  if(!rows.length)return showToast('Chưa có order để xuất');
+  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-order-'+new Date().toISOString().slice(0,10)+'.xlsx');};
+async function importOrderList(file){
+  if(!window.XLSX&&!file.name.toLowerCase().endsWith('.txt'))return topErr('Thư viện Excel chưa tải xong, thử lại sau.');
+  let rows=[];
+  try{
+    if(file.name.toLowerCase().endsWith('.txt')){rows=(await file.text()).split(/\r?\n/).map(l=>({Title:l}));}
+    else{const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});}
+  }catch(e){return topErr('Không đọc được file: '+(e.message||e));}
+  const pick=(r,names)=>{for(const n of names){if(r[n]!=null&&String(r[n]).trim()!=='')return String(r[n]).trim();}return '';};
+  const toDate=v=>{if(!v)return null;if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);const s=String(v).trim();const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);return null;};
+  const list=[],sellerCache={};
+  for(const r of rows){
+    const product=pick(r,['Title','Tên sản phẩm','Tên SP','Product','Sản phẩm']);
+    if(!product||/ctrl\s*\+/i.test(product))continue;
+    const sname=pick(r,['Seller','Seller bàn giao']);let seller_id=null;
+    if(sname){const k=sname.toLowerCase();if(k in sellerCache)seller_id=sellerCache[k];else{try{seller_id=await ensureSeller(sname);}catch(e){seller_id=null;}sellerCache[k]=seller_id;}}
+    const ng=pick(r,['Nghiệm thu','Nghiem thu']);const accepted=/done|đã|ok|xong|x/i.test(ng);
+    const note=[pick(r,['Note','Ghi chú']),pick(r,['Đối tượng'])?'ĐT: '+pick(r,['Đối tượng']):'',pick(r,['Bối cảnh'])?'BC: '+pick(r,['Bối cảnh']):''].filter(Boolean).join(' · ');
+    list.push({product,seller_id,ptype:pick(r,['Loại sản phẩm','Loại'])||null,combo:pick(r,['Combo'])||null,format:pick(r,['Format'])||null,producer:pick(r,['Người sản xuất'])||null,accepted,status:accepted?'done':'edit',deadline:toDate(pick(r,['Deadline','Date Sản xuất done','Date'])),note:note||null,created_by:me.id});
+  }
+  if(!list.length)return showToast('File không có order nào (kiểm tra cột Title/Tên sản phẩm)');
+  if(!confirm('Tạo '+list.length+' order từ file?'))return;
+  let ok=0,fail=0,lastErr='';
+  for(const o of list){try{const {error}=await sb.from('orders').insert(o);if(error)throw error;ok++;}catch(e){fail++;lastErr=e.message||String(e);}}
+  if(ok)await logAction('Import order từ file','orders',ok+' order');
+  showToast('Đã tạo '+ok+' order'+(fail?' · '+fail+' lỗi':''));
+  if(fail)topErr(lastErr);
+  await loadData();
+}
 $('btnCancelOrder').onclick=()=>$('orderForm').style.display='none';
 $('btnAddIssue').onclick=()=>{const f=$('issueForm');const show=f.style.display=='none';if(show&&!$('isReporter').value)$('isReporter').value=me.full_name||me.email;f.style.display=show?'block':'none';};
 $('btnCancelIssue').onclick=()=>$('issueForm').style.display='none';
