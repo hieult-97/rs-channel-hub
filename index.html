@@ -523,7 +523,8 @@ async function afterLogin(){
   const allow=(me.role==='SD'?allViews:(roleAccess[me.role]||DEFAULT_ACCESS[me.role]||[])).concat('profile');
   document.querySelectorAll('.nav a').forEach(a=>a.style.display=allow.includes(a.dataset.view)?'':'none');
   // chỉ admin được thêm/nhập kênh (RLS cũng chặn ở server)
-  ['btnAddCh','btnImport'].forEach(id=>{const e=$(id);if(e)e.style.display=isAdmin()?'':'none';});
+  {const a=$('btnAddCh');if(a)a.style.display='';}                          // mọi người đã duyệt được thêm kênh
+  {const i=$('btnImport');if(i)i.style.display=isAdmin()?'':'none';}        // nhập Excel hàng loạt: admin
   await loadData();
   loadOrderOpts();
   loadProducers();
@@ -747,7 +748,7 @@ function renderCh(){
   fillSel('fNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH.value||c.h===fH.value));
   rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
-  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td>'+hdot(c.h)+'</td><td style="white-space:nowrap">'+(isAdmin()?'<span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>':'')+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>').join('');
+  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td>'+hdot(c.h)+'</td><td style="white-space:nowrap">'+(true?'<span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>':'')+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>').join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
   document.querySelectorAll('#channels th.sortable').forEach(th=>{th.querySelector('.ar').textContent=th.dataset.k===sortK?(sortDir<0?'▼':'▲'):'';});
@@ -1014,7 +1015,13 @@ async function importOrderList(file){
 $('btnCancelOrder').onclick=()=>$('orderForm').style.display='none';
 $('btnAddIssue').onclick=()=>{const f=$('issueForm');const show=f.style.display=='none';if(show&&!$('isReporter').value)$('isReporter').value=me.full_name||me.email;f.style.display=show?'block':'none';};
 $('btnCancelIssue').onclick=()=>$('issueForm').style.display='none';
-$('btnAddCh').onclick=()=>{const f=$('chForm');const show=f.style.display=='none';if(show)resetChForm();f.style.display=show?'block':'none';};
+$('btnAddCh').onclick=()=>{const f=$('chForm');const show=f.style.display=='none';
+  if(show){resetChForm();
+    if(me.role==='Seller'){if(me.seller_id)$('ncSeller').value=me.seller_id;$('ncSeller').disabled=true;}else{$('ncSeller').disabled=false;}
+    if(me.role==='Media'&&me.full_name){let chk=[...document.querySelectorAll('#ncCare .careChk')].find(c=>c.value===me.full_name);
+      if(chk)chk.checked=true;else{const d=document.createElement('span');d.innerHTML=careChip(me.full_name,true);$('ncCare').appendChild(d.firstChild);}}
+  }
+  f.style.display=show?'block':'none';};
 $('btnCancelCh').onclick=()=>{$('chForm').style.display='none';resetChForm();};
 $('obGo').onclick=()=>selectView(obGoTarget);
 $('dashSeller').onchange=renderAll;
