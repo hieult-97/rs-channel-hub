@@ -214,7 +214,7 @@
           <div><label>URL kênh</label><input class="field" id="ncName" placeholder="@tenkenh"></div>
           <div><label>Sàn</label><select class="field" id="ncPlatform"><option>TikTok</option><option>Etsy</option><option>Khác</option></select></div>
           <div><label>Seller bàn giao</label><select class="field" id="ncSeller"></select></div>
-          <div><label>Người Care</label><input class="field" id="ncCare" placeholder="Tên người quản lý"></div>
+          <div><label>Người Care (chọn 1 hoặc nhiều)</label><div id="ncCare" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px;max-height:110px;overflow:auto;display:flex;flex-wrap:wrap;gap:6px;font-size:13px"></div></div>
           <div><label>Niche / Ngách</label><input class="field" id="ncNiche" placeholder="Clothing..."></div>
           <div><label>Status</label><select class="field" id="ncAcc"><option value="shop">Đã bật shop</option><option value="buff">Chưa · buff</option></select></div>
           <div><label>Thị trường</label><input class="field" id="ncMarket" placeholder="US"></div>
@@ -801,7 +801,8 @@ $('btnSaveCh').onclick=async()=>{
   $('btnSaveCh').disabled=true;
   try{
     if(newSeller){const {data,error}=await sb.from('sellers').insert({name:newSeller}).select().single();if(error)throw error;sid=data.id;}
-    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:$('ncCare').value.trim()||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,violations:Number($('ncViol').value)||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
+    const careList=[...document.querySelectorAll('#ncCare .careChk')].filter(c=>c.checked).map(c=>c.value);
+    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,violations:Number($('ncViol').value)||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
     if(editingId){const {error}=await sb.from('channels').update(rec).eq('id',editingId);if(error)throw error;await logAction('Sửa kênh','channels',rec.name);showToast('Đã lưu thay đổi ✓');}
     else{const {error}=await sb.from('channels').insert(rec);if(error)throw error;await logAction('Thêm kênh','channels',rec.name);showToast('Đã thêm kênh ✓');}
     $('chForm').style.display='none';resetChForm();
@@ -810,10 +811,13 @@ $('btnSaveCh').onclick=async()=>{
   $('btnSaveCh').disabled=false;
 };
 function resetChForm(){editingId=null;$('chFormTitle').textContent='Thêm kênh';$('btnSaveCh').textContent='Lưu kênh';
+  document.querySelectorAll('#ncCare .careChk').forEach(c=>c.checked=false);
   ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncViol','ncNote','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');}
 function editChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;editingId=id;
   $('chFormTitle').textContent='Sửa kênh: '+c.name;$('btnSaveCh').textContent='Lưu thay đổi';
-  $('ncName').value=c.name||'';$('ncPlatform').value=c.platform||'TikTok';$('ncSeller').value=c.seller_id||'';$('ncCare').value=c.care||'';$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncViol').value=c.violations!=null?c.violations:'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
+  $('ncName').value=c.name||'';$('ncPlatform').value=c.platform||'TikTok';$('ncSeller').value=c.seller_id||'';{const careSet=new Set((c.care||'').split(',').map(x=>x.trim()).filter(Boolean));
+   document.querySelectorAll('#ncCare .careChk').forEach(chk=>chk.checked=careSet.has(chk.value));
+   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncViol').value=c.violations!=null?c.violations:'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
   $('chForm').style.display='block';selectView('channels');try{$('chForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editChannel=editChannel;
 async function delRow(table,id,msg){if(!confirm(msg))return;const {error}=await sb.from(table).delete().eq('id',id);if(error)return topErr(error.message);await logAction('Xóa',table,'id='+id);showToast('Đã xóa ✓');await loadData();}
@@ -1124,9 +1128,12 @@ function fillOrderSelects(){
 }
 window.orderOptChange=function(kind,sel){if(sel.value==='__add__'){const v=(prompt('Nhập '+({type:'loại sản phẩm',combo:'combo',format:'format'}[kind])+' mới:')||'').trim();sel.value='';if(v)addOrderOpt(kind,v,sel);}};
 async function addOrderOpt(kind,label,sel){const {error}=await sb.from('order_options').insert({kind,label});if(error){topErr(/order_options/.test(error.message||'')?'Hãy chạy patch-TONG-HOP.sql để bật thêm lựa chọn.':error.message);return;}await logAction('Thêm lựa chọn','order_options',kind+': '+label);await loadOrderOpts();if(sel)sel.value=label;showToast('Đã thêm ✓');}
-async function loadProducers(){try{const {data}=await sb.rpc('list_members');const meds=(data||[]).filter(m=>m.role==='Media');
+function careChip(n,checked){return '<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:4px 9px"><input type="checkbox" class="careChk" value="'+n.replace(/"/g,'')+'"'+(checked?' checked':'')+'>'+esc(n)+'</label>';}
+async function loadProducers(){try{const {data}=await sb.rpc('list_members');const all=data||[];const meds=all.filter(m=>m.role==='Media');
   $('orProducer').innerHTML='<option value="">— chọn người sản xuất —</option>'+meds.map(m=>'<option>'+esc(m.full_name||'')+'</option>').join('');
   if(me&&me.role==='Media'&&me.full_name)$('orProducer').value=me.full_name;
+  const care=all.filter(m=>(m.role==='Media'||m.role==='Seller')&&m.full_name);
+  $('ncCare').innerHTML=care.map(m=>careChip(m.full_name,false)).join('')||'<span style="color:var(--muted)">Chưa có thành viên Media/Seller</span>';
 }catch(e){}}
 
 boot();
