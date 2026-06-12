@@ -917,7 +917,7 @@ function renderAll(){
       '<td style="color:var(--muted)">'+esc(c.o)+'</td>'+
       '<td style="color:var(--muted)">—</td>'+
       '<td><span class="chip" style="background:'+ic.mid[0]+';color:'+ic.mid[1]+'">Cần xử lý</span></td>'+
-      '<td><span title="Sửa kênh (đưa Violations về 0 sau khi xử lý)" style="cursor:pointer;font-size:14px" onclick="editChannel('+c.id+')">✏️</span></td></tr>';}).join('');
+      '<td style="white-space:nowrap"><span title="Ghi nhận thành vấn đề để gán người xử lý + đổi trạng thái" style="cursor:pointer;color:var(--brand);font-size:12px;margin-right:8px" onclick="drillIssue('+c.id+')">📝 Ghi nhận</span><span title="Sửa kênh (đưa Violations về 0 sau khi xử lý)" style="cursor:pointer;font-size:14px" onclick="editChannel('+c.id+')">✏️</span></td></tr>';}).join('');
   $('issueBody').innerHTML=vioRows+issues.map(i=>{
     const stCell=isAdmin()?'<select style="'+SELCSS+'" onchange="setIssueStatus('+i.id+',this.value)">'+selOpts([['open','Mới'],['doing','Đang xử lý'],['waiting','Chờ phản hồi'],['done','Đã đóng']],i.scode)+'</select>':'<span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span>';
     const whoCell=isAdmin()?'<select style="'+SELCSS+';width:130px" onchange="setIssueAssignee('+i.id+',this.value)">'+memberOpts(i.who)+'</select>':(i.who?esc(i.who):'<span style="color:var(--muted)">—</span>');
