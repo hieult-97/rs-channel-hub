@@ -342,11 +342,13 @@
         <div class="form">
           <div><label>Seller</label><select class="field" id="orSeller"></select></div>
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
-          <div><label>Loại</label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
-          <div><label>Người sản xuất</label><select class="field" id="orProducer"></select></div>
-          <div><label>Combo</label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
-          <div><label>Format</label><select class="field" id="orFormat" onchange="orderOptChange('format',this)"></select></div>
+          <div><label>Loại <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
+          <div><label>Người sản xuất <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orProducer"></select></div>
+          <div><label>Combo <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
+          <div><label>Format <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orFormat" onchange="orderOptChange('format',this)"></select></div>
           <div><label>Deadline</label><input class="field" id="orDeadline" type="date"></div>
+          <div><label>Kênh tham khảo <span style="color:var(--muted);font-weight:500">(seller tự điền nếu không theo combo)</span></label><input class="field" id="orRef" placeholder="@kenh hoặc link video tham khảo"></div>
+          <div style="grid-column:1/-1"><label>Note ý tưởng <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><textarea class="field" id="orNote" rows="2" placeholder="Mô tả ý tưởng, đối tượng, bối cảnh, yêu cầu riêng..." style="resize:vertical;font-weight:500"></textarea></div>
         </div>
         <div style="margin-top:12px"><button class="btn" id="btnSaveOrder">Lưu order (lẻ)</button> <button class="btn ghost" id="btnCancelOrder">Hủy</button></div>
       </div>
@@ -653,7 +655,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:String(o.created_at||'').slice(0,10).split('-').reverse().slice(0,2).join('/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:String(o.created_at||'').slice(0,10).split('-').reverse().slice(0,2).join('/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—'};});
@@ -806,9 +808,10 @@ function renderAll(){
     const ngCell=canAccept?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
     const act=isAdmin()?'<span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'';
     const sub=[o.combo,o.format].filter(Boolean).join(' · ');
+    const refLine=o.ref?'<div style="font-size:10.5px;color:var(--brand);white-space:normal;max-width:220px">📺 Tham khảo: '+esc(o.ref)+'</div>':'';
     let dlCell='<span style="color:var(--muted)">—</span>';
     if(o.deadline){const over=o.scode!=='done'&&String(o.deadline)<todayStr();dlCell='<span'+(over?' style="color:var(--red);font-weight:700"':'')+'>'+String(o.deadline).slice(5).split('-').reverse().join('/')+(over?' ⚠ trễ':'')+'</span>';}
-    return '<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+esc(o.p)+'</b>'+(sub?'<div style="font-size:10.5px;color:var(--muted);white-space:normal;max-width:220px">'+esc(sub)+'</div>':'')+'</td><td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+esc(o.who)+'</td><td>'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td style="color:var(--amber);white-space:normal;max-width:220px">'+esc(o.note||'')+'</td><td>'+act+'</td></tr>';}).join('');
+    return '<tr><td>'+o.d+'</td><td>'+o.s+'</td><td><b>'+esc(o.p)+'</b>'+(sub?'<div style="font-size:10.5px;color:var(--muted);white-space:normal;max-width:220px">'+esc(sub)+'</div>':'')+refLine+'</td><td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+esc(o.who)+'</td><td>'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td style="color:var(--amber);white-space:normal;max-width:220px">'+esc(o.note||'')+'</td><td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=orders.length?'none':'block';
   // issues
   $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green'],['Vi phạm (kênh)',ch.filter(c=>c.violations>0).length,'amber']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
@@ -901,12 +904,13 @@ $('upGmv').oninput=()=>{const g=Number($('upGmv').value)||0;$('gmvVnd').textCont
 $('btnSaveOrder').onclick=async()=>{
   const row={seller_id:$('orSeller').value?Number($('orSeller').value):null,product:$('orProduct').value.trim(),
     ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),format:$('orFormat').value.trim(),
+    ref_channel:$('orRef').value.trim()||null,note:$('orNote').value.trim()||null,
     status:'edit',deadline:$('orDeadline').value||null,created_by:me.id};
   if(!row.product)return showToast('Nhập tên sản phẩm');
   $('btnSaveOrder').disabled=true;const {error}=await sb.from('orders').insert(row);$('btnSaveOrder').disabled=false;
   if(error)return topErr(error.message);
   await logAction('Tạo order','orders',row.product);
-  showToast('Đã tạo order ✓');$('orderForm').style.display='none';['orProduct','orType','orProducer','orCombo','orFormat','orDeadline'].forEach(i=>$(i).value='');
+  showToast('Đã tạo order ✓');$('orderForm').style.display='none';['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orNote'].forEach(i=>$(i).value='');
   await loadData();
 };
 $('btnSaveIssue').onclick=async()=>{
@@ -1169,11 +1173,11 @@ $('btnOrderImport').onclick=()=>$('orderListFile').click();
 $('orderListFile').onchange=e=>{if(e.target.files[0])importOrderList(e.target.files[0]);e.target.value='';};
 $('btnOrderTemplate').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
   const ws=XLSX.utils.json_to_sheet([
-    {'Seller':'Tạ Huệ','Title':'Funny Goose Tee','Loại sản phẩm':'Clothing - T-shirt','Combo':'Combo lẻ - 5','Format':'23. Format GRWM','Người sản xuất':'Huyền','Nghiệm thu':'','Note':'','Đối tượng':'Unisex','Deadline':'2026-06-20'},
-    {'Seller':'Tạ Huệ','Title':'Mama Goose Shirt','Loại sản phẩm':'Clothing - T-shirt','Combo':'Order lẻ','Format':'','Người sản xuất':'Linh','Nghiệm thu':'Done','Note':'','Đối tượng':'Nữ','Deadline':''}
+    {'Seller':'Tạ Huệ','Title':'Funny Goose Tee','Loại sản phẩm':'Clothing - T-shirt','Combo':'Combo lẻ - 5','Format':'23. Format GRWM','Người sản xuất':'Huyền','Kênh tham khảo':'','Nghiệm thu':'','Note':'Tông vui nhộn','Đối tượng':'Unisex','Deadline':'2026-06-20'},
+    {'Seller':'Tạ Huệ','Title':'Mama Goose Shirt','Loại sản phẩm':'Clothing - T-shirt','Combo':'','Format':'','Người sản xuất':'Linh','Kênh tham khảo':'@ref_kenh hoặc link','Nghiệm thu':'Done','Note':'Không theo combo, làm theo kênh tham khảo','Đối tượng':'Nữ','Deadline':''}
   ]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-form-mau-order.xlsx');};
 $('btnOrderExport').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
-  const rows=orders.map(o=>({'Ngày':o.d,'Seller':o.s,'Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Deadline':o.deadline||'','Ghi chú':o.note||''}));
+  const rows=orders.map(o=>({'Ngày':o.d,'Seller':o.s,'Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Kênh tham khảo':o.ref||'','Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Deadline':o.deadline||'','Note ý tưởng':o.note||''}));
   if(!rows.length)return showToast('Chưa có order để xuất');
   const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-order-'+new Date().toISOString().slice(0,10)+'.xlsx');};
 async function importOrderList(file){
@@ -1193,7 +1197,8 @@ async function importOrderList(file){
     if(sname){const k=sname.toLowerCase();if(k in sellerCache)seller_id=sellerCache[k];else{try{seller_id=await ensureSeller(sname);}catch(e){seller_id=null;}sellerCache[k]=seller_id;}}
     const ng=pick(r,['Nghiệm thu','Nghiem thu']);const accepted=/done|đã|ok|xong|x/i.test(ng);
     const note=[pick(r,['Note','Ghi chú']),pick(r,['Đối tượng'])?'ĐT: '+pick(r,['Đối tượng']):'',pick(r,['Bối cảnh'])?'BC: '+pick(r,['Bối cảnh']):''].filter(Boolean).join(' · ');
-    list.push({product,seller_id,ptype:pick(r,['Loại sản phẩm','Loại'])||null,combo:pick(r,['Combo'])||null,format:pick(r,['Format'])||null,producer:pick(r,['Người sản xuất'])||null,accepted,status:accepted?'done':'edit',deadline:toDate(pick(r,['Deadline','Date Sản xuất done','Date'])),note:note||null,created_by:me.id});
+    const ref=pick(r,['Kênh tham khảo','Kenh tham khao','Ref','Reference']);
+    list.push({product,seller_id,ptype:pick(r,['Loại sản phẩm','Loại'])||null,combo:pick(r,['Combo'])||null,format:pick(r,['Format'])||null,producer:pick(r,['Người sản xuất'])||null,ref_channel:ref||null,accepted,status:accepted?'done':'edit',deadline:toDate(pick(r,['Deadline','Date Sản xuất done','Date'])),note:note||null,created_by:me.id});
   }
   if(!list.length)return showToast('File không có order nào (kiểm tra cột Title/Tên sản phẩm)');
   if(!confirm('Tạo '+list.length+' order từ file?'))return;
