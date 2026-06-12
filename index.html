@@ -889,7 +889,7 @@ function renderAll(){
     const editBtn=canEditCase?'<span title="Sửa order (case)" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="editOrder('+o.id+')">✏️</span>':'';
     const act=editBtn+(isAdmin()?'<span title="Đánh dấu trả lại / làm lại (+1, giảm chất lượng KPI)" style="cursor:pointer;margin-right:10px" onclick="reworkOrder('+o.id+')">↩'+(o.rework?'<sup style="color:var(--red)">'+o.rework+'</sup>':'')+'</span><span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'');
     const sub=[o.combo,o.format].filter(Boolean).join(' · ');
-    const refLine=(o.chn?'<div style="font-size:10.5px;color:var(--green);white-space:normal;max-width:220px">📡 Kênh: '+esc(o.chn)+'</div>':'')+(o.ref?'<div style="font-size:10.5px;color:var(--brand);white-space:normal;max-width:220px">📺 Tham khảo: '+esc(o.ref)+'</div>':'')+(o.img?'<img src="'+esc(o.img)+'" title="Bấm xem ảnh lớn" style="height:36px;border-radius:6px;margin-top:5px;cursor:pointer;border:1px solid var(--line)" onclick="window.open(this.src,\'_blank\')">':'');
+    const refLine=(o.chn?'<div style="font-size:10.5px;color:var(--green);white-space:normal;max-width:220px">📡 Kênh: '+esc(o.chn)+'</div>':'')+(o.ref?'<div style="font-size:10.5px;white-space:nowrap">📺 Tham khảo: '+linkSnippet(o.ref,'Xem')+'</div>':'')+(o.img?'<img src="'+esc(o.img)+'" title="Bấm xem ảnh lớn" style="height:36px;border-radius:6px;margin-top:5px;cursor:pointer;border:1px solid var(--line)" onclick="window.open(this.src,\'_blank\')">':'');
     let dlCell='<span style="color:var(--muted)">—</span>';
     if(o.deadline){const rem=daysLeft(o.deadline),done=o.scode==='done';let badge='';
       if(!done){if(rem>1)badge='<div style="font-size:10.5px;color:var(--green)">còn '+rem+' ngày</div>';
@@ -964,12 +964,12 @@ function renderCh(){
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH.value||c.h===fH.value));
   rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
   $('chBody').innerHTML=rows.map(c=>{
-    const shopIc=c.shop?(/^https?:\/\//i.test(c.shop)?' <a href="'+esc(c.shop)+'" target="_blank" title="Mở shop lấy sản phẩm" style="text-decoration:none">🛒</a>':' <span title="Mã/URL shop: '+esc(c.shop)+'" style="cursor:help">🛒</span>'):'';
+    const shopIc=c.shop?'<div style="margin-top:4px;white-space:nowrap">'+linkSnippet(c.shop,'Shop')+'</div>':'';
     const pin=window.gOpenIssues&&window.gOpenIssues.has(c.n)?' <span title="Đã có vấn đề ghi nhận đang mở" style="cursor:help">📌</span>':'';
     const sub='<div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+esc(c.plat)+(c.market&&c.market!=='—'?' · '+esc(c.market):'')+'</div>';
     const pctTd=c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>';
     const dlt=c.d?' <span style="font-size:10.5px;color:'+(c.d>0?'var(--green)':'var(--red)')+'">'+sign(c.d)+'</span>':'';
-    return '<tr><td class="stick"><b>'+esc(c.n)+'</b>'+pin+sub+'</td>'+
+    return '<tr><td class="stick"><b>'+esc(c.n)+'</b> <span title="Copy URL kênh" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyEnc(\''+encodeURIComponent(c.n).replace(/'/g,'%27')+'\')">📋</span>'+pin+sub+'</td>'+
       '<td style="color:var(--muted)">'+esc(c.niche)+'</td>'+
       '<td>'+accChip(c.acc)+shopIc+'</td>'+
       '<td>'+esc(c.s)+'</td>'+
@@ -1261,7 +1261,11 @@ window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||nul
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
 function fallbackCopy(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Đã copy link ✓');}catch(e){prompt('Copy link (Ctrl+C):',t);}ta.remove();}
-function copyTxt(t){if(!t)return;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>showToast('Đã copy link ✓'),()=>fallbackCopy(t));}else fallbackCopy(t);}
+function copyTxt(t){if(!t)return;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>showToast('Đã copy ✓'),()=>fallbackCopy(t));}else fallbackCopy(t);}
+// Snippet "🔗 Xem · 📋 Copy" dùng chung cho mọi link
+function linkSnippet(text,label){if(!text)return '<span style="color:var(--muted)">—</span>';const e=encodeURIComponent(text).replace(/'/g,'%27');return '<span title="Xem link" style="cursor:pointer;color:var(--brand);font-size:12px" onclick="viewLinkEnc(\''+e+'\')">🔗 '+(label||'Xem')+'</span> <span title="Copy" style="cursor:pointer;color:var(--muted);font-size:12px" onclick="copyEnc(\''+e+'\')">📋 Copy</span>';}
+window.viewLinkEnc=function(e){const t=decodeURIComponent(e);showDrill('🔗 Link','<div style="padding:14px"><div style="word-break:break-all;font-size:13.5px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;line-height:1.55">'+esc(t)+'</div><div style="margin-top:12px"><button class="btn" onclick="copyEnc(\''+e+'\')">📋 Copy link</button></div></div>');};
+window.copyEnc=function(e){copyTxt(decodeURIComponent(e));};
 window.copyOrderLink=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const t=o?o[field]:'';if(!t){showToast('Chưa có link');return;}copyTxt(t);};
 window.openOrderLink=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const t=o?o[field]:'';if(!t){showToast('Chưa có link');return;}
   const title=field==='dlink'?'🔗 Link nghiệm thu':'🔗 Link sản phẩm';
