@@ -864,6 +864,7 @@ function renderAll(){
   const oc={idea:['rgba(91,140,255,.16)','var(--brand)'],edit:['rgba(242,193,78,.16)','var(--amber)'],wait:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)']};
   const overdueOrders=orders.filter(o=>o.deadline&&o.scode!=='done'&&String(o.deadline)<todayStr()).length;
   $('orderKpis').innerHTML=[['Order',orders.length,''],['Đang làm',orders.filter(o=>o.st[0]=='edit').length,'amber'],['Chờ nghiệm thu',orders.filter(o=>o.st[0]=='wait').length,'brand'],['Done',orders.filter(o=>o.st[0]=='done').length,'green'],['Trễ hạn',overdueOrders,'red']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
+  window.gProducerNames=[...new Set([...(mediaNames||[]),...orders.map(o=>o.who).filter(x=>x&&x!=='—')])].sort();
   $('orderBody').innerHTML=orders.map(o=>{
     const canStatus=isAdmin()||me.role==='Media';     // media sản xuất → đặt trạng thái
     const canAccept=isAdmin()||me.role==='Seller';     // seller order → nghiệm thu
@@ -1250,7 +1251,7 @@ window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||nul
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
 let mediaNames=[];
-function producerOpts(sel){const names=mediaNames.slice();if(sel&&sel!=='—'&&!names.includes(sel))names.unshift(sel);return '<option value="">— chưa gán —</option>'+names.map(n=>'<option'+(n===sel?' selected':'')+'>'+esc(n)+'</option>').join('');}
+function producerOpts(sel){const base=(window.gProducerNames&&window.gProducerNames.length)?window.gProducerNames:mediaNames;const names=base.slice();if(sel&&sel!=='—'&&!names.includes(sel))names.unshift(sel);return '<option value="">— chưa gán —</option>'+names.map(n=>'<option'+(n===sel?' selected':'')+'>'+esc(n)+'</option>').join('');}
 let editingOrderId=null;
 function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;editingOrderId=id;
   const f=$('orderForm');f.style.display='block';
@@ -1532,8 +1533,8 @@ function renderGrowth(){
   if(growthChart){growthChart.destroy();growthChart=null;}
   if(has&&window.Chart){const gx={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b92a7'},grid:{color:'rgba(140,150,170,.15)'}},y:{ticks:{color:'#8b92a7'},grid:{color:'rgba(140,150,170,.15)'}}}};
     growthChart=new Chart($('grChart'),{type:'line',data:{labels,datasets:[{label:mLabel,data:values,borderColor:'#5b8cff',backgroundColor:'rgba(91,140,255,.12)',fill:true,tension:.35,pointRadius:3}]},options:gx});}
-  const rows=ch.map(c=>{const ss=snapsAsc(c.id);if(!ss.length)return null;const f0=Number(ss[0].followers)||0,f1=Number(ss[ss.length-1].followers)||0,delta=f1-f0,pct=f0?(delta/f0*100):0,gp=c.goal?(f1/c.goal*100):0;return {n:c.n,f0,f1,delta,pct,gp,goal:c.goal,or:c.or,com:c.com};}).filter(Boolean).sort((a,b)=>b.pct-a.pct);
-  $('grBody').innerHTML=rows.map(r=>'<tr><td><b>'+r.n+'</b></td><td class="num">'+fmtK(r.f0)+'</td><td class="num">'+fmtK(r.f1)+'</td><td class="num">'+sign(r.delta)+'</td><td class="num" style="color:'+(r.pct>0?'var(--green)':r.pct<0?'var(--red)':'var(--muted)')+';font-weight:700">'+(r.pct>0?'+':'')+r.pct.toFixed(1)+'%</td><td class="num">'+(r.goal?'<span style="color:'+(r.gp>=100?'var(--green)':r.gp>=60?'var(--amber)':'var(--muted)')+';font-weight:600">'+Math.round(r.gp)+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+r.or+'</td><td class="num">$'+r.com.toFixed(1)+'K</td><td>'+(r.pct>0?'<span class="pos">▲ tốt lên</span>':r.pct<0?'<span class="neg">▼ giảm</span>':'<span style="color:var(--muted)">— đi ngang</span>')+'</td></tr>').join('');
+  const rows=ch.map(c=>{const ss=snapsAsc(c.id);const has=ss.length>0;const f0=has?Number(ss[0].followers)||0:(Number(c.f)||0),f1=has?Number(ss[ss.length-1].followers)||0:(Number(c.f)||0),delta=f1-f0,pct=f0?(delta/f0*100):0,gp=c.goal?(f1/c.goal*100):0;return {n:c.n,f0,f1,delta,pct,gp,goal:c.goal,or:c.or,com:c.com,has};}).sort((a,b)=>(b.has-a.has)||b.pct-a.pct);
+  $('grBody').innerHTML=rows.map(r=>'<tr><td><b>'+r.n+'</b></td><td class="num">'+fmtK(r.f0)+'</td><td class="num">'+fmtK(r.f1)+'</td><td class="num">'+sign(r.delta)+'</td><td class="num" style="color:'+(r.pct>0?'var(--green)':r.pct<0?'var(--red)':'var(--muted)')+';font-weight:700">'+(r.pct>0?'+':'')+r.pct.toFixed(1)+'%</td><td class="num">'+(r.goal?'<span style="color:'+(r.gp>=100?'var(--green)':r.gp>=60?'var(--amber)':'var(--muted)')+';font-weight:600">'+Math.round(r.gp)+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+r.or+'</td><td class="num">$'+r.com.toFixed(1)+'K</td><td>'+(!r.has?'<span style="color:var(--muted)">chưa nhập DL</span>':r.pct>0?'<span class="pos">▲ tốt lên</span>':r.pct<0?'<span class="neg">▼ giảm</span>':'<span style="color:var(--muted)">— đi ngang</span>')+'</td></tr>').join('');
   $('grEmpty').style.display=rows.length?'none':'block';
 }
 
