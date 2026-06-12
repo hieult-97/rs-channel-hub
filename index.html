@@ -109,6 +109,24 @@
   .theme-pop .tp:hover{background:var(--panel2)}
   .theme-pop .tp.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,transparent)}
   .theme-pop .sw{width:18px;height:18px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+  .kpi.clk{cursor:pointer;transition:transform .1s,box-shadow .12s,border-color .12s}
+  .kpi.clk:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--brand) 50%,var(--line));box-shadow:0 6px 18px rgba(20,30,60,.12)}
+  .kpi.clk::after{content:"›";position:absolute;top:12px;right:14px;color:var(--muted);font-size:18px;opacity:.5}
+  .card.kpi{position:relative}
+  .lg-clk{cursor:pointer;border-radius:6px;padding:2px 6px;transition:background .1s}
+  .lg-clk:hover{background:var(--panel2)}
+  .drill-back{position:fixed;inset:0;background:rgba(8,12,22,.55);z-index:130;display:flex;align-items:center;justify-content:center;padding:24px}
+  .drill-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:560px;max-width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.4)}
+  .drill-h{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line)}
+  .drill-h b{font-size:15px}
+  .drill-x{cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:6px}
+  .drill-x:hover{background:var(--panel2);color:var(--text)}
+  .drill-body{overflow:auto;padding:8px}
+  .drill-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+  .drill-row:hover{background:var(--panel2);border-color:var(--line)}
+  .drill-row .drm b{font-size:13.5px}.drill-row .drm small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+  .drill-val{font-weight:700;font-size:13.5px;white-space:nowrap}
+  .drill-foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
   .hamb{display:none}
   .ov{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
   .ov.hide{display:none}
@@ -653,7 +671,7 @@ function renderAll(){
   fillSel('dashPlatform','Tất cả sàn',[...new Set(ch.map(c=>c.plat))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('dashNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('dashChannel','Tất cả kênh',ch.map(c=>({v:c.id,t:c.n})));
-  const sc=dashScope();
+  const sc=dashScope();window.gScope=sc;
   $('dashSub').textContent=sc.length+'/'+ch.length+' kênh · '+sellers.length+' seller'+(asOf?' · tính đến '+asOf:'')+' · 1$=26.000₫';
   const totF=sc.reduce((a,c)=>a+c.f,0),totD=sc.reduce((a,c)=>a+c.d,0),totOr=sc.reduce((a,c)=>a+c.or,0),totCom=sc.reduce((a,c)=>a+c.com,0);
   const totV=sc.reduce((a,c)=>a+c.v,0),totVid=sc.reduce((a,c)=>a+c.vid,0);
@@ -668,18 +686,18 @@ function renderAll(){
   const totViol=sc.reduce((a,c)=>a+(c.violations||0),0),violCh=sc.filter(c=>c.violations>0).length;
   const avgF=sc.length?Math.round(totF/sc.length):0;
   $('kpis').innerHTML=[
-   ['Tổng kênh<span class="help" title="Số kênh đang theo dõi trong phạm vi lọc hiện tại.">?</span>','TB '+fmtK(avgF)+' follower/kênh',sc.length.toLocaleString('vi')],
-   ['Tổng follower','<span class="up">▲'+fmtK(totD)+'</span> tăng kỳ này',fmtK(totF)],
-   ['Tổng view (kỳ)',totVid+' video đăng'+pc(totV,totVP),fmtK(totV)],
-   ['View TB / video<span class="help" title="Chất lượng nội dung: view trung bình mỗi video trong kỳ.">?</span>','sản lượng &amp; reach',fmtK(viewPerVid)],
-   ['Đơn kỳ này',conv.toFixed(2)+' đơn/1K view'+pc(totOr,totOrP),totOr.toLocaleString('vi')],
-   ['GMV kỳ này<span class="help" title="Tổng giá trị đơn (USD) trong kỳ. Tự quy ra VND theo tỷ giá 26.000.">?</span>','≈ '+fmtVnd(totCom)+pc(totCom,totComP),'$'+totCom.toFixed(1)+'K'],
-   ['Tổng video đăng','sản lượng media kỳ này',totVid.toLocaleString('vi')],
-   ['Đã bật shop<span class="help" title="Số kênh đã bật TikTok Shop / tổng kênh trong phạm vi lọc.">?</span>',shopPct+'% kênh đã mở shop',shopCnt+' /'+sc.length],
-   ['Tổng vi phạm<span class="help" title="Tổng số vi phạm đang ghi nhận trên các kênh — rủi ro cần xử lý.">?</span>','<span style="color:var(--red)">'+violCh+'</span> kênh dính vi phạm',totViol.toLocaleString('vi')],
-   ['Cần cập nhật<span class="help" title="Ưu tiên cập nhật hằng ngày. Quá 3 ngày chưa nhập = quá hạn.">?</span>','<span style="color:var(--red)">'+overdue+'</span> quá hạn (>3 ngày)',needToday+' /'+sc.length],
-   ['Kênh cần chú ý','<span style="color:var(--amber)">'+amberCnt+'</span> chú ý · <span style="color:var(--red)">'+redCnt+'</span> vấn đề',(amberCnt+redCnt)+' /'+sc.length],
-  ].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val">'+k[2]+'</div><div class="delta">'+k[1]+'</div></div>').join('');
+   ['Tổng kênh<span class="help" title="Số kênh đang theo dõi trong phạm vi lọc hiện tại.">?</span>','TB '+fmtK(avgF)+' follower/kênh',sc.length.toLocaleString('vi'),'all'],
+   ['Tổng follower','<span class="up">▲'+fmtK(totD)+'</span> tăng kỳ này',fmtK(totF),'follower'],
+   ['Tổng view (kỳ)',totVid+' video đăng'+pc(totV,totVP),fmtK(totV),'view'],
+   ['View TB / video<span class="help" title="Chất lượng nội dung: view trung bình mỗi video trong kỳ.">?</span>','sản lượng &amp; reach',fmtK(viewPerVid),'viewvid'],
+   ['Đơn kỳ này',conv.toFixed(2)+' đơn/1K view'+pc(totOr,totOrP),totOr.toLocaleString('vi'),'orders'],
+   ['GMV kỳ này<span class="help" title="Tổng giá trị đơn (USD) trong kỳ. Tự quy ra VND theo tỷ giá 26.000.">?</span>','≈ '+fmtVnd(totCom)+pc(totCom,totComP),'$'+totCom.toFixed(1)+'K','gmv'],
+   ['Tổng video đăng','sản lượng media kỳ này',totVid.toLocaleString('vi'),'video'],
+   ['Đã bật shop<span class="help" title="Số kênh đã bật TikTok Shop / tổng kênh trong phạm vi lọc.">?</span>',shopPct+'% kênh đã mở shop',shopCnt+' /'+sc.length,'shop'],
+   ['Tổng vi phạm<span class="help" title="Tổng số vi phạm đang ghi nhận trên các kênh — rủi ro cần xử lý.">?</span>','<span style="color:var(--red)">'+violCh+'</span> kênh dính vi phạm',totViol.toLocaleString('vi'),'viol'],
+   ['Cần cập nhật<span class="help" title="Ưu tiên cập nhật hằng ngày. Quá 3 ngày chưa nhập = quá hạn.">?</span>','<span style="color:var(--red)">'+overdue+'</span> quá hạn (>3 ngày)',needToday+' /'+sc.length,'update'],
+   ['Kênh cần chú ý','<span style="color:var(--amber)">'+amberCnt+'</span> chú ý · <span style="color:var(--red)">'+redCnt+'</span> vấn đề',(amberCnt+redCnt)+' /'+sc.length,'attention'],
+  ].map(k=>'<div class="card kpi'+(k[3]?' clk" onclick="drillKPI(\''+k[3]+'\')"':'"')+'><div class="label">'+k[0]+'</div><div class="val">'+k[2]+'</div><div class="delta">'+k[1]+'</div></div>').join('');
   $('navOverdue').textContent=overdue||'';
   // onboarding / getting-started
   const ob=$('onboard');
@@ -689,7 +707,7 @@ function renderAll(){
   // health
   const hc={g:sc.filter(c=>c.h=='g').length,a:sc.filter(c=>c.h=='a').length,r:sc.filter(c=>c.h=='r').length,n:sc.filter(c=>c.h=='n').length};
   $('healthTot').textContent=sc.length+' kênh';
-  $('healthLegend').innerHTML='<span><span class="dot-h g"></span>Tốt '+hc.g+'</span><span><span class="dot-h a"></span>Chú ý '+hc.a+'</span><span><span class="dot-h r"></span>Vấn đề '+hc.r+'</span><span><span class="dot-h n"></span>Chưa DL '+hc.n+'</span>';
+  $('healthLegend').innerHTML='<span class="lg-clk" onclick="drillKPI(\'h_g\')"><span class="dot-h g"></span>Tốt '+hc.g+'</span><span class="lg-clk" onclick="drillKPI(\'h_a\')"><span class="dot-h a"></span>Chú ý '+hc.a+'</span><span class="lg-clk" onclick="drillKPI(\'h_r\')"><span class="dot-h r"></span>Vấn đề '+hc.r+'</span><span class="lg-clk" onclick="drillKPI(\'h_n\')"><span class="dot-h n"></span>Chưa DL '+hc.n+'</span>';
   if(healthChart)healthChart.destroy();
   if(window.Chart)healthChart=new Chart($('health'),{type:'doughnut',data:{labels:['Tốt','Chú ý','Vấn đề','Chưa DL'],datasets:[{data:[hc.g,hc.a,hc.r,hc.n],backgroundColor:['#3ecf8e','#f2c14e','#f06a6a','#8b92a7'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'66%'}});
   // gauges — tính trên các kênh ĐÃ có dữ liệu
@@ -877,6 +895,45 @@ function editChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String
    careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncViol').value=c.violations!=null?c.violations:'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
   $('chForm').style.display='block';selectView('channels');try{$('chForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editChannel=editChannel;
+// ===== Drill-down: bấm KPI / chú thích sức khỏe → xổ danh sách kênh chi tiết =====
+function closeDrill(){const m=document.getElementById('drillWrap');if(m)m.remove();}
+window.closeDrill=closeDrill;
+function showDrill(title,rowsHtml,footHtml){
+  closeDrill();
+  const w=document.createElement('div');w.id='drillWrap';w.className='drill-back';
+  w.innerHTML='<div class="drill-card"><div class="drill-h"><b>'+title+'</b><span class="drill-x" onclick="closeDrill()">✕</span></div><div class="drill-body">'+(rowsHtml||'<div class="empty" style="padding:24px">Không có kênh nào</div>')+'</div>'+(footHtml?'<div class="drill-foot">'+footHtml+'</div>':'')+'</div>';
+  document.body.appendChild(w);
+  w.onclick=e=>{if(e.target===w)closeDrill();};
+}
+function drillGo(id){closeDrill();editChannel(id);}window.drillGo=drillGo;
+function drillUpd(id){closeDrill();selectView('update');setTimeout(()=>{const s=document.getElementById('updCh');if(s){s.value=id;s.dispatchEvent(new Event('change'));}},60);}window.drillUpd=drillUpd;
+function drillView(v){closeDrill();selectView(v);}window.drillView=drillView;
+function drillKPI(key){
+  const sc=window.gScope||[];
+  let list=sc.slice(),title='',fmt=c=>'',act=c=>'drillGo('+c.id+')',foot='';
+  const H={g:'🟢 Tốt',a:'🟠 Chú ý',r:'🔴 Vấn đề',n:'⚪ Chưa DL'};
+  switch(key){
+    case 'all':title='Tất cả kênh ('+list.length+')';list.sort((a,b)=>b.f-a.f);fmt=c=>fmtK(c.f)+' follower';break;
+    case 'follower':title='Follower theo kênh';list.sort((a,b)=>b.f-a.f);fmt=c=>fmtK(c.f)+(c.d?' ('+sign(c.d)+')':'');break;
+    case 'view':title='View kỳ theo kênh';list.sort((a,b)=>b.v-a.v);fmt=c=>fmtK(c.v)+' view';break;
+    case 'viewvid':title='View trung bình / video';list.sort((a,b)=>(b.vid?b.v/b.vid:0)-(a.vid?a.v/a.vid:0));fmt=c=>fmtK(c.vid?Math.round(c.v/c.vid):0)+'/video';break;
+    case 'orders':title='Đơn kỳ theo kênh';list.sort((a,b)=>b.or-a.or);fmt=c=>c.or+' đơn';break;
+    case 'gmv':title='GMV theo kênh';list.sort((a,b)=>b.com-a.com);fmt=c=>'$'+c.com.toFixed(1)+'K';break;
+    case 'video':title='Video đăng theo kênh';list.sort((a,b)=>b.vid-a.vid);fmt=c=>c.vid+' video';break;
+    case 'shop':title='Kênh đã bật shop';list=sc.filter(c=>c.acc=='shop');fmt=c=>'✓ Đã bật shop';break;
+    case 'viol':title='Kênh có vi phạm';list=sc.filter(c=>c.violations>0).sort((a,b)=>b.violations-a.violations);fmt=c=>'<span style="color:var(--red)">'+c.violations+' vi phạm</span>';foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
+    case 'update':title='Kênh cần cập nhật';list=sc.filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1)).sort((a,b)=>b.upd-a.upd);fmt=c=>(c.upd>=999?'<span style="color:var(--red)">chưa từng nhập</span>':'đã '+c.upd+' ngày');act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
+    case 'attention':title='Kênh cần chú ý';list=sc.filter(c=>c.h=='r'||c.h=='a').sort((a,b)=>(a.h=='r'?0:1)-(b.h=='r'?0:1));fmt=c=>H[c.h];break;
+    case 'h_g':title='Kênh khỏe (Tốt)';list=sc.filter(c=>c.h=='g');fmt=c=>H[c.h];break;
+    case 'h_a':title='Kênh chú ý';list=sc.filter(c=>c.h=='a');fmt=c=>H[c.h];break;
+    case 'h_r':title='Kênh có vấn đề';list=sc.filter(c=>c.h=='r');fmt=c=>H[c.h];break;
+    case 'h_n':title='Kênh chưa có dữ liệu';list=sc.filter(c=>c.h=='n');fmt=c=>H[c.h];break;
+    default:return;
+  }
+  const rows=list.map(c=>'<div class="drill-row" onclick="'+act(c)+'"><div class="drm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+(c.o&&c.o!=='—'?' · '+esc(c.o):'')+'</small></div><div class="drill-val">'+fmt(c)+'</div></div>').join('');
+  showDrill(title,rows,foot);
+}
+window.drillKPI=drillKPI;
 async function delRow(table,id,msg){if(!confirm(msg))return;const {error}=await sb.from(table).delete().eq('id',id);if(error)return topErr(error.message);await logAction('Xóa',table,'id='+id);showToast('Đã xóa ✓');await loadData();}
 async function updRow(table,id,patch){const {error}=await sb.from(table).update(patch).eq('id',id);if(error)return topErr(error.message);await logAction('Sửa',table,'id='+id+' '+JSON.stringify(patch));showToast('Đã cập nhật ✓');await loadData();}
 function deleteChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;delRow('channels',id,'Xóa kênh "'+c.name+'"? Snapshot của kênh cũng bị xóa.');}
