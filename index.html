@@ -672,6 +672,8 @@ function renderAll(){
   fillSel('dashNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('dashChannel','Tất cả kênh',ch.map(c=>({v:c.id,t:c.n})));
   const sc=dashScope();window.gScope=sc;
+  // Tập tên kênh đang có vấn đề ghi nhận (issue chưa đóng) — để gắn cờ 📌
+  window.gOpenIssues=new Set((typeof issues!=='undefined'?issues:[]).filter(i=>i.scode!=='done').map(i=>i.ch));
   $('dashSub').textContent=sc.length+'/'+ch.length+' kênh · '+sellers.length+' seller'+(asOf?' · tính đến '+asOf:'')+' · 1$=26.000₫';
   const totF=sc.reduce((a,c)=>a+c.f,0),totD=sc.reduce((a,c)=>a+c.d,0),totOr=sc.reduce((a,c)=>a+c.or,0),totCom=sc.reduce((a,c)=>a+c.com,0);
   const totV=sc.reduce((a,c)=>a+c.v,0),totVid=sc.reduce((a,c)=>a+c.vid,0);
@@ -814,7 +816,7 @@ function renderCh(){
   fillSel('fNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH.value||c.h===fH.value));
   rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
-  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b></td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+(c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+fmtK(c.v)+'</td><td class="num"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td>'+hdot(c.h)+'</td><td style="white-space:nowrap">'+(true?'<span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>':'')+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>').join('');
+  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b>'+(window.gOpenIssues&&window.gOpenIssues.has(c.n)?' <span title="Đã có vấn đề ghi nhận đang mở" style="cursor:help">📌</span>':'')+'</td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+(c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+fmtK(c.v)+'</td><td class="num"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td title="'+(healthReason(c).join(' · ')||'Ổn định')+'">'+hdot(c.h)+'</td><td style="white-space:nowrap">'+(true?'<span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>':'')+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>').join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
   document.querySelectorAll('#channels th.sortable').forEach(th=>{th.querySelector('.ar').textContent=th.dataset.k===sortK?(sortDir<0?'▼':'▲'):'';});
@@ -908,10 +910,43 @@ function showDrill(title,rowsHtml,footHtml){
 function drillGo(id){closeDrill();editChannel(id);}window.drillGo=drillGo;
 function drillUpd(id){closeDrill();selectView('update');setTimeout(()=>{const s=document.getElementById('updCh');if(s){s.value=id;s.dispatchEvent(new Event('change'));}},60);}window.drillUpd=drillUpd;
 function drillView(v){closeDrill();selectView(v);}window.drillView=drillView;
+// Lý do cụ thể vì sao một kênh ở trạng thái Chú ý / Vấn đề (suy ra từ healthRule)
+function healthReason(c){
+  const r=[];
+  if(c.upd>=999)r.push('Chưa từng cập nhật số liệu');
+  else if(c.upd>3)r.push('Quá hạn cập nhật '+c.upd+' ngày');
+  else if(c.upd>=2)r.push('Sắp tới hạn ('+c.upd+' ngày chưa nhập)');
+  if(c.upd<999&&c.vid<=2)r.push('Chỉ '+c.vid+' video trong kỳ');
+  if(c.d<0)r.push('Follower giảm '+fmtK(-c.d));
+  if(c.vP>0&&c.v<c.vP*0.7)r.push('Bay view '+Math.round((1-c.v/c.vP)*100)+'% so kỳ trước');
+  if(c.violations>0)r.push(c.violations+' vi phạm');
+  return r;
+}
+window.healthReason=healthReason;
+// Mở thẳng form Ghi nhận vấn đề, điền sẵn kênh + lý do tự phát hiện
+function drillIssue(id){
+  closeDrill();selectView('issues');
+  setTimeout(()=>{const f=document.getElementById('issueForm');if(f)f.style.display='block';
+    const c=(window.gScope||[]).find(x=>String(x.id)===String(id));
+    const cs=document.getElementById('isChannel');if(cs)cs.value=id;
+    const rp=document.getElementById('isReporter');if(rp&&!rp.value)rp.value=(typeof me!=='undefined'&&(me.full_name||me.email))||'';
+    const ti=document.getElementById('isTitle');if(ti&&!ti.value&&c){const rs=healthReason(c);if(rs.length)ti.value=rs[0];}
+    try{f.scrollIntoView({behavior:'smooth'});}catch(e){}
+  },60);
+}
+window.drillIssue=drillIssue;
 function drillKPI(key){
   const sc=window.gScope||[];
-  let list=sc.slice(),title='',fmt=c=>'',act=c=>'drillGo('+c.id+')',foot='';
+  let list=sc.slice(),title='',fmt=c=>'',act=c=>'drillGo('+c.id+')',foot='',builder=null;
   const H={g:'🟢 Tốt',a:'🟠 Chú ý',r:'🔴 Vấn đề',n:'⚪ Chưa DL'};
+  // Dòng cho kênh có vấn đề: hiện lý do + nút Ghi nhận
+  const problemRow=c=>{const rs=healthReason(c);const col=c.h=='r'?'var(--red)':c.h=='a'?'var(--amber)':'var(--muted)';
+    const reason=rs.length?'<div style="font-size:11.5px;color:'+col+';margin-top:3px;white-space:normal">⚠ '+rs.join(' · ')+'</div>':'';
+    const done=window.gOpenIssues&&window.gOpenIssues.has(c.n);
+    const btn=done
+      ?'<button class="btn ghost" style="font-size:11.5px;padding:6px 10px;white-space:nowrap" onclick="event.stopPropagation();drillView(\'issues\')">📌 Đã ghi nhận ›</button>'
+      :'<button class="btn ghost" style="font-size:11.5px;padding:6px 10px;white-space:nowrap" onclick="event.stopPropagation();drillIssue('+c.id+')">Ghi nhận ›</button>';
+    return '<div class="drill-row" onclick="drillGo('+c.id+')"><div class="drm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+(c.o&&c.o!=='—'?' · '+esc(c.o):'')+'</small>'+reason+'</div>'+btn+'</div>';};
   switch(key){
     case 'all':title='Tất cả kênh ('+list.length+')';list.sort((a,b)=>b.f-a.f);fmt=c=>fmtK(c.f)+' follower';break;
     case 'follower':title='Follower theo kênh';list.sort((a,b)=>b.f-a.f);fmt=c=>fmtK(c.f)+(c.d?' ('+sign(c.d)+')':'');break;
@@ -921,16 +956,17 @@ function drillKPI(key){
     case 'gmv':title='GMV theo kênh';list.sort((a,b)=>b.com-a.com);fmt=c=>'$'+c.com.toFixed(1)+'K';break;
     case 'video':title='Video đăng theo kênh';list.sort((a,b)=>b.vid-a.vid);fmt=c=>c.vid+' video';break;
     case 'shop':title='Kênh đã bật shop';list=sc.filter(c=>c.acc=='shop');fmt=c=>'✓ Đã bật shop';break;
-    case 'viol':title='Kênh có vi phạm';list=sc.filter(c=>c.violations>0).sort((a,b)=>b.violations-a.violations);fmt=c=>'<span style="color:var(--red)">'+c.violations+' vi phạm</span>';foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
+    case 'viol':title='Kênh có vi phạm';list=sc.filter(c=>c.violations>0).sort((a,b)=>b.violations-a.violations);builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
     case 'update':title='Kênh cần cập nhật';list=sc.filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1)).sort((a,b)=>b.upd-a.upd);fmt=c=>(c.upd>=999?'<span style="color:var(--red)">chưa từng nhập</span>':'đã '+c.upd+' ngày');act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
-    case 'attention':title='Kênh cần chú ý';list=sc.filter(c=>c.h=='r'||c.h=='a').sort((a,b)=>(a.h=='r'?0:1)-(b.h=='r'?0:1));fmt=c=>H[c.h];break;
-    case 'h_g':title='Kênh khỏe (Tốt)';list=sc.filter(c=>c.h=='g');fmt=c=>H[c.h];break;
-    case 'h_a':title='Kênh chú ý';list=sc.filter(c=>c.h=='a');fmt=c=>H[c.h];break;
-    case 'h_r':title='Kênh có vấn đề';list=sc.filter(c=>c.h=='r');fmt=c=>H[c.h];break;
-    case 'h_n':title='Kênh chưa có dữ liệu';list=sc.filter(c=>c.h=='n');fmt=c=>H[c.h];break;
+    case 'attention':title='Kênh cần chú ý';list=sc.filter(c=>c.h=='r'||c.h=='a').sort((a,b)=>(a.h=='r'?0:1)-(b.h=='r'?0:1));builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
+    case 'h_g':title='Kênh khỏe (Tốt)';list=sc.filter(c=>c.h=='g');fmt=c=>'🟢 Tốt';break;
+    case 'h_a':title='Kênh chú ý';list=sc.filter(c=>c.h=='a');builder=problemRow;break;
+    case 'h_r':title='Kênh có vấn đề';list=sc.filter(c=>c.h=='r');builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
+    case 'h_n':title='Kênh chưa có dữ liệu';list=sc.filter(c=>c.h=='n');fmt=c=>'<span style="color:var(--muted)">chưa nhập số liệu</span>';act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
     default:return;
   }
-  const rows=list.map(c=>'<div class="drill-row" onclick="'+act(c)+'"><div class="drm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+(c.o&&c.o!=='—'?' · '+esc(c.o):'')+'</small></div><div class="drill-val">'+fmt(c)+'</div></div>').join('');
+  const genRow=c=>'<div class="drill-row" onclick="'+act(c)+'"><div class="drm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+(c.o&&c.o!=='—'?' · '+esc(c.o):'')+'</small></div><div class="drill-val">'+fmt(c)+'</div></div>';
+  const rows=list.map(builder||genRow).join('');
   showDrill(title,rows,foot);
 }
 window.drillKPI=drillKPI;
