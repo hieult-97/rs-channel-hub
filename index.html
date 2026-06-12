@@ -220,6 +220,15 @@
         <select id="dashPlatform"><option value="">Tất cả sàn</option></select>
         <select id="dashNiche"><option value="">Tất cả niche</option></select>
         <select id="dashChannel"><option value="">Tất cả kênh</option></select>
+        <select id="dashPeriod" title="Khoảng thời gian tính các số 'kỳ' (view, đơn, GMV, video, tăng follower)">
+          <option value="latest">Kỳ: Mới nhất</option>
+          <option value="7">Kỳ: 7 ngày</option>
+          <option value="30">Kỳ: 30 ngày</option>
+          <option value="90">Kỳ: 90 ngày</option>
+          <option value="month">Kỳ: Tháng này</option>
+          <option value="quarter">Kỳ: Quý này</option>
+          <option value="year">Kỳ: Năm nay</option>
+        </select>
         <label style="color:var(--muted);font-size:12px;display:flex;align-items:center;gap:6px">Tính đến ngày <input type="date" id="dashDate" style="background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 10px;color:var(--text);font-size:13px"></label>
         <button class="btn ghost" id="dashReset" style="padding:8px 12px">Xóa lọc</button>
       </div>
@@ -534,6 +543,31 @@ function showToast(m){const t=$('toast');t.textContent=m||'Đã lưu ✓';t.clas
 function topErr(m){const e=$('topErr');if(m){e.textContent='Lỗi: '+m;e.style.display='block';}else e.style.display='none';}
 function todayStr(){return new Date().toLocaleDateString('en-CA');} // YYYY-MM-DD theo giờ địa phương
 function daysSince(dateStr){if(!dateStr)return 999;const d=new Date(String(dateStr).slice(0,10)+'T00:00:00');const t=new Date(todayStr()+'T00:00:00');return Math.round((t-d)/86400000);}
+// Khoảng "kỳ" để tổng hợp số liệu. Trả về {start,end,prevStart,prevEnd} dạng YYYY-MM-DD.
+function periodWindow(period,endStr){
+  const ymd=dt=>dt.toLocaleDateString('en-CA');
+  const end=new Date((endStr||todayStr())+'T00:00:00');
+  let start,prevStart,prevEnd;
+  if(period==='7'||period==='30'||period==='90'){
+    const n=Number(period);
+    start=new Date(end);start.setDate(start.getDate()-(n-1));
+    prevEnd=new Date(start);prevEnd.setDate(prevEnd.getDate()-1);
+    prevStart=new Date(prevEnd);prevStart.setDate(prevStart.getDate()-(n-1));
+  }else if(period==='month'){
+    start=new Date(end.getFullYear(),end.getMonth(),1);
+    prevEnd=new Date(start);prevEnd.setDate(0);
+    prevStart=new Date(prevEnd.getFullYear(),prevEnd.getMonth(),1);
+  }else if(period==='quarter'){
+    const q=Math.floor(end.getMonth()/3);start=new Date(end.getFullYear(),q*3,1);
+    prevEnd=new Date(start);prevEnd.setDate(0);
+    const pq=Math.floor(prevEnd.getMonth()/3);prevStart=new Date(prevEnd.getFullYear(),pq*3,1);
+  }else if(period==='year'){
+    start=new Date(end.getFullYear(),0,1);
+    prevStart=new Date(end.getFullYear()-1,0,1);prevEnd=new Date(end.getFullYear()-1,11,31);
+  }else{return null;}
+  return {start:ymd(start),end:ymd(end),prevStart:ymd(prevStart),prevEnd:ymd(prevEnd)};
+}
+function periodLabel(){const p=window.dashPeriod||'latest';return {latest:'Mới nhất',7:'7 ngày',30:'30 ngày',90:'90 ngày',month:'Tháng này',quarter:'Quý này',year:'Năm nay'}[p]||'Mới nhất';}
 function healthRule(latest,prev,d,upd,vid){if(!latest)return 'n';if(upd>3||vid<=2||(prev&&d<0))return 'r';if(upd>=2||(prev&&d===0))return 'a';return 'g';}
 const isAdmin=()=>me&&(me.role==='SD'||me.role==='Leader');
 const isSD=()=>me&&me.role==='SD';
@@ -619,7 +653,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:(o.created_at||'').slice(5,10).replace('-','/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,d:String(o.created_at||'').slice(0,10).split('-').reverse().slice(0,2).join('/'),s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—'};});
@@ -639,20 +673,36 @@ function buildCh(asOfDate){
     if(asOfDate)ss=ss.filter(s=>String(s.period_date)<=asOfDate);
     ss=ss.slice().sort((a,b)=>{const ka=String(a.created_at||a.period_date||''),kb=String(b.created_at||b.period_date||'');return ka<kb?1:(ka>kb?-1:0);});// mới nhất trước (theo thời điểm tạo)
     // mỗi ngày chỉ giữ bản mới nhất → so sánh ngày-qua-ngày
-    const seenD=new Set();const day=[];for(const s of ss){const k=String(s.period_date);if(!seenD.has(k)){seenD.add(k);day.push(s);}}
+    const seenD=new Set();const day=[];for(const s of ss){const k=String(s.period_date);if(!seenD.has(k)){seenD.add(k);day.push(s);}}// day: mới nhất trước
     const latest=day[0],prev=day[1];
-    const f=latest?Number(latest.followers)||0:0;
-    const d=(latest&&prev)?(Number(latest.followers)||0)-(Number(prev.followers)||0):0;
-    const vid=latest?Number(latest.videos)||0:0;
-    const or=latest?Number(latest.orders)||0:0;
-    const com=latest?(Number(latest.gmv_usd)||0)/1000:0;
-    const v=latest?Number(latest.views)||0:0;
+    const lf=latest?Number(latest.followers)||0:0;
     const upd=latest?daysSince(latest.period_date):999;
-    const orP=prev?Number(prev.orders)||0:0,comP=prev?(Number(prev.gmv_usd)||0)/1000:0,vP=prev?Number(prev.views)||0:0;
+    // Sức khỏe & "Δ kỳ" theo NGÀY (so lần nhập gần nhất với lần trước) — không đổi theo bộ lọc kỳ
+    const vidDaily=latest?Number(latest.videos)||0:0;
+    const dDaily=(latest&&prev)?lf-(Number(prev.followers)||0):0;
+    let f,d,v,vid,or,com,orP,comP,vP;
+    const win=(window.dashPeriod&&window.dashPeriod!=='latest')?periodWindow(window.dashPeriod,asOfDate):null;
+    if(!win){
+      f=lf;d=dDaily;
+      v=latest?Number(latest.views)||0:0;vid=vidDaily;
+      or=latest?Number(latest.orders)||0:0;com=latest?(Number(latest.gmv_usd)||0)/1000:0;
+      vP=prev?Number(prev.views)||0:0;orP=prev?Number(prev.orders)||0:0;comP=prev?(Number(prev.gmv_usd)||0)/1000:0;
+    }else{
+      const inWin=day.filter(s=>{const k=String(s.period_date);return k>=win.start&&k<=win.end;});
+      const inPrev=day.filter(s=>{const k=String(s.period_date);return k>=win.prevStart&&k<=win.prevEnd;});
+      const sum=(arr,fld)=>arr.reduce((a,s)=>a+(Number(s[fld])||0),0);
+      v=sum(inWin,'views');vid=sum(inWin,'videos');or=sum(inWin,'orders');com=sum(inWin,'gmv_usd')/1000;
+      vP=sum(inPrev,'views');orP=sum(inPrev,'orders');comP=sum(inPrev,'gmv_usd')/1000;
+      const wNew=inWin[0];// follower = bản mới nhất trong kỳ
+      f=wNew?Number(wNew.followers)||0:lf;
+      const before=day.find(s=>String(s.period_date)<win.start);// follower ngay trước kỳ
+      const startF=before?Number(before.followers)||0:(inWin.length?Number(inWin[inWin.length-1].followers)||0:0);
+      d=wNew?f-startF:0;
+    }
     const care=(c.care&&String(c.care).trim())?String(c.care).trim():chOwnerOf(c.id);
     const _goal=Number(c.follower_goal)||0,pct=_goal?Math.round(f/_goal*100):0;
     const age=daysSince(c.created_at);// số ngày kênh đã được thêm vào tool
-    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',violations:Number(c.violations)||0,goal:_goal,pct,age,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(latest,prev,d,upd,vid)};
+    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',violations:Number(c.violations)||0,goal:_goal,pct,age,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(latest,prev,dDaily,upd,vidDaily)};
   });
 }
 function dashScope(){let r=ch;const se=$('dashSeller')?$('dashSeller').value:'',cn=$('dashChannel')?$('dashChannel').value:'',pl=$('dashPlatform')?$('dashPlatform').value:'',ni=$('dashNiche')?$('dashNiche').value:'';if(se)r=r.filter(c=>c.s===se);if(pl)r=r.filter(c=>c.plat===pl);if(ni)r=r.filter(c=>c.niche===ni);if(cn)r=r.filter(c=>String(c.id)===String(cn));return r;}
@@ -674,7 +724,7 @@ function renderAll(){
   const sc=dashScope();window.gScope=sc;
   // Tập tên kênh đang có vấn đề ghi nhận (issue chưa đóng) — để gắn cờ 📌
   window.gOpenIssues=new Set((typeof issues!=='undefined'?issues:[]).filter(i=>i.scode!=='done').map(i=>i.ch));
-  $('dashSub').textContent=sc.length+'/'+ch.length+' kênh · '+sellers.length+' seller'+(asOf?' · tính đến '+asOf:'')+' · 1$=26.000₫';
+  $('dashSub').textContent=sc.length+'/'+ch.length+' kênh · '+sellers.length+' seller · Kỳ: '+periodLabel()+(asOf?' · tính đến '+asOf:'')+' · 1$=26.000₫';
   const totF=sc.reduce((a,c)=>a+c.f,0),totD=sc.reduce((a,c)=>a+c.d,0),totOr=sc.reduce((a,c)=>a+c.or,0),totCom=sc.reduce((a,c)=>a+c.com,0);
   const totV=sc.reduce((a,c)=>a+c.v,0),totVid=sc.reduce((a,c)=>a+c.vid,0);
   const totOrP=sc.reduce((a,c)=>a+(c.orP||0),0),totComP=sc.reduce((a,c)=>a+(c.comP||0),0),totVP=sc.reduce((a,c)=>a+(c.vP||0),0);
@@ -1171,7 +1221,9 @@ $('dashChannel').onchange=renderAll;
 $('dashPlatform').onchange=renderAll;
 $('dashNiche').onchange=renderAll;
 $('dashDate').onchange=e=>{asOf=e.target.value||null;rebuild();};
-$('dashReset').onclick=()=>{['dashSeller','dashChannel','dashPlatform','dashNiche','dashDate'].forEach(i=>$(i).value='');asOf=null;rebuild();};
+window.dashPeriod='latest';
+if($('dashPeriod'))$('dashPeriod').onchange=e=>{window.dashPeriod=e.target.value||'latest';rebuild();};
+$('dashReset').onclick=()=>{['dashSeller','dashChannel','dashPlatform','dashNiche','dashDate'].forEach(i=>$(i).value='');if($('dashPeriod'))$('dashPeriod').value='latest';window.dashPeriod='latest';asOf=null;rebuild();};
 $('grChannel').onchange=renderGrowth;$('grMetric').onchange=renderGrowth;
 $('logRefresh').onclick=renderLog;
 $('btnReport').onclick=exportChannels;
@@ -1232,7 +1284,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<
 async function renderLog(){const b=$('logBody');b.innerHTML='<tr><td class="empty" colspan="5">Đang tải...</td></tr>';
   const {data,error}=await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(300);
   if(error){b.innerHTML='';$('logEmpty').style.display='block';$('logEmpty').textContent=/activity_log/.test(error.message)?'Hãy chạy patch-TONG-HOP.sql để bật nhật ký.':error.message;return;}
-  b.innerHTML=(data||[]).map(l=>'<tr><td style="white-space:nowrap">'+String(l.created_at||'').slice(0,16).replace('T',' ')+'</td><td>'+esc(l.actor)+'</td><td><span class="chip blue">'+esc(l.action)+'</span></td><td style="color:var(--muted)">'+esc(l.entity)+'</td><td style="color:var(--muted);font-size:12px;white-space:normal;max-width:320px">'+esc(l.detail)+'</td></tr>').join('');
+  b.innerHTML=(data||[]).map(l=>'<tr><td style="white-space:nowrap">'+(function(){const s=String(l.created_at||'');const p=s.slice(0,10).split('-');const tm=s.slice(11,16);return (p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s.slice(0,10))+(tm?' '+tm:'');})()+'</td><td>'+esc(l.actor)+'</td><td><span class="chip blue">'+esc(l.action)+'</span></td><td style="color:var(--muted)">'+esc(l.entity)+'</td><td style="color:var(--muted);font-size:12px;white-space:normal;max-width:320px">'+esc(l.detail)+'</td></tr>').join('');
   $('logEmpty').style.display=(data&&data.length)?'none':'block';}
 
 // danh mục Order (quản lý thêm/sửa/xóa)
