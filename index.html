@@ -65,6 +65,11 @@
   th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:var(--text)}
   th .ar{opacity:.6;font-size:9px}
   tr:hover td{background:var(--panel2)}
+  /* Ghim cột Kênh khi cuộn ngang (bảng Kênh) */
+  #channels td.stick,#channels th.stick{position:sticky;left:0;z-index:2;background:var(--panel);box-shadow:1px 0 0 var(--line)}
+  #channels thead th.stick{background:var(--panel2);z-index:3}
+  #channels tr:hover td.stick{background:var(--panel2)}
+  #channels td,#channels th{vertical-align:middle}
   td.num,th.num{text-align:right}
   .dot-h{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
   .g{background:var(--green)}.a{background:var(--amber)}.r{background:var(--red)}.n{background:var(--muted)}
@@ -301,14 +306,12 @@
       <div class="card" style="padding:0"><div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th class="sortable" data-k="n">Kênh <span class="ar"></span></th>
-            <th>Sàn</th>
+            <th class="sortable stick" data-k="n">Kênh <span class="ar"></span></th>
             <th class="sortable" data-k="niche">Niche <span class="ar"></span></th>
-            <th>Tài khoản</th><th>Seller</th><th>Người Care</th><th>Thị trường</th><th class="num">Vi phạm</th>
+            <th>Shop</th><th>Seller</th><th>Người Care</th><th class="num">Vi phạm</th>
             <th class="sortable num" data-k="f">Follower <span class="ar"></span></th>
-            <th class="sortable num" data-k="pct">% mục tiêu <span class="ar"></span></th>
-            <th class="sortable num" data-k="d">Δ kỳ <span class="ar"></span></th>
-            <th class="sortable num" data-k="v">View kỳ <span class="ar"></span></th>
+            <th class="sortable num" data-k="pct">% MT <span class="ar"></span></th>
+            <th class="sortable num" data-k="v">View <span class="ar"></span></th>
             <th class="sortable num" data-k="vid">Video <span class="ar"></span></th>
             <th class="sortable num" data-k="or">Đơn <span class="ar"></span></th>
             <th class="sortable num" data-k="com">GMV ($) <span class="ar"></span></th>
@@ -931,7 +934,28 @@ function renderCh(){
   fillSel('fNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH.value||c.h===fH.value));
   rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
-  $('chBody').innerHTML=rows.map(c=>'<tr><td><b>'+c.n+'</b>'+(window.gOpenIssues&&window.gOpenIssues.has(c.n)?' <span title="Đã có vấn đề ghi nhận đang mở" style="cursor:help">📌</span>':'')+'</td><td style="color:var(--muted)">'+c.plat+'</td><td style="color:var(--muted)">'+c.niche+'</td><td>'+accChip(c.acc)+(c.shop?(/^https?:\/\//i.test(c.shop)?' <a href="'+esc(c.shop)+'" target="_blank" title="Mở shop lấy sản phẩm" style="text-decoration:none">🛒</a>':' <span title="Mã/URL shop: '+esc(c.shop)+'" style="cursor:help">🛒</span>'):'')+'</td><td>'+c.s+'</td><td>'+c.o+'</td><td style="color:var(--muted)">'+c.market+'</td><td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td><td class="num">'+fmtK(c.f)+'</td><td class="num">'+(c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+sign(c.d)+'</td><td class="num">'+fmtK(c.v)+'</td><td class="num"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td><td class="num">'+c.or+'</td><td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td><td>'+updChip(c.upd)+'</td><td title="'+(healthReason(c).join(' · ')||'Ổn định')+'">'+hdot(c.h)+'</td><td style="white-space:nowrap">'+(true?'<span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>':'')+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>').join('');
+  $('chBody').innerHTML=rows.map(c=>{
+    const shopIc=c.shop?(/^https?:\/\//i.test(c.shop)?' <a href="'+esc(c.shop)+'" target="_blank" title="Mở shop lấy sản phẩm" style="text-decoration:none">🛒</a>':' <span title="Mã/URL shop: '+esc(c.shop)+'" style="cursor:help">🛒</span>'):'';
+    const pin=window.gOpenIssues&&window.gOpenIssues.has(c.n)?' <span title="Đã có vấn đề ghi nhận đang mở" style="cursor:help">📌</span>':'';
+    const sub='<div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+esc(c.plat)+(c.market&&c.market!=='—'?' · '+esc(c.market):'')+'</div>';
+    const pctTd=c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>';
+    const dlt=c.d?' <span style="font-size:10.5px;color:'+(c.d>0?'var(--green)':'var(--red)')+'">'+sign(c.d)+'</span>':'';
+    return '<tr><td class="stick"><b>'+esc(c.n)+'</b>'+pin+sub+'</td>'+
+      '<td style="color:var(--muted)">'+esc(c.niche)+'</td>'+
+      '<td>'+accChip(c.acc)+shopIc+'</td>'+
+      '<td>'+esc(c.s)+'</td>'+
+      '<td style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
+      '<td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td>'+
+      '<td class="num">'+fmtK(c.f)+dlt+'</td>'+
+      '<td class="num">'+pctTd+'</td>'+
+      '<td class="num">'+fmtK(c.v)+'</td>'+
+      '<td class="num"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td>'+
+      '<td class="num">'+c.or+'</td>'+
+      '<td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
+      '<td>'+updChip(c.upd)+'</td>'+
+      '<td title="'+(healthReason(c).join(' · ')||'Ổn định')+'">'+hdot(c.h)+'</td>'+
+      '<td style="white-space:nowrap"><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
+  }).join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
   document.querySelectorAll('#channels th.sortable').forEach(th=>{th.querySelector('.ar').textContent=th.dataset.k===sortK?(sortDir<0?'▼':'▲'):'';});
