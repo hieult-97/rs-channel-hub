@@ -459,12 +459,12 @@
         </div>
         <div id="kpiCfgSave" style="margin-top:10px"></div>
       </div>
-      <div class="card" style="padding:0;margin-bottom:14px"><div style="padding:13px 16px 0"><h3>Media / Người sản xuất</h3></div><div class="tbl-wrap"><table>
+      <div class="card" id="kpiMediaCard" style="padding:0;margin-bottom:14px"><div style="padding:13px 16px 0"><h3>Media / Người sản xuất</h3></div><div class="tbl-wrap"><table>
         <thead><tr><th>Người sản xuất</th><th class="num">Video làm / yêu cầu</th><th class="num">Tỉ lệ giao</th><th class="num">Đúng hạn</th><th class="num">Đạt định mức</th><th class="num">Chất lượng</th><th>Kết luận</th></tr></thead>
         <tbody id="kpiMediaBody"></tbody></table></div>
         <div class="empty" id="kpiMediaEmpty" style="display:none">Chưa có order nào trong kỳ để chấm.</div>
       </div>
-      <div class="card" style="padding:0"><div style="padding:13px 16px 0"><h3>Seller / Chủ kênh</h3></div><div class="tbl-wrap"><table>
+      <div class="card" id="kpiSellerCard" style="padding:0"><div style="padding:13px 16px 0"><h3>Seller / Chủ kênh</h3></div><div class="tbl-wrap"><table>
         <thead><tr><th>Seller</th><th class="num">Số kênh</th><th class="num">Cập nhật đúng nhịp</th><th class="num">Vi phạm</th><th class="num">Đơn kỳ</th><th class="num">GMV ($)</th><th>Kết luận</th></tr></thead>
         <tbody id="kpiSellerBody"></tbody></table></div>
         <div class="empty" id="kpiSellerEmpty" style="display:none">Chưa có kênh nào.</div>
@@ -1094,16 +1094,21 @@ window.reworkOrder=reworkOrder;
 function kpiPct(val,thr){const c=val>=thr?'var(--green)':val>=thr*0.8?'var(--amber)':'var(--red)';return '<span style="color:'+c+';font-weight:700">'+Math.round(val)+'%</span>';}
 function renderKPI(){
   if(!$('kpiMediaBody'))return;
-  const sd=isSD();
+  const sd=isSD(),staff=isAdmin();
+  // Phân quyền: Media chỉ thấy bảng Media (dòng của mình), Seller chỉ thấy bảng Seller (của mình). SD/Leader thấy tất cả.
+  const myName=me&&me.full_name||'',mySeller=(me&&me.seller_id)?chSellerName(me.seller_id):'';
+  if($('kpiMediaCard'))$('kpiMediaCard').style.display=(staff||(me&&me.role==='Media'))?'':'none';
+  if($('kpiSellerCard'))$('kpiSellerCard').style.display=(staff||(me&&me.role==='Seller'))?'':'none';
   $('cfgQuota').value=kpiConfig.quota;$('cfgHit').value=kpiConfig.hit;$('cfgOntime').value=kpiConfig.ontime;$('cfgQuality').value=kpiConfig.quality;
   ['cfgQuota','cfgHit','cfgOntime','cfgQuality'].forEach(i=>{if($(i))$(i).disabled=!sd;});
-  $('kpiCfgSave').innerHTML=sd?'<button class="btn" onclick="saveKpiConfig()">Lưu định mức</button>':'<span style="color:var(--muted);font-size:12px">Chỉ SD được chỉnh định mức.</span>';
+  $('kpiCfgSave').innerHTML=sd?'<button class="btn" onclick="saveKpiConfig()">Lưu định mức</button>':'<span style="color:var(--muted);font-size:12px">Chỉ SD được chỉnh định mức (đây là quy định "xong việc" chung).</span>';
   const pv=$('kpiPeriod')?$('kpiPeriod').value:'30';
   const win=pv==='all'?null:periodWindow(pv,todayStr());
   const today=todayStr();
   const ords=orders.filter(o=>!win||(o.cdate&&o.cdate>=win.start&&o.cdate<=win.end));
   // ---- Media ----
-  const names=[...new Set(ords.map(o=>o.who).filter(x=>x&&x!=='—'))];
+  let names=[...new Set(ords.map(o=>o.who).filter(x=>x&&x!=='—'))];
+  if(!staff&&me&&me.role==='Media')names=names.filter(n=>n===myName);
   const mrows=names.map(nm=>{
     const g=ords.filter(o=>o.who===nm);
     const req=g.length,done=g.filter(o=>o.scode==='done').length;
@@ -1126,7 +1131,8 @@ function renderKPI(){
     '<td>'+(r.pass?okChip:noChip)+'</td></tr>').join('');
   $('kpiMediaEmpty').style.display=mrows.length?'none':'block';
   // ---- Seller ----
-  const sl=[...new Set(ch.map(c=>c.s))].filter(x=>x&&x!=='—');
+  let sl=[...new Set(ch.map(c=>c.s))].filter(x=>x&&x!=='—');
+  if(!staff&&me&&me.role==='Seller')sl=sl.filter(s=>s===mySeller);
   const srows=sl.map(s=>{
     const gc=ch.filter(c=>c.s===s);
     const overdue=gc.filter(c=>c.upd>3&&!(c.upd>=999&&c.age<1)).length;
