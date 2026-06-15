@@ -435,8 +435,13 @@
       <div class="topbar"><div><h1>Cập nhật số liệu</h1><div class="sub">Ưu tiên nhập hằng ngày (tối đa 3 ngày/kênh) · hệ thống tự tính phần còn lại</div></div></div>
       <div class="card" style="margin-bottom:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <h3>⚡ Nhập nhanh nhiều kênh <span class="tag">Gõ vào ô cần đổi → bấm Lưu tất cả (chỉ lưu dòng đã sửa)</span></h3>
-          <button class="btn" id="btnBulkSave">💾 Lưu tất cả thay đổi</button>
+          <h3>⚡ Nhập nhanh nhiều kênh <span class="tag">Gõ trực tiếp vào bảng, hoặc dùng Excel để nhập hàng loạt</span></h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn ghost" id="btnSnapForm">⬇️ Tải form Excel</button>
+            <button class="btn ghost" id="btnSnapImport">⬆️ Nhập từ Excel</button>
+            <input type="file" id="snapFile" accept=".xlsx,.xls" style="display:none">
+            <button class="btn" id="btnBulkSave">💾 Lưu bảng trên</button>
+          </div>
         </div>
         <div class="tbl-wrap" style="margin-top:10px"><table>
           <thead><tr><th>Kênh</th><th class="num">Follower</th><th class="num">View kỳ</th><th class="num">Video</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th>Cập nhật</th></tr></thead>
@@ -444,26 +449,10 @@
           <div class="empty" id="bulkEmpty" style="display:none">Chưa có kênh nào bạn phụ trách.</div>
         </div>
       </div>
-      <div class="grid row2b" style="align-items:start;margin-top:0">
-        <div class="card">
-          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Chọn kênh để cập nhật</label>
-          <select id="updCh" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-size:14px;font-weight:600"></select>
-          <div id="updMeta" style="font-size:12px;color:var(--muted);margin:8px 0 16px"></div>
-          <div class="form" style="grid-template-columns:1fr 1fr">
-            <div><label>Follower hiện tại</label><input class="field" id="upFollower" type="number" placeholder="0"></div>
-            <div><label>View trong kỳ</label><input class="field" id="upViews" type="number" placeholder="0"></div>
-            <div><label>Số video đăng</label><input class="field" id="upVideos" type="number" placeholder="0"></div>
-            <div><label>Đơn từ kênh</label><input class="field" id="upOrders" type="number" placeholder="0"></div>
-            <div><label>GMV ($)</label><input class="field" id="upGmv" type="number" placeholder="0"><div class="auto" id="gmvVnd"></div></div>
-            <div><label>Hoa hồng ($) — tùy chọn</label><input class="field" id="upComm" type="number" placeholder="—"></div>
-          </div>
-          <div style="margin-top:16px"><button class="btn" id="btnSaveUpd">Lưu cập nhật</button></div>
-        </div>
-        <div class="card"><h3>Lịch sử cập nhật gần đây</h3>
-          <div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Kênh</th><th class="num">Follower</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th></th></tr></thead>
-          <tbody id="histBody"></tbody></table>
-          <div class="empty" id="histEmpty" style="display:none">Chưa có lần cập nhật nào.</div></div>
-        </div>
+      <div class="card"><h3>Lịch sử cập nhật gần đây</h3>
+        <div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Kênh</th><th class="num">Follower</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th></th></tr></thead>
+        <tbody id="histBody"></tbody></table>
+        <div class="empty" id="histEmpty" style="display:none">Chưa có lần cập nhật nào.</div></div>
       </div>
     </section>
 
@@ -482,6 +471,11 @@
           <div><label>Người xử lý</label><select class="field" id="isAssignee"></select></div>
           <div><label>Hạn xử lý <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><input class="field" id="isDue" type="date"></div>
           <div><label>Trạng thái</label><select class="field" id="isStatus"><option value="open">🔵 Mới</option><option value="doing">🟡 Đang xử lý</option><option value="waiting">🟣 Chờ phản hồi</option><option value="done">🟢 Đã đóng</option></select></div>
+        </div>
+        <div style="margin-top:12px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Ảnh vi phạm / bằng chứng <span style="font-weight:500">(không bắt buộc)</span></label>
+          <button class="btn ghost" id="isImgBtn" type="button">📷 Tải ảnh lên</button>
+          <input type="file" id="isImg" accept="image/*" style="display:none">
+          <div id="isImgPrev" style="margin-top:8px"></div>
         </div>
         <div style="margin-top:12px"><button class="btn" id="btnSaveIssue">Lưu</button> <button class="btn ghost" id="btnCancelIssue">Hủy</button></div>
       </div>
@@ -796,7 +790,7 @@ async function loadData(){
       return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
-      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||''};});
+      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||'',img:i.image_url||''};});
     if(isAdmin()){
       const {data:profs}=await sb.from('profiles').select('*').order('created_at');
       allUsers=profs||[];pendUsers=allUsers.filter(p=>p.status==='pending');
@@ -992,7 +986,8 @@ function renderAll(){
     const chCell=i.channel_id?'<span style="cursor:pointer;text-decoration:underline" title="Mở kênh" onclick="editChannel('+i.channel_id+')">'+esc(i.ch)+'</span>':esc(i.ch);
     const tCol=i.type==='Vi phạm'?'var(--red)':i.type==='Lỗi sản xuất'?'var(--amber)':'var(--muted)';
     const typeCell=i.type?'<span class="chip" style="background:var(--panel2);color:'+tCol+'">'+esc(i.type)+'</span>':'<span style="color:var(--muted)">—</span>';
-    return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+typeCell+'</td><td>'+i.src+'</td><td style="color:var(--muted)">'+chCell+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td style="color:var(--muted)">'+esc(i.reporter)+'</td><td>'+whoCell+'</td><td>'+dueCell+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
+    const imgCell=i.img?' <span style="cursor:pointer;font-size:13px" title="Xem ảnh" onclick="viewIssueImg('+i.id+')">🖼</span>':'';
+    return '<tr><td><b>'+esc(i.t)+'</b>'+imgCell+'</td><td>'+typeCell+'</td><td>'+i.src+'</td><td style="color:var(--muted)">'+chCell+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td style="color:var(--muted)">'+esc(i.reporter)+'</td><td>'+whoCell+'</td><td>'+dueCell+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('issueEmpty').style.display=fIssues.length?'none':'block';
   $('navIssues').textContent=issues.filter(i=>i.st[0]!='done').length||'';
   // by seller (toàn bộ kênh)
@@ -1008,7 +1003,7 @@ function renderAll(){
   renderHist();
   // dropdowns
   const opt=arr=>arr.map(x=>'<option value="'+x.id+'">'+x.n+'</option>').join('');
-  $('updCh').innerHTML=opt(ch);updMeta();renderBulkUpd();renderToday();
+  renderBulkUpd();renderToday();
   $('isChannel').innerHTML=opt(ch);
   if($('orChannel'))$('orChannel').innerHTML='<option value="">— không chọn —</option>'+opt(ch);
   $('orSeller').innerHTML=sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
@@ -1063,25 +1058,57 @@ function renderHist(){
   $('histBody').innerHTML=rows.map(s=>'<tr><td style="white-space:nowrap">'+(s.created_at?vnDateTime(s.created_at):vnDate(s.period_date))+'</td><td>'+esc(cName(s.channel_id))+'</td><td class="num">'+fmtK(Number(s.followers)||0)+'</td><td class="num">'+(Number(s.orders)||0)+'</td><td class="num">$'+((Number(s.gmv_usd)||0)/1000).toFixed(1)+'K</td><td>'+((isAdmin()||s.created_by===me.id)?'<span title="Xóa lần cập nhật" style="cursor:pointer;font-size:13px" onclick="deleteSnapshot('+s.id+')">🗑️</span>':'')+'</td></tr>').join('');
   $('histEmpty').style.display=rows.length?'none':'block';
 }
-function updMeta(){const id=$('updCh').value;const c=ch.find(x=>String(x.id)===String(id));if(!c){$('updMeta').textContent='';return;}
-  const due=c.upd>=999?'chưa từng cập nhật':c.upd>3?'QUÁ HẠN '+c.upd+' ngày':c.upd==3?'đến hạn hôm nay':'kỳ tới: còn '+(3-c.upd)+' ngày';
-  $('updMeta').innerHTML='Người QL: <b>'+c.o+'</b> · '+(c.upd>=3?'<span style="color:var(--red)">'+due+'</span>':due);}
-
-// ====== ACTIONS ======
-$('btnSaveUpd').onclick=async()=>{
-  const id=$('updCh').value;if(!id)return showToast('Chưa có kênh để nhập');
-  const row={channel_id:Number(id),period_date:todayStr(),
-    followers:Number($('upFollower').value)||0,views:Number($('upViews').value)||0,videos:Number($('upVideos').value)||0,
-    orders:Number($('upOrders').value)||0,gmv_usd:Number($('upGmv').value)||0,
-    commission_usd:$('upComm').value?Number($('upComm').value):null,created_by:me.id};
-  $('btnSaveUpd').disabled=true;
-  const {error}=await sb.from('snapshots').insert(row);
-  $('btnSaveUpd').disabled=false;
-  if(error)return topErr(error.message);
-  await logAction('Nhập số liệu','snapshots','channel_id='+id);
-  showToast('Đã lưu cập nhật ✓');['upFollower','upViews','upVideos','upOrders','upGmv','upComm'].forEach(i=>$(i).value='');
+// ====== EXCEL số liệu: tải form + nhập ======
+// Tải file Excel: mỗi kênh 1 dòng, Follower điền sẵn theo lần gần nhất, ngày = hôm nay.
+// Vừa là "export hiện trạng" vừa là "form mẫu" để điền số mới rồi nhập lại.
+function exportSnapForm(){
+  if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau vài giây.');
+  if(!ch||!ch.length)return showToast('Chưa có kênh để xuất');
+  const today=vnDate(todayStr());
+  const rows=ch.map(c=>{const ls=latestSnap(c.id);return {
+    'Kênh':c.n,'Người QL':c.o||'','Ngày (DD/MM/YYYY)':today,
+    'Follower':ls?Number(ls.followers)||0:'','View kỳ':'','Video':'','Đơn':'','GMV (USD)':''};});
+  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'SoLieu');
+  XLSX.writeFile(wb,'RS-so-lieu-'+todayStr()+'.xlsx');
+}
+async function importSnapshots(file){
+  if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau.');
+  topErr('');
+  let rows=[];
+  try{const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array',cellDates:true});
+    rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});}
+  catch(e){return topErr('Không đọc được file: '+(e.message||e));}
+  if(!rows.length)return showToast('File trống (kiểm tra dòng tiêu đề ở hàng đầu)');
+  const nmap={};(ch||[]).forEach(c=>nmap[String(c.n).trim().toLowerCase()]=c.id);
+  const num=(r,names)=>{const raw=String(pickVal(r,names)).replace(/[^\d.\-]/g,'');return raw===''?null:Number(raw);};
+  let ok=0,skip=0,fail=0,lastErr='';
+  for(const r of rows){
+    const name=String(pickVal(r,['Kênh','Kenh','URL kênh','Tên kênh','channel'])).trim();
+    const cid=nmap[name.toLowerCase()];
+    if(!cid){skip++;continue;}
+    const date=parseDateAny(pickVal(r,['Ngày (DD/MM/YYYY)','Ngày','Ngay','date']))||todayStr();
+    const f=num(r,['Follower','Followers','follower']),v=num(r,['View kỳ','View ky','Views','view']);
+    const vid=num(r,['Video','Videos','video']),or=num(r,['Đơn','Don','Orders','order']),gmv=num(r,['GMV (USD)','GMV','gmv']);
+    if(f==null&&v==null&&vid==null&&or==null&&gmv==null){skip++;continue;} // dòng trống số → bỏ qua
+    const ls=latestSnap(cid);
+    const row={channel_id:cid,period_date:date,
+      followers:f!=null?f:(ls?Number(ls.followers)||0:0),
+      views:v||0,videos:vid||0,orders:or||0,gmv_usd:gmv||0,created_by:me.id};
+    try{const ex=(rawSnaps||[]).find(s=>s.channel_id===cid&&String(s.period_date)===date);
+      if(ex){const{error}=await sb.from('snapshots').update(row).eq('id',ex.id);if(error)throw error;}
+      else{const{error}=await sb.from('snapshots').insert(row);if(error)throw error;}
+      ok++;}
+    catch(e){fail++;lastErr=e.message||String(e);}
+  }
+  await logAction('Nhập số liệu từ Excel','snapshots',ok+' kênh');
+  showToast('Đã nhập '+ok+' kênh'+(skip?' · bỏ qua '+skip:'')+(fail?' · '+fail+' lỗi':''));
+  if(fail)topErr(lastErr);
   await loadData();
-};
+}
+if($('btnSnapForm'))$('btnSnapForm').onclick=exportSnapForm;
+if($('btnSnapImport'))$('btnSnapImport').onclick=()=>$('snapFile').click();
+if($('snapFile'))$('snapFile').onchange=e=>{if(e.target.files[0])importSnapshots(e.target.files[0]);e.target.value='';};
 // ===== Nhập nhanh nhiều kênh =====
 function latestSnap(cid){let best=null;(rawSnaps||[]).forEach(s=>{if(s.channel_id!==cid)return;const k=String(s.period_date||'')+'|'+String(s.created_at||'');const bk=best?String(best.period_date||'')+'|'+String(best.created_at||''):'';if(!best||k>bk)best=s;});return best;}
 function renderBulkUpd(){if(!$('bulkBody'))return;
@@ -1125,7 +1152,6 @@ function renderToday(){if(!$('todayBody'))return;const t=todayCounts();
   const n=t.ordDue.length+t.chUpd.length+t.myIssues.length+(t.staff||t.isS?t.ordWait.length:0);if($('navToday'))$('navToday').textContent=n||'';
 }
 window.renderToday=renderToday;
-$('upGmv').oninput=()=>{const g=Number($('upGmv').value)||0;$('gmvVnd').textContent=g?'≈ '+fmtVnd(g/1000):'';};
 
 $('btnSaveOrder').onclick=async()=>{
   const row={seller_id:$('orSeller').value?Number($('orSeller').value):null,product:$('orProduct').value.trim(),
@@ -1149,7 +1175,7 @@ $('btnSaveIssue').onclick=async()=>{
   const cid=$('isChannel').value;const rc=(rawChannels||[]).find(x=>String(x.id)===String(cid));
   const row={title:$('isTitle').value.trim(),source:$('isSource').value,issue_type:($('isType')&&$('isType').value)||null,channel_id:cid?Number(cid):null,channel_name:rc?rc.name:null,
     seller_id:rc?rc.seller_id:null,severity:$('isSev').value,status:($('isStatus')?$('isStatus').value:'open')||'open',
-    due_date:($('isDue')&&$('isDue').value)||null,
+    due_date:($('isDue')&&$('isDue').value)||null,image_url:issueImageUrl||null,
     reporter:$('isReporter').value.trim()||(me.full_name||me.email),assignee:$('isAssignee').value.trim()||null,created_by:me.id};
   if(!row.title)return showToast('Nhập tiêu đề');
   $('btnSaveIssue').disabled=true;let error;
@@ -1162,12 +1188,13 @@ $('btnSaveIssue').onclick=async()=>{
   await loadData();
 };
 let editingIssueId=null;
-function resetIssueForm(){editingIssueId=null;const h=$('issueForm').querySelector('h3');if(h)h.textContent='Ghi nhận vấn đề';if($('btnSaveIssue'))$('btnSaveIssue').textContent='Lưu';['isTitle','isDue'].forEach(i=>{if($(i))$(i).value='';});if($('isType'))$('isType').value='Sự cố kênh';}
+function resetIssueForm(){editingIssueId=null;const h=$('issueForm').querySelector('h3');if(h)h.textContent='Ghi nhận vấn đề';if($('btnSaveIssue'))$('btnSaveIssue').textContent='Lưu';['isTitle','isDue'].forEach(i=>{if($(i))$(i).value='';});if($('isType'))$('isType').value='Sự cố kênh';clearIssueImg();}
 function editIssue(id){const i=issues.find(x=>String(x.id)===String(id));if(!i)return;editingIssueId=id;
   const f=$('issueForm');f.style.display='block';const h=f.querySelector('h3');if(h)h.textContent='Sửa vấn đề: '+i.t;if($('btnSaveIssue'))$('btnSaveIssue').textContent='Lưu thay đổi';
   $('isTitle').value=i.t||'';$('isSource').value=(i.src&&i.src!=='—')?i.src:'Media';if($('isChannel'))$('isChannel').value=i.channel_id||'';
   $('isSev').value=i.sevCode||'mid';if($('isStatus'))$('isStatus').value=i.scode||'open';if($('isDue'))$('isDue').value=i.due||'';if($('isType')&&i.type)$('isType').value=i.type;
   if($('isReporter'))$('isReporter').value=(i.reporter&&i.reporter!=='—')?i.reporter:'';if($('isAssignee'))$('isAssignee').value=i.who||'';
+  issueImageUrl=i.img||null;if($('isImgPrev'))$('isImgPrev').innerHTML=i.img?'<img src="'+esc(i.img)+'" style="max-height:130px;border-radius:8px;vertical-align:middle"> <span style="cursor:pointer;color:var(--red);font-size:12px" onclick="clearIssueImg()">✕ bỏ ảnh</span>':'';
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editIssue=editIssue;
 $('btnSaveCh').onclick=async()=>{
@@ -1391,6 +1418,7 @@ window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
+window.viewIssueImg=function(id){const i=issues.find(x=>String(x.id)===String(id));if(!i||!i.img)return;showDrill('🖼 Ảnh — '+esc(i.t),'<div style="padding:12px 14px;text-align:center"><img src="'+esc(i.img)+'" style="max-width:100%;max-height:70vh;border-radius:10px"></div>');};
 window.viewOrderDetail=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
   const fields=[['Sản phẩm',o.p],['Loại',o.t],['Combo',o.combo],['Format',o.format],['Kênh sản xuất',o.chn],['Kênh tham khảo',o.ref],['Link sản phẩm',o.plink],['Lý do trả lại',o.reject],['Note ý tưởng',o.note]].filter(r=>r[1]&&r[1]!=='—');
   let html='<div style="padding:12px 16px">';
@@ -1554,7 +1582,6 @@ function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classLis
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
 ['fSearch','fSeller','fNiche','fHealth'].forEach(id=>$(id).addEventListener('input',renderCh));
 document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche')?1:-1;}renderCh();});
-$('updCh').onchange=updMeta;
 $('hamb').onclick=()=>$('side').classList.toggle('collapsed');
 $('btnAddOrder').onclick=()=>{const f=$('orderForm');const show=f.style.display=='none';
   if(show){
@@ -1664,6 +1691,18 @@ if($('orImg'))$('orImg').onchange=async e=>{const f=e.target.files[0];if(!f)retu
   }catch(err){orderImageUrl=null;$('orImgPrev').innerHTML='<span style="color:var(--red);font-size:12px">Lỗi tải ảnh ('+(err.message||err)+'). Cần chạy patch-TONG-HOP.sql để tạo kho ảnh.</span>';}
   e.target.value='';};
 window.clearPostImg=()=>{postImageUrl=null;$('postImgPrev').style.display='none';$('postImgPrev').innerHTML='';};
+// ảnh vấn đề / vi phạm
+let issueImageUrl=null;
+window.clearIssueImg=function(){issueImageUrl=null;if($('isImgPrev'))$('isImgPrev').innerHTML='';};
+if($('isImgBtn'))$('isImgBtn').onclick=()=>$('isImg').click();
+if($('isImg'))$('isImg').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  $('isImgPrev').innerHTML='<span style="color:var(--muted);font-size:12px">Đang tải ảnh...</span>';
+  try{const path='issues/'+me.id+'/'+Date.now()+'_'+f.name.replace(/[^\w.\-]/g,'_');
+    const up=await sb.storage.from('feed').upload(path,f);if(up.error)throw up.error;
+    issueImageUrl=sb.storage.from('feed').getPublicUrl(path).data.publicUrl;
+    $('isImgPrev').innerHTML='<img src="'+issueImageUrl+'" style="max-height:130px;border-radius:8px;vertical-align:middle"> <span style="cursor:pointer;color:var(--red);font-size:12px" onclick="clearIssueImg()">✕ bỏ ảnh</span>';
+  }catch(err){issueImageUrl=null;$('isImgPrev').innerHTML='<span style="color:var(--red);font-size:12px">Lỗi tải ảnh ('+(err.message||err)+'). Cần chạy patch-TONG-HOP.sql để tạo kho ảnh.</span>';}
+  e.target.value='';};
 // thả cảm xúc
 window.reactPost=async(postId,emoji)=>{try{
   const {data:cur}=await sb.from('post_reactions').select('emoji').eq('post_id',postId).eq('user_id',me.id).maybeSingle();
