@@ -407,6 +407,8 @@
           <div><label>Seller</label><select class="field" id="orSeller"></select></div>
           <div><label>Kênh sản xuất cho <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orChannel"></select></div>
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
+          <div style="grid-column:1/-1"><label>Title <span style="color:var(--muted);font-weight:500">(caption trả cho seller)</span></label><input class="field" id="orTitle" placeholder="Tiêu đề video để seller đăng"></div>
+          <div style="grid-column:1/-1"><label>Hashtag <span style="color:var(--muted);font-weight:500">(caption trả cho seller)</span></label><input class="field" id="orHashtag" placeholder="#fyp #jersey ..."></div>
           <div><label>Loại <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
           <div><label>Người sản xuất <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orProducer"></select></div>
           <div><label>Combo <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
@@ -424,7 +426,7 @@
       </div>
       <div class="grid kpis" id="orderKpis" style="margin-bottom:14px"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Mã order</th><th>Ngày order</th><th>Seller</th><th>Sản phẩm &amp; chi tiết</th><th>Link SP</th><th>Loại</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Ghi chú</th><th></th></tr></thead>
+        <table><thead><tr><th>Mã order</th><th>Ngày order</th><th>Seller</th><th>Sản phẩm</th><th>Title</th><th>Hashtag</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái</th><th>Nghiệm thu</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
       </div></div>
@@ -788,7 +790,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||''};});
@@ -965,10 +967,9 @@ function renderAll(){
         else if(rem===0)badge='<div style="font-size:10.5px;color:var(--amber);font-weight:700">hôm nay</div>';
         else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';}
       dlCell='<div'+((!done&&rem<0)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
-    const prodCell='<td style="max-width:360px;white-space:normal"><b>'+esc(o.p)+'</b>'+(sub?'<div style="font-size:10.5px;color:var(--muted)">'+esc(sub)+'</div>':'')+refLine+'</td>';
-    const linkCell=o.plink?'<td style="white-space:nowrap"><span title="Xem link sản phẩm" style="cursor:pointer;color:var(--brand);font-size:12px" onclick="openOrderLink('+o.id+',\'plink\')">🔗 Xem</span> <span title="Copy link sản phẩm" style="cursor:pointer;font-size:12px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'plink\')">📋 Copy</span></td>':'<td style="color:var(--muted)">—</td>';
-    const noteCell=o.note?'<td style="white-space:nowrap"><span style="color:var(--amber);cursor:pointer;font-size:12px;text-decoration:underline" onclick="viewOrderNote('+o.id+')">📝 Xem</span></td>':'<td style="color:var(--muted)">—</td>';
-    return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td style="white-space:nowrap">'+o.d+'</td><td>'+o.s+'</td>'+prodCell+linkCell+'<td style="color:var(--muted)">'+esc(o.t)+'</td><td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+noteCell+'<td>'+act+'</td></tr>';}).join('');
+    const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div><span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
+    const capCell=(txt,field)=>!txt?'<td style="color:var(--muted)">—</td>':'<td style="max-width:200px"><div style="white-space:normal;font-size:12px;line-height:1.4;max-height:48px;overflow:hidden">'+esc(txt)+'</div><span title="Copy" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span></td>';
+    return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td style="white-space:nowrap">'+o.d+'</td><td>'+o.s+'</td>'+prodCell+capCell(o.title,'title')+capCell(o.hashtag,'hashtag')+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=orders.length?'none':'block';
   // issues
   const isOverdue=i=>i.scode!=='done'&&i.due&&String(i.due)<todayStr();
@@ -1129,7 +1130,7 @@ $('upGmv').oninput=()=>{const g=Number($('upGmv').value)||0;$('gmvVnd').textCont
 $('btnSaveOrder').onclick=async()=>{
   const row={seller_id:$('orSeller').value?Number($('orSeller').value):null,product:$('orProduct').value.trim(),
     ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),format:$('orFormat').value.trim(),
-    ref_channel:$('orRef').value.trim()||null,product_link:($('orProductLink')&&$('orProductLink').value.trim())||null,note:$('orNote').value.trim()||null,
+    ref_channel:$('orRef').value.trim()||null,product_link:($('orProductLink')&&$('orProductLink').value.trim())||null,title:($('orTitle')&&$('orTitle').value.trim())||null,hashtag:($('orHashtag')&&$('orHashtag').value.trim())||null,note:$('orNote').value.trim()||null,
     channel_id:$('orChannel')&&$('orChannel').value?Number($('orChannel').value):null,image_url:orderImageUrl||null,
     deadline:$('orDeadline').value||null};
   if(!row.product)return showToast('Nhập tên sản phẩm');
@@ -1370,6 +1371,13 @@ window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
+window.viewOrderDetail=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
+  const fields=[['Sản phẩm',o.p],['Loại',o.t],['Combo',o.combo],['Format',o.format],['Kênh sản xuất',o.chn],['Kênh tham khảo',o.ref],['Link sản phẩm',o.plink],['Note ý tưởng',o.note]].filter(r=>r[1]&&r[1]!=='—');
+  let html='<div style="padding:12px 16px">';
+  fields.forEach(r=>{html+='<div style="margin-bottom:9px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+r[0]+'</div><div style="font-size:13.5px;word-break:break-word;white-space:pre-wrap">'+esc(r[1])+'</div></div>';});
+  if(o.img)html+='<img src="'+esc(o.img)+'" style="max-width:100%;max-height:300px;border-radius:8px;margin-top:4px" onclick="window.open(this.src,\'_blank\')">';
+  html+='</div>';
+  showDrill('🔎 Chi tiết order '+esc(o.code||''),html);};
 function fallbackCopy(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Đã copy link ✓');}catch(e){prompt('Copy link (Ctrl+C):',t);}ta.remove();}
 function copyTxt(t){if(!t)return;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>showToast('Đã copy ✓'),()=>fallbackCopy(t));}else fallbackCopy(t);}
 // Snippet "🔗 Xem · 📋 Copy" dùng chung cho mọi link
@@ -1390,11 +1398,11 @@ function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)r
   $('orSeller').value=o.seller_id||'';if($('orChannel'))$('orChannel').value=o.channel_id||'';
   $('orProduct').value=o.p||'';$('orType').value=(o.t&&o.t!=='—')?o.t:'';$('orProducer').value=(o.who&&o.who!=='—')?o.who:'';
   $('orCombo').value=o.combo||'';$('orFormat').value=o.format||'';$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min=o.cdate||'';
-  $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';$('orNote').value=o.note||'';
+  $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';if($('orTitle'))$('orTitle').value=o.title||'';if($('orHashtag'))$('orHashtag').value=o.hashtag||'';$('orNote').value=o.note||'';
   orderImageUrl=o.img||null;$('orImgPrev').innerHTML=o.img?'<img src="'+esc(o.img)+'" style="max-height:130px;border-radius:8px;vertical-align:middle"> <span style="cursor:pointer;color:var(--red);font-size:12px" onclick="clearOrderImg()">✕ bỏ ảnh</span>':'';
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editOrder=editOrder;
-function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel'].forEach(i=>{if($(i))$(i).value='';});}
+function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orTitle','orHashtag','orNote','orChannel'].forEach(i=>{if($(i))$(i).value='';});}
 window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
 window.deleteSnapshot=(id)=>delRow('snapshots',id,'Xóa lần cập nhật này? (số liệu sẽ tính lại theo lần trước)');
 window.setIssueStatus=(id,v)=>updRow('issues',id,{status:v});
@@ -1545,7 +1553,7 @@ $('btnOrderTemplate').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Ex
     {'Seller':'Tạ Huệ','Kênh':'','Title':'Mama Goose Shirt','Loại sản phẩm':'Clothing - T-shirt','Combo':'','Format':'','Người sản xuất':'Linh','Kênh tham khảo':'@ref_kenh hoặc link','Link sản phẩm':'','Link nghiệm thu':'','Nghiệm thu':'Done','Note':'Không theo combo, làm theo kênh tham khảo','Đối tượng':'Nữ','Deadline':''}
   ]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-form-mau-order.xlsx');};
 $('btnOrderExport').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
-  const rows=orders.map(o=>({'Mã order':o.code||(window.gOrderCode&&window.gOrderCode[o.id])||'','Ngày':o.d,'Seller':o.s,'Kênh':o.chn||'','Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Kênh tham khảo':o.ref||'','Link sản phẩm':o.plink||'','Link nghiệm thu':o.dlink||'','Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Deadline':vnDate(o.deadline)||'','Note ý tưởng':o.note||''}));
+  const rows=orders.map(o=>({'Mã order':o.code||(window.gOrderCode&&window.gOrderCode[o.id])||'','Ngày':o.d,'Seller':o.s,'Kênh':o.chn||'','Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Caption Title':o.title||'','Hashtag':o.hashtag||'','Kênh tham khảo':o.ref||'','Link sản phẩm':o.plink||'','Link nghiệm thu':o.dlink||'','Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Deadline':vnDate(o.deadline)||'','Note ý tưởng':o.note||''}));
   if(!rows.length)return showToast('Chưa có order để xuất');
   const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-order-'+new Date().toISOString().slice(0,10)+'.xlsx');};
 async function importOrderList(file){
@@ -1567,8 +1575,9 @@ async function importOrderList(file){
     const note=[pick(r,['Note','Ghi chú']),pick(r,['Đối tượng'])?'ĐT: '+pick(r,['Đối tượng']):'',pick(r,['Bối cảnh'])?'BC: '+pick(r,['Bối cảnh']):''].filter(Boolean).join(' · ');
     const ref=pick(r,['Kênh tham khảo','Kenh tham khao','Ref','Reference']);
     const plink=pick(r,['Link sản phẩm','Link san pham','Product link']);const dlink=pick(r,['Link nghiệm thu','Link nghiem thu','Delivery link']);
+    const capTitle=pick(r,['Caption Title','Caption','Tiêu đề video','Title video']);const hashtag=pick(r,['Hashtag','hashtag']);
     const chName=pick(r,['Kênh','URL kênh','Channel']);let channel_id=null;if(chName){const cc=(rawChannels||[]).find(x=>String(x.name||'').toLowerCase()===chName.toLowerCase());if(cc)channel_id=cc.id;}
-    list.push({product,seller_id,channel_id,ptype:pick(r,['Loại sản phẩm','Loại'])||null,combo:pick(r,['Combo'])||null,format:pick(r,['Format'])||null,producer:pick(r,['Người sản xuất'])||null,ref_channel:ref||null,product_link:plink||null,delivery_link:dlink||null,accepted,status:accepted?'done':'edit',deadline:toDate(pick(r,['Deadline','Date Sản xuất done','Date'])),note:note||null,created_by:me.id});
+    list.push({product,seller_id,channel_id,ptype:pick(r,['Loại sản phẩm','Loại'])||null,combo:pick(r,['Combo'])||null,format:pick(r,['Format'])||null,producer:pick(r,['Người sản xuất'])||null,ref_channel:ref||null,product_link:plink||null,delivery_link:dlink||null,title:capTitle||null,hashtag:hashtag||null,accepted,status:accepted?'done':'edit',deadline:toDate(pick(r,['Deadline','Date Sản xuất done','Date'])),note:note||null,created_by:me.id});
   }
   if(!list.length)return showToast('File không có order nào (kiểm tra cột Title/Tên sản phẩm)');
   if(!confirm('Tạo '+list.length+' order từ file?'))return;
