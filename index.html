@@ -674,6 +674,9 @@ async function backfillOrderCodes(){if(!isSD())return;const ms=(orders||[]).filt
   const byDay={};(orders||[]).forEach(o=>{if(o.code){const d=o.code.slice(2,10),n=parseInt(o.code.slice(10),10)||0;byDay[d]=Math.max(byDay[d]||0,n);}});
   for(const o of [...ms].sort((a,b)=>(a.id||0)-(b.id||0))){const d=String(o.cdate||todayStr()).replace(/-/g,'');byDay[d]=(byDay[d]||0)+1;const code=odCode(d,byDay[d]);try{const {error}=await sb.from('orders').update({order_code:code}).eq('id',o.id);if(!error)o.code=code;}catch(e){}}
 }
+async function backfillIssueChannels(){if(!isSD())return;const ms=(issues||[]).filter(i=>!i.channel_name&&i.channel_id);if(!ms.length)return;
+  for(const i of ms){const c=(rawChannels||[]).find(x=>x.id===i.channel_id);if(c){try{const {error}=await sb.from('issues').update({channel_name:c.name}).eq('id',i.id);if(!error){i.channel_name=c.name;i.ch=c.name;}}catch(e){}}}
+}
 // Khoảng "kỳ" để tổng hợp số liệu. Trả về {start,end,prevStart,prevEnd} dạng YYYY-MM-DD.
 function periodWindow(period,endStr){
   const ymd=dt=>dt.toLocaleDateString('en-CA');
@@ -788,12 +791,13 @@ async function loadData(){
       return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
-      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,ch:c?c.name:'—',s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||''};});
+      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||''};});
     if(isAdmin()){
       const {data:profs}=await sb.from('profiles').select('*').order('created_at');
       allUsers=profs||[];pendUsers=allUsers.filter(p=>p.status==='pending');
     }
     try{await backfillOrderCodes();}catch(e){}// gán mã cố định cho order chưa có (SD)
+    try{await backfillIssueChannels();}catch(e){}// lưu tên kênh cho vấn đề cũ (SD)
     rebuild();
   }catch(e){topErr(e.message||String(e));}
 }
@@ -1142,7 +1146,7 @@ $('btnSaveOrder').onclick=async()=>{
 };
 $('btnSaveIssue').onclick=async()=>{
   const cid=$('isChannel').value;const rc=(rawChannels||[]).find(x=>String(x.id)===String(cid));
-  const row={title:$('isTitle').value.trim(),source:$('isSource').value,channel_id:cid?Number(cid):null,
+  const row={title:$('isTitle').value.trim(),source:$('isSource').value,channel_id:cid?Number(cid):null,channel_name:rc?rc.name:null,
     seller_id:rc?rc.seller_id:null,severity:$('isSev').value,status:($('isStatus')?$('isStatus').value:'open')||'open',
     due_date:($('isDue')&&$('isDue').value)||null,
     reporter:$('isReporter').value.trim()||(me.full_name||me.email),assignee:$('isAssignee').value.trim()||null,created_by:me.id};
