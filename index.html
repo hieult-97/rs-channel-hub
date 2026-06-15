@@ -472,7 +472,7 @@
           <div><label>Hạn xử lý <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><input class="field" id="isDue" type="date"></div>
           <div><label>Trạng thái</label><select class="field" id="isStatus"><option value="open">🔵 Mới</option><option value="doing">🟡 Đang xử lý</option><option value="waiting">🟣 Chờ phản hồi</option><option value="done">🟢 Đã đóng</option></select></div>
         </div>
-        <div style="margin-top:12px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Ảnh vi phạm / bằng chứng <span style="font-weight:500">(không bắt buộc)</span></label>
+        <div style="margin-top:12px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Ảnh vi phạm / bằng chứng <span style="color:var(--red);font-weight:600">* bắt buộc</span></label>
           <button class="btn ghost" id="isImgBtn" type="button">📷 Tải ảnh lên</button>
           <input type="file" id="isImg" accept="image/*" multiple style="display:none">
           <div id="isImgPrev" style="margin-top:8px"></div>
@@ -1178,6 +1178,7 @@ $('btnSaveIssue').onclick=async()=>{
     due_date:($('isDue')&&$('isDue').value)||null,image_url:imgJoin('issue'),
     reporter:$('isReporter').value.trim()||(me.full_name||me.email),assignee:$('isAssignee').value.trim()||null,created_by:me.id};
   if(!row.title)return showToast('Nhập tiêu đề');
+  if(!imgStore.issue.length)return showToast('Bắt buộc đính kèm ít nhất 1 ảnh vi phạm / bằng chứng');
   $('btnSaveIssue').disabled=true;let error;
   if(editingIssueId){delete row.created_by;({error}=await sb.from('issues').update(row).eq('id',editingIssueId));}
   else{({error}=await sb.from('issues').insert(row));}
