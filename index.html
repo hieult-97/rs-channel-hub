@@ -981,13 +981,14 @@ function renderAll(){
       '<td style="color:var(--muted)">'+esc(c.o)+'</td>'+
       '<td style="color:var(--muted)">—</td>'+
       '<td><span class="chip" style="background:'+ic.mid[0]+';color:'+ic.mid[1]+'">Cần xử lý</span></td>'+
-      '<td style="white-space:nowrap"><span title="Ghi nhận thành vấn đề để gán người xử lý + đổi trạng thái" style="cursor:pointer;color:var(--brand);font-size:12px;margin-right:8px" onclick="drillIssue('+c.id+')">📝 Ghi nhận</span><span title="Sửa kênh (đưa Violations về 0 sau khi xử lý)" style="cursor:pointer;font-size:14px" onclick="editChannel('+c.id+')">✏️</span></td></tr>';}).join('');
+      '<td style="white-space:nowrap"><button class="btn ghost" style="font-size:11.5px;padding:5px 10px" title="Ghi nhận thành vấn đề để gán người xử lý + đổi trạng thái" onclick="drillIssue('+c.id+')">📝 Ghi nhận</button></td></tr>';}).join('');
   $('issueBody').innerHTML=vioRows+issues.map(i=>{
-    const stCell=isAdmin()?'<select style="'+SELCSS+'" onchange="setIssueStatus('+i.id+',this.value)">'+selOpts([['open','Mới'],['doing','Đang xử lý'],['waiting','Chờ phản hồi'],['done','Đã đóng']],i.scode)+'</select>':'<span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span>';
-    const whoCell=isAdmin()?'<select style="'+SELCSS+';width:130px" onchange="setIssueAssignee('+i.id+',this.value)">'+memberOpts(i.who)+'</select>':(i.who?esc(i.who):'<span style="color:var(--muted)">—</span>');
+    const canIssue=isAdmin()||(me&&me.role==='Media');
+    const stCell=canIssue?'<select style="'+SELCSS+'" onchange="setIssueStatus('+i.id+',this.value)">'+selOpts([['open','Mới'],['doing','Đang xử lý'],['waiting','Chờ phản hồi'],['done','Đã đóng']],i.scode)+'</select>':'<span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span>';
+    const whoCell=canIssue?'<select style="'+SELCSS+';min-width:150px" onchange="setIssueAssignee('+i.id+',this.value)">'+memberOpts(i.who)+'</select>':(i.who?esc(i.who):'<span style="color:var(--muted)">—</span>');
     const over=isOverdue(i);
     const dueCell=i.due?'<span'+(over?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(i.due)+(over?' ⚠':'')+'</span>':'<span style="color:var(--muted)">—</span>';
-    const act=isAdmin()?'<span title="Sửa vấn đề" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="editIssue('+i.id+')">✏️</span><span title="Xóa vấn đề" style="cursor:pointer" onclick="deleteIssue('+i.id+')">🗑️</span>':'';
+    const act=(canIssue?'<span title="Sửa vấn đề" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="editIssue('+i.id+')">✏️</span>':'')+(isAdmin()?'<span title="Xóa vấn đề" style="cursor:pointer" onclick="deleteIssue('+i.id+')">🗑️</span>':'');
     return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+esc(i.ch)+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td style="color:var(--muted)">'+esc(i.reporter)+'</td><td>'+whoCell+'</td><td>'+dueCell+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('issueEmpty').style.display=(issues.length||vioCh.length)?'none':'block';
   $('navIssues').textContent=issues.filter(i=>i.st[0]!='done').length||'';
