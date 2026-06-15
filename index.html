@@ -202,7 +202,9 @@
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
       <a data-view="dash" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Tổng quan</a>
+      <a data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Việc hôm nay <span class="bell" id="navToday"></span></a>
       <a data-view="channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></svg> Kênh <span class="bell" id="navOverdue"></span></a>
+      <a data-view="videos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3z"/></svg> Nhật ký video</a>
       <a data-view="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg> Tăng trưởng</a>
       <a data-view="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4l1.5 5M14 4l1.5 5"/></svg> Order sản xuất</a>
       <a data-view="update"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Cập nhật số liệu</a>
@@ -259,6 +261,12 @@
         <div class="card"><h3>Top kênh theo GMV <span class="tag">kỳ này</span></h3><div class="tbl-wrap"><table><tbody id="topCh"></tbody></table></div></div>
         <div class="card"><h3>Cần chú ý ngay <span class="tag">cảnh báo cao</span></h3><div id="dashAlerts"></div></div>
       </div>
+    </section>
+
+    <section class="view" id="today">
+      <div class="topbar"><div><h1>Việc hôm nay</h1><div class="sub">Gom đúng việc cần làm theo vai trò của bạn</div></div></div>
+      <div class="grid kpis" id="todayKpis" style="margin-bottom:14px"></div>
+      <div id="todayBody"></div>
     </section>
 
     <section class="view" id="channels">
@@ -324,6 +332,51 @@
       </div></div>
     </section>
 
+    <section class="view" id="videos">
+      <div class="topbar"><div><h1>Nhật ký video</h1><div class="sub">Mỗi kênh 1 sổ video · nhập sản xuất 1 lần · cập nhật view khớp theo URL</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" id="btnVidTemplate">⤓ Form mẫu</button>
+          <button class="btn ghost" id="btnVidImport">⤒ Nhập / Cập nhật (khớp URL)</button>
+          <button class="btn ghost" id="btnVidExport">⤓ Xuất Excel</button>
+          <button class="btn" id="btnAddVid">+ Thêm video</button>
+        </div>
+      </div>
+      <input type="file" id="vidFile" accept=".xlsx,.xls,.csv" style="display:none">
+      <div class="filters" style="margin-bottom:14px">
+        <select id="vidChannel" style="min-width:260px"></select>
+        <input id="vidSearch" placeholder="Tìm theo Title / URL...">
+        <select id="vidStatus"><option value="">Mọi trạng thái</option></select>
+      </div>
+      <div class="card" id="vidForm" style="display:none;margin-bottom:14px">
+        <h3 id="vidFormTitle">Thêm video</h3>
+        <div class="form">
+          <div><label>Title</label><input class="field" id="vTitle" placeholder="Tiêu đề video"></div>
+          <div><label>URL <span style="color:var(--muted);font-weight:500">(khóa khớp)</span></label><input class="field" id="vUrl" placeholder="https://..."></div>
+          <div><label>Status</label><input class="field" id="vStatus" placeholder="Published / Scheduled / Draft"></div>
+          <div><label>Product</label><input class="field" id="vProduct" placeholder="Sản phẩm"></div>
+          <div><label>Hashtag</label><input class="field" id="vHashtag" placeholder="#..."></div>
+          <div><label>Date sản xuất</label><input class="field" id="vProduced" type="date"></div>
+          <div><label>Date Published</label><input class="field" id="vPublished" type="date"></div>
+          <div><label>Date schedule</label><input class="field" id="vSchedule" type="date"></div>
+          <div><label>Quality score</label><input class="field" id="vQuality" type="number" step="0.1" placeholder="0"></div>
+          <div><label>Duration</label><input class="field" id="vDuration" placeholder="vd 0:35"></div>
+          <div><label>Lượt view</label><input class="field" id="vViews" type="number" placeholder="0"></div>
+          <div style="grid-column:1/-1"><label>Note</label><input class="field" id="vNote" placeholder="Ghi chú"></div>
+        </div>
+        <div style="margin-top:12px"><button class="btn" id="btnSaveVid">Lưu video</button> <button class="btn ghost" id="btnCancelVid">Hủy</button></div>
+      </div>
+      <div class="grid kpis" id="vidKpis" style="margin-bottom:14px"></div>
+      <div class="card" id="vidAggCard" style="padding:0;display:none"><div style="padding:13px 16px 0"><h3>Tổng hợp theo kênh</h3></div><div class="tbl-wrap">
+        <table><thead><tr><th>Kênh</th><th>Người care</th><th class="num">Tổng video</th><th class="num">Đã đăng</th><th class="num">Lên lịch</th><th class="num">Tổng view</th><th class="num">View TB/video</th></tr></thead>
+        <tbody id="vidAggBody"></tbody></table></div>
+      </div>
+      <div class="card" id="vidDetailCard" style="padding:0"><div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Date SX</th><th>Title</th><th>URL</th><th>Status</th><th>Date Published</th><th>Product</th><th class="num">Quality</th><th>Duration</th><th class="num">View</th><th>Note</th><th></th></tr></thead>
+        <tbody id="vidBody"></tbody></table>
+        <div class="empty" id="vidEmpty" style="display:none">Chưa có video nào cho kênh này. Bấm "+ Thêm video" hoặc "Nhập / Cập nhật".</div>
+      </div></div>
+    </section>
+
     <section class="view" id="growth">
       <div class="topbar"><div><h1>Tăng trưởng</h1><div class="sub">Kênh đang tốt lên thế nào theo thời gian</div></div></div>
       <div class="filters">
@@ -379,6 +432,17 @@
 
     <section class="view" id="update">
       <div class="topbar"><div><h1>Cập nhật số liệu</h1><div class="sub">Ưu tiên nhập hằng ngày (tối đa 3 ngày/kênh) · hệ thống tự tính phần còn lại</div></div></div>
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <h3>⚡ Nhập nhanh nhiều kênh <span class="tag">Gõ vào ô cần đổi → bấm Lưu tất cả (chỉ lưu dòng đã sửa)</span></h3>
+          <button class="btn" id="btnBulkSave">💾 Lưu tất cả thay đổi</button>
+        </div>
+        <div class="tbl-wrap" style="margin-top:10px"><table>
+          <thead><tr><th>Kênh</th><th class="num">Follower</th><th class="num">View kỳ</th><th class="num">Video</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th>Cập nhật</th></tr></thead>
+          <tbody id="bulkBody"></tbody></table>
+          <div class="empty" id="bulkEmpty" style="display:none">Chưa có kênh nào bạn phụ trách.</div>
+        </div>
+      </div>
       <div class="grid row2b" style="align-items:start;margin-top:0">
         <div class="card">
           <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Chọn kênh để cập nhật</label>
@@ -573,8 +637,8 @@ const $=id=>document.getElementById(id);
 let me=null;            // profile của user đang đăng nhập
 let ch=[], orders=[], issues=[], sellers=[], pendUsers=[], allUsers=[];
 let rawChannels=[], rawSnaps=[], rawMembers=[], asOf=null, editingId=null;
-const MENU_SECTIONS=[['dash','Tổng quan'],['channels','Kênh'],['growth','Tăng trưởng'],['orders','Order sản xuất'],['update','Cập nhật số liệu'],['issues','Vấn đề'],['alerts','Cảnh báo'],['bySeller','Theo seller'],['byOwner','Theo người quản lý'],['kpi','KPI nhân sự'],['team','Bảng tin'],['cat','Danh mục'],['log','Nhật ký'],['roles','Phân quyền']];
-const DEFAULT_ACCESS={Leader:['dash','channels','growth','orders','update','issues','alerts','bySeller','byOwner','kpi','roles','cat','team'],Media:['dash','channels','growth','orders','update','issues','team'],Seller:['dash','channels','growth','orders','update','issues','team']};
+const MENU_SECTIONS=[['dash','Tổng quan'],['today','Việc hôm nay'],['channels','Kênh'],['videos','Nhật ký video'],['growth','Tăng trưởng'],['orders','Order sản xuất'],['update','Cập nhật số liệu'],['issues','Vấn đề'],['alerts','Cảnh báo'],['bySeller','Theo seller'],['byOwner','Theo người quản lý'],['kpi','KPI nhân sự'],['team','Bảng tin'],['cat','Danh mục'],['log','Nhật ký'],['roles','Phân quyền']];
+const DEFAULT_ACCESS={Leader:['dash','today','channels','videos','growth','orders','update','issues','alerts','bySeller','byOwner','kpi','roles','cat','team'],Media:['dash','today','channels','videos','growth','orders','update','issues','team'],Seller:['dash','today','channels','videos','growth','orders','update','issues','team']};
 let roleAccess=null;
 async function loadRoleAccess(){try{const {data}=await sb.from('app_settings').select('value').eq('key','role_access').maybeSingle();roleAccess=(data&&data.value)?data.value:null;}catch(e){roleAccess=null;}
   if(!roleAccess)roleAccess={};['Leader','Media','Seller'].forEach(r=>{if(!Array.isArray(roleAccess[r]))roleAccess[r]=DEFAULT_ACCESS[r].slice();});}
@@ -940,7 +1004,7 @@ function renderAll(){
   renderHist();
   // dropdowns
   const opt=arr=>arr.map(x=>'<option value="'+x.id+'">'+x.n+'</option>').join('');
-  $('updCh').innerHTML=opt(ch);updMeta();
+  $('updCh').innerHTML=opt(ch);updMeta();renderBulkUpd();renderToday();
   $('isChannel').innerHTML=opt(ch);
   if($('orChannel'))$('orChannel').innerHTML='<option value="">— không chọn —</option>'+opt(ch);
   $('orSeller').innerHTML=sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
@@ -1014,6 +1078,47 @@ $('btnSaveUpd').onclick=async()=>{
   showToast('Đã lưu cập nhật ✓');['upFollower','upViews','upVideos','upOrders','upGmv','upComm'].forEach(i=>$(i).value='');
   await loadData();
 };
+// ===== Nhập nhanh nhiều kênh =====
+function latestSnap(cid){let best=null;(rawSnaps||[]).forEach(s=>{if(s.channel_id!==cid)return;const k=String(s.period_date||'')+'|'+String(s.created_at||'');const bk=best?String(best.period_date||'')+'|'+String(best.created_at||''):'';if(!best||k>bk)best=s;});return best;}
+function renderBulkUpd(){if(!$('bulkBody'))return;
+  const inp=(k,val)=>'<input data-k="'+k+'" type="number" value="'+(val===''||val==null?'':val)+'" oninput="this.closest(\'tr\').dataset.dirty=\'1\'" style="width:84px;background:var(--panel2);border:1.5px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--text);font-size:12.5px">';
+  $('bulkBody').innerHTML=(ch||[]).map(c=>{const ls=latestSnap(c.id);const lf=ls?Number(ls.followers)||0:'';
+    return '<tr data-cid="'+c.id+'"><td style="white-space:nowrap"><b>'+esc(c.n)+'</b><div style="font-size:10.5px;color:var(--muted)">'+esc(c.s)+'</div></td><td class="num">'+inp('f',lf)+'</td><td class="num">'+inp('v','')+'</td><td class="num">'+inp('vid','')+'</td><td class="num">'+inp('or','')+'</td><td class="num">'+inp('gmv','')+'</td><td>'+updChip(c.upd)+'</td></tr>';}).join('');
+  $('bulkEmpty').style.display=(ch&&ch.length)?'none':'block';
+}
+async function saveBulkUpd(){const trs=document.querySelectorAll('#bulkBody tr[data-dirty="1"]');if(!trs.length)return showToast('Chưa sửa ô nào');
+  const today=todayStr();let ok=0,fail=0,lastErr='';
+  for(const tr of trs){const cid=Number(tr.dataset.cid);const g=k=>{const el=tr.querySelector('[data-k="'+k+'"]');return el?el.value:'';};const ls=latestSnap(cid);
+    const row={channel_id:cid,period_date:today,followers:g('f')!==''?Number(g('f')):(ls?Number(ls.followers)||0:0),views:Number(g('v'))||0,videos:Number(g('vid'))||0,orders:Number(g('or'))||0,gmv_usd:Number(g('gmv'))||0,created_by:me.id};
+    try{const ex=(rawSnaps||[]).find(s=>s.channel_id===cid&&String(s.period_date)===today);
+      if(ex){const {error}=await sb.from('snapshots').update(row).eq('id',ex.id);if(error)throw error;}else{const {error}=await sb.from('snapshots').insert(row);if(error)throw error;}ok++;
+    }catch(e){fail++;lastErr=e.message||String(e);}}
+  await logAction('Nhập nhanh nhiều kênh','snapshots',ok+' kênh');
+  showToast('Đã lưu '+ok+' kênh'+(fail?' · '+fail+' lỗi':''));if(fail)topErr(lastErr);
+  await loadData();
+}
+if($('btnBulkSave'))$('btnBulkSave').onclick=saveBulkUpd;
+// ===== Việc hôm nay =====
+function todayCounts(){const today=todayStr(),staff=isAdmin(),isM=me&&me.role==='Media',isS=me&&me.role==='Seller';const mySeller=(me&&me.seller_id)?chSellerName(me.seller_id):'';
+  const myOrders=(orders||[]).filter(o=>staff||(isM&&o.who===me.full_name)||(isS&&o.s===mySeller));
+  const ordDue=myOrders.filter(o=>o.scode!=='done'&&o.deadline&&String(o.deadline)<=today);
+  const ordWait=myOrders.filter(o=>o.scode==='wait');
+  const chUpd=(ch||[]).filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1));
+  const myIssues=(issues||[]).filter(i=>i.scode!=='done'&&(staff||i.who===me.full_name||i.reporter===me.full_name));
+  return {ordDue,ordWait,chUpd,myIssues,staff,isS};}
+function renderToday(){if(!$('todayBody'))return;const t=todayCounts();
+  $('todayKpis').innerHTML=[['Order tới hạn',t.ordDue.length,'red'],['Chờ nghiệm thu',t.ordWait.length,'brand'],['Kênh cần cập nhật',t.chUpd.length,'amber'],['Vấn đề cần xử lý',t.myIssues.length,'red']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
+  const li=(txt,sub,go)=>'<div class="alert lo" style="cursor:pointer" onclick="selectView(\''+go+'\')"><div class="ic">›</div><div><b>'+txt+'</b><div class="who">'+sub+'</div></div></div>';
+  const card=(title,items,empty)=>'<div class="card" style="margin-bottom:14px"><h3>'+title+'</h3><div style="margin-top:10px">'+(items.length?items.join(''):'<div class="empty" style="padding:14px">'+empty+'</div>')+'</div></div>';
+  let html='';
+  html+=card('⏰ Order tới hạn / quá hạn ('+t.ordDue.length+')',[...t.ordDue].sort((a,b)=>String(a.deadline).localeCompare(String(b.deadline))).slice(0,15).map(o=>{const rem=daysLeft(o.deadline);const tag=rem<0?'trễ '+(-rem)+' ngày':rem===0?'hôm nay':'còn '+rem+' ngày';return li(esc(o.p),'Deadline '+vnDate(o.deadline)+' · '+tag+(o.who&&o.who!=='—'?' · '+esc(o.who):''),'orders');}),'Không có order tới hạn 🎉');
+  if(t.staff||t.isS)html+=card('✅ Order chờ nghiệm thu ('+t.ordWait.length+')',t.ordWait.slice(0,15).map(o=>li(esc(o.p),'Người làm: '+esc(o.who)+' · seller '+esc(o.s),'orders')),'Không có order chờ nghiệm thu');
+  html+=card('📝 Kênh cần cập nhật ('+t.chUpd.length+')',[...t.chUpd].sort((a,b)=>b.upd-a.upd).slice(0,15).map(c=>li(esc(c.n),(c.upd>=999?'chưa từng nhập':'đã '+c.upd+' ngày chưa nhập')+' · '+esc(c.o),'update')),'Mọi kênh đã cập nhật 🎉');
+  html+=card('⚠ Vấn đề cần xử lý ('+t.myIssues.length+')',t.myIssues.slice(0,15).map(i=>li(esc(i.t),i.st[1]+' · '+(i.who?'xử lý: '+esc(i.who):'CHƯA GÁN')+(i.ch&&i.ch!=='—'?' · '+esc(i.ch):''),'issues')),'Không có vấn đề tồn 🎉');
+  $('todayBody').innerHTML=html;
+  const n=t.ordDue.length+t.chUpd.length+t.myIssues.length+(t.staff||t.isS?t.ordWait.length:0);if($('navToday'))$('navToday').textContent=n||'';
+}
+window.renderToday=renderToday;
 $('upGmv').oninput=()=>{const g=Number($('upGmv').value)||0;$('gmvVnd').textContent=g?'≈ '+fmtVnd(g/1000):'';};
 
 $('btnSaveOrder').onclick=async()=>{
@@ -1413,7 +1518,7 @@ $('btnExport').onclick=exportChannels;
 $('btnTemplate').onclick=downloadTemplate;
 $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{if(e.target.files[0])importChannels(e.target.files[0]);e.target.value='';};
-function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(v==='team')renderTeam();if(v==='log')renderLog();if(v==='cat')renderCat();if(v==='kpi')renderKPI();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
+function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(v==='team')renderTeam();if(v==='log')renderLog();if(v==='cat')renderCat();if(v==='kpi')renderKPI();if(v==='videos')renderVideos();if(v==='update')renderBulkUpd();if(v==='today')renderToday();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
 ['fSearch','fSeller','fNiche','fHealth'].forEach(id=>$(id).addEventListener('input',renderCh));
 document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche')?1:-1;}renderCh();});
@@ -1558,6 +1663,109 @@ function renderGrowth(){
   $('grBody').innerHTML=rows.map(r=>'<tr><td><b>'+r.n+'</b></td><td class="num">'+fmtK(r.f0)+'</td><td class="num">'+fmtK(r.f1)+'</td><td class="num">'+sign(r.delta)+'</td><td class="num" style="color:'+(r.pct>0?'var(--green)':r.pct<0?'var(--red)':'var(--muted)')+';font-weight:700">'+(r.pct>0?'+':'')+r.pct.toFixed(1)+'%</td><td class="num">'+(r.goal?'<span style="color:'+(r.gp>=100?'var(--green)':r.gp>=60?'var(--amber)':'var(--muted)')+';font-weight:600">'+Math.round(r.gp)+'%</span>':'<span style="color:var(--muted)">—</span>')+'</td><td class="num">'+r.or+'</td><td class="num">$'+r.com.toFixed(1)+'K</td><td>'+(!r.has?'<span style="color:var(--muted)">chưa nhập DL</span>':r.pct>0?'<span class="pos">▲ tốt lên</span>':r.pct<0?'<span class="neg">▼ giảm</span>':'<span style="color:var(--muted)">— đi ngang</span>')+'</td></tr>').join('');
   $('grEmpty').style.display=rows.length?'none':'block';
 }
+
+// ====== NHẬT KÝ VIDEO (theo từng kênh) ======
+let vidData=[],editingVidId=null;
+async function loadVideosFor(cid){try{let qy=sb.from('videos').select('*');if(cid&&cid!=='all')qy=qy.eq('channel_id',Number(cid));const {data,error}=await qy.order('created_at',{ascending:true});if(error)throw error;vidData=data||[];}catch(e){vidData=[];topErr(e.message||String(e));}}
+function fillVidChannels(){const sel=$('vidChannel');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="all">▦ Tất cả kênh — tổng hợp</option>'+(ch||[]).map(c=>'<option value="'+c.id+'">'+esc(c.n)+'</option>').join('');if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;else sel.value='all';}
+function vidPublished(v){return !!v.date_published||/publish|đăng|live|posted/i.test(v.status||'');}
+function vidScheduled(v){return !vidPublished(v)&&(!!v.date_schedule||/schedul|lịch/i.test(v.status||''));}
+async function renderVideos(){if(!$('vidBody'))return;fillVidChannels();const cid=$('vidChannel').value;
+  await loadVideosFor(cid);
+  if(cid==='all')renderVidAgg();else renderVidTable();}
+window.renderVideos=renderVideos;
+window.vidGo=function(id){$('vidChannel').value=String(id);renderVideos();};
+function renderVidAgg(){
+  $('vidDetailCard').style.display='none';$('vidAggCard').style.display='';$('vidForm').style.display='none';
+  const tot=vidData.length,pub=vidData.filter(vidPublished).length,sch=vidData.filter(vidScheduled).length,tv=vidData.reduce((a,v)=>a+(Number(v.views)||0),0);
+  $('vidKpis').innerHTML=[['Tổng video (mọi kênh)',tot,''],['Đã đăng',pub,'green'],['Lên lịch',sch,'brand'],['Tổng view',fmtK(tv),'amber']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
+  const q=($('vidSearch').value||'').toLowerCase();const byCh={};vidData.forEach(v=>{(byCh[v.channel_id]=byCh[v.channel_id]||[]).push(v);});
+  let rows=(ch||[]).map(c=>{const g=byCh[c.id]||[];return {id:c.id,n:c.n,o:c.o,t:g.length,pub:g.filter(vidPublished).length,sch:g.filter(vidScheduled).length,tv:g.reduce((a,v)=>a+(Number(v.views)||0),0)};});
+  if(q)rows=rows.filter(r=>r.n.toLowerCase().includes(q));
+  rows.sort((a,b)=>b.tv-a.tv||b.t-a.t);
+  $('vidAggBody').innerHTML=rows.map(r=>'<tr style="cursor:pointer" title="Bấm xem chi tiết kênh" onclick="vidGo('+r.id+')"><td><b>'+esc(r.n)+'</b></td><td style="color:var(--muted);font-size:11px;max-width:170px;white-space:normal">'+esc(r.o||'—')+'</td><td class="num">'+r.t+'</td><td class="num" style="color:var(--green);font-weight:600">'+r.pub+'</td><td class="num" style="color:var(--brand)">'+r.sch+'</td><td class="num">'+fmtK(r.tv)+'</td><td class="num">'+fmtK(r.t?Math.round(r.tv/r.t):0)+'</td></tr>').join('')||'<tr><td class="empty" colspan="7">Chưa có kênh/video nào</td></tr>';
+}
+function renderVidTable(){
+  if(!$('vidBody'))return;
+  $('vidDetailCard').style.display='';$('vidAggCard').style.display='none';
+  const sts=[...new Set(vidData.map(v=>v.status).filter(Boolean))];
+  if($('vidStatus')){const cur=$('vidStatus').value;$('vidStatus').innerHTML='<option value="">Mọi trạng thái</option>'+sts.map(s=>'<option'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');}
+  const q=($('vidSearch').value||'').toLowerCase(),st=$('vidStatus')?$('vidStatus').value:'';
+  const rows=vidData.filter(v=>(!q||String(v.title||'').toLowerCase().includes(q)||String(v.url||'').toLowerCase().includes(q))&&(!st||v.status===st));
+  const tot=vidData.length,pub=vidData.filter(vidPublished).length,sch=vidData.filter(vidScheduled).length,tv=vidData.reduce((a,v)=>a+(Number(v.views)||0),0);
+  $('vidKpis').innerHTML=[['Tổng video',tot,''],['Đã đăng',pub,'green'],['Lên lịch',sch,'brand'],['Tổng view',fmtK(tv),'amber']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
+  const canEdit=isAdmin()||me.role==='Media';
+  $('vidBody').innerHTML=rows.map((v,i)=>'<tr>'+
+    '<td style="color:var(--muted)">'+(i+1)+'</td>'+
+    '<td style="white-space:nowrap">'+(vnDate(v.produced_date)||'—')+'</td>'+
+    '<td style="max-width:260px;white-space:normal"><b>'+esc(v.title||'(chưa có tiêu đề)')+'</b>'+(v.hashtag?'<div style="font-size:10.5px;color:var(--muted)">'+esc(v.hashtag)+'</div>':'')+'</td>'+
+    '<td style="white-space:nowrap">'+(v.url?linkSnippet(v.url,'Xem'):'<span style="color:var(--muted)">—</span>')+'</td>'+
+    '<td>'+(v.status?'<span class="chip" style="background:var(--panel2)">'+esc(v.status)+'</span>':'<span style="color:var(--muted)">—</span>')+'</td>'+
+    '<td style="white-space:nowrap">'+(v.date_published?vnDate(v.date_published):'<span style="color:var(--muted)">—</span>')+'</td>'+
+    '<td style="color:var(--muted)">'+esc(v.product||'—')+'</td>'+
+    '<td class="num">'+(v.quality_score!=null&&v.quality_score!==''?v.quality_score:'—')+'</td>'+
+    '<td>'+esc(v.duration||'—')+'</td>'+
+    '<td class="num">'+fmtK(Number(v.views)||0)+'</td>'+
+    '<td style="color:var(--amber);max-width:150px;white-space:normal;font-size:11px">'+esc(v.note||'')+'</td>'+
+    '<td style="white-space:nowrap">'+(canEdit?'<span title="Sửa" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editVideo('+v.id+')">✏️</span>':'')+((isAdmin()||v.created_by===me.id)?'<span title="Xóa" style="cursor:pointer;font-size:14px" onclick="deleteVideo('+v.id+')">🗑️</span>':'')+'</td>'+
+  '</tr>').join('');
+  $('vidEmpty').style.display=rows.length?'none':'block';$('vidEmpty').textContent='Chưa có video nào cho kênh này. Bấm "+ Thêm video" hoặc "Nhập / Cập nhật".';
+}
+function resetVidForm(){editingVidId=null;$('vidFormTitle').textContent='Thêm video';$('btnSaveVid').textContent='Lưu video';['vTitle','vUrl','vStatus','vProduct','vHashtag','vProduced','vPublished','vSchedule','vQuality','vDuration','vViews','vNote'].forEach(i=>{if($(i))$(i).value='';});}
+function editVideo(id){const v=vidData.find(x=>String(x.id)===String(id));if(!v)return;editingVidId=id;$('vidForm').style.display='block';$('vidFormTitle').textContent='Sửa video';$('btnSaveVid').textContent='Lưu thay đổi';
+  $('vTitle').value=v.title||'';$('vUrl').value=v.url||'';$('vStatus').value=v.status||'';$('vProduct').value=v.product||'';$('vHashtag').value=v.hashtag||'';$('vProduced').value=v.produced_date||'';$('vPublished').value=v.date_published||'';$('vSchedule').value=v.date_schedule||'';$('vQuality').value=v.quality_score!=null?v.quality_score:'';$('vDuration').value=v.duration||'';$('vViews').value=v.views!=null?v.views:'';$('vNote').value=v.note||'';
+  try{$('vidForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
+window.editVideo=editVideo;
+function deleteVideo(id){const v=vidData.find(x=>String(x.id)===String(id));if(!v)return;if(!confirm('Xóa video "'+(v.title||v.url||'')+'"?'))return;sb.from('videos').delete().eq('id',id).then(({error})=>{if(error)return topErr(error.message);showToast('Đã xóa ✓');renderVideos();});}
+window.deleteVideo=deleteVideo;
+async function importVideos(file){const cid=$('vidChannel').value;if(!cid||cid==='all')return showToast('Chọn 1 kênh cụ thể để nhập');
+  if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
+  let rows=[];try{const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array',cellDates:true});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});}catch(e){return topErr('Không đọc được file: '+(e.message||e));}
+  const pick=(r,names)=>{for(const n of names){if(r[n]!=null&&String(r[n]).trim()!=='')return String(r[n]).trim();}return '';};
+  const num=v=>{const n=Number(String(v).replace(/[^\d.\-]/g,''));return isNaN(n)?null:n;};
+  await loadVideosFor(cid);const byUrl={};vidData.forEach(v=>{if(v.url)byUrl[String(v.url).trim().toLowerCase()]=v;});
+  let ins=0,upd=0,fail=0,lastErr='';
+  for(const r of rows){
+    const url=pick(r,['URL','Url','url','Link','Đường dẫn','Link video']);
+    const title=pick(r,['Title','Tiêu đề','Tên video','title']);
+    if(!url&&!title)continue;
+    const rec={channel_id:Number(cid)};const setIf=(k,val)=>{if(val!==''&&val!=null)rec[k]=val;};
+    setIf('title',title);setIf('url',url);
+    setIf('hashtag',pick(r,['Hashtag','hashtag']));
+    setIf('status',pick(r,['Status','Trạng thái']));
+    setIf('product',pick(r,['Product','Sản phẩm']));
+    setIf('duration',pick(r,['Duration','Thời lượng']));
+    const pd=parseDateAny(pick(r,['Date sản xuất','Date san xuat','Ngày sản xuất']));if(pd)rec.produced_date=pd;
+    const dpub=parseDateAny(pick(r,['Date Published','Date published','Ngày đăng','Ngày publish']));if(dpub)rec.date_published=dpub;
+    const dsch=parseDateAny(pick(r,['Date schedule','Date Schedule','Ngày lên lịch']));if(dsch)rec.date_schedule=dsch;
+    const qs=pick(r,['Quality score','Quality','Điểm chất lượng']);if(qs!=='')rec.quality_score=num(qs);
+    const vw=pick(r,['Lượt view','Luot view','Views','View','Lượt xem']);if(vw!=='')rec.views=num(vw)||0;
+    const nt=pick(r,['Note','Ghi chú']);if(nt!=='')rec.note=nt;
+    try{const ex=url?byUrl[url.toLowerCase()]:null;
+      if(ex){const {error}=await sb.from('videos').update(rec).eq('id',ex.id);if(error)throw error;upd++;}
+      else{rec.created_by=me.id;const {error}=await sb.from('videos').insert(rec);if(error)throw error;ins++;}
+    }catch(e){fail++;lastErr=e.message||String(e);}
+  }
+  await logAction('Nhập video','videos',(ins+upd)+' dòng');
+  showToast('Thêm '+ins+' · cập nhật '+upd+(fail?' · '+fail+' lỗi':''));if(fail)topErr(lastErr);
+  await renderVideos();
+}
+$('btnSaveVid').onclick=async()=>{const cid=$('vidChannel').value;if(!cid||cid==='all')return showToast('Chọn 1 kênh cụ thể để thêm video');
+  const row={channel_id:Number(cid),title:$('vTitle').value.trim()||null,url:$('vUrl').value.trim()||null,status:$('vStatus').value.trim()||null,product:$('vProduct').value.trim()||null,hashtag:$('vHashtag').value.trim()||null,produced_date:$('vProduced').value||null,date_published:$('vPublished').value||null,date_schedule:$('vSchedule').value||null,quality_score:$('vQuality').value!==''?Number($('vQuality').value):null,duration:$('vDuration').value.trim()||null,views:$('vViews').value!==''?Number($('vViews').value):0,note:$('vNote').value.trim()||null};
+  if(!row.title&&!row.url)return showToast('Cần ít nhất Title hoặc URL');
+  $('btnSaveVid').disabled=true;let error;
+  if(editingVidId){({error}=await sb.from('videos').update(row).eq('id',editingVidId));}else{row.created_by=me.id;({error}=await sb.from('videos').insert(row));}
+  $('btnSaveVid').disabled=false;if(error)return topErr(error.message);
+  showToast(editingVidId?'Đã lưu ✓':'Đã thêm video ✓');$('vidForm').style.display='none';resetVidForm();renderVideos();};
+$('btnAddVid').onclick=()=>{if($('vidChannel').value==='all')return showToast('Chọn 1 kênh cụ thể để thêm video');const f=$('vidForm');const show=f.style.display=='none';if(show)resetVidForm();f.style.display=show?'block':'none';};
+$('btnCancelVid').onclick=()=>{$('vidForm').style.display='none';resetVidForm();};
+$('vidChannel').onchange=()=>renderVideos();
+$('vidSearch').oninput=()=>renderVidTable();
+$('vidStatus').onchange=()=>renderVidTable();
+$('btnVidImport').onclick=()=>$('vidFile').click();
+$('vidFile').onchange=e=>{if(e.target.files[0])importVideos(e.target.files[0]);e.target.value='';};
+$('btnVidTemplate').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');const ws=XLSX.utils.json_to_sheet([{'Date sản xuất':'15/06/2026','Title':'Video mẫu','URL':'https://www.tiktok.com/@kenh/video/123','Hashtag':'#fyp #jersey','Status':'Published','Date Published':'15/06/2026','Date schedule':'','Product':'Custom Jersey','Quality score':8,'Duration':'0:32','Lượt view':1200,'Note':''}]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Video');XLSX.writeFile(wb,'RS-form-mau-video.xlsx');};
+$('btnVidExport').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');if(!vidData.length)return showToast('Chưa có video để xuất');const chN={};(ch||[]).forEach(c=>chN[c.id]=c.n);const rows=vidData.map((v,i)=>({'STT':i+1,'Kênh':chN[v.channel_id]||'','Date sản xuất':vnDate(v.produced_date),'Title':v.title||'','URL':v.url||'','Hashtag':v.hashtag||'','Status':v.status||'','Date Published':vnDate(v.date_published),'Date schedule':vnDate(v.date_schedule),'Product':v.product||'','Quality score':v.quality_score!=null?v.quality_score:'','Duration':v.duration||'','Lượt view':v.views||0,'Note':v.note||''}));const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Video');XLSX.writeFile(wb,'RS-video-'+new Date().toISOString().slice(0,10)+'.xlsx');};
 
 // log
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
