@@ -251,7 +251,7 @@
       <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
         <div class="card"><h3>Tỷ lệ kênh khỏe <span class="tag">🟢/tổng</span></h3><div class="gaugeWrap"><canvas id="gauge1"></canvas><div class="gaugeTxt" id="gauge1Txt"></div></div></div>
         <div class="card"><h3>Cập nhật đúng hạn <span class="tag">trong ngày</span></h3><div class="gaugeWrap"><canvas id="gauge2"></canvas><div class="gaugeTxt" id="gauge2Txt"></div></div></div>
-        <div class="card"><h3>Sức khỏe kênh <span class="tag" id="healthTot"></span></h3><canvas id="health" style="max-height:150px"></canvas><div id="healthLegend" style="display:flex;justify-content:space-around;margin-top:10px;font-size:12px"></div></div>
+        <div class="card"><h3>Trạng thái kênh <span class="tag" id="healthTot"></span></h3><canvas id="health" style="max-height:150px"></canvas><div id="healthLegend" style="display:flex;justify-content:space-around;margin-top:10px;font-size:12px"></div></div>
       </div>
       <div class="grid row2">
         <div class="card"><h3>Đơn &amp; GMV theo tháng <span class="tag">từ dữ liệu thật</span></h3><canvas id="trend"></canvas></div>
@@ -295,7 +295,6 @@
           <div><label>IP</label><input class="field" id="ncIp" placeholder="US"></div>
           <div><label>Proxy</label><input class="field" id="ncProxy" placeholder="ip:port:user:pass"></div>
           <div><label>Phone đăng nhập</label><input class="field" id="ncPhone" placeholder=""></div>
-          <div><label>Violations</label><input class="field" id="ncViol" type="number" placeholder="0"></div>
           <div><label>Mục tiêu follower</label><input class="field" id="ncGoal" type="number" placeholder="50000"></div>
           <div style="grid-column:1/-1"><label>Note</label><input class="field" id="ncNote" placeholder="Ghi chú"></div>
         </div>
@@ -308,7 +307,7 @@
         <input id="fSearch" placeholder="Tìm theo tên kênh...">
         <select id="fSeller"><option value="">Tất cả seller</option></select>
         <select id="fNiche"><option value="">Tất cả niche</option></select>
-        <select id="fHealth"><option value="">Mọi sức khỏe</option><option value="g">🟢 Tốt</option><option value="a">🟠 Chú ý</option><option value="r">🔴 Vấn đề</option></select>
+        <select id="fHealth"><option value="">Mọi trạng thái</option><option value="g">🟢 Tốt</option><option value="a">🟠 Chú ý</option><option value="r">🔴 Cần chú ý gấp</option><option value="n">⚪ Chưa có DL</option></select>
         <span class="cnt" id="chCount"></span>
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
@@ -316,7 +315,7 @@
           <thead><tr>
             <th class="sortable stick" data-k="n">Kênh <span class="ar"></span></th>
             <th class="sortable" data-k="niche">Niche <span class="ar"></span></th>
-            <th>Shop</th><th>Seller</th><th>Người Care</th><th class="num">Vi phạm</th>
+            <th>Shop</th><th>Seller</th><th>Người Care</th><th class="num">Vấn đề mở</th>
             <th class="sortable num" data-k="f">Follower <span class="ar"></span></th>
             <th class="sortable num" data-k="pct">% MT <span class="ar"></span></th>
             <th class="sortable num" data-k="v">View <span class="ar"></span></th>
@@ -324,7 +323,7 @@
             <th class="sortable num" data-k="or">Đơn <span class="ar"></span></th>
             <th class="sortable num" data-k="com">GMV ($) <span class="ar"></span></th>
             <th class="sortable num" data-k="upd">Cập nhật <span class="ar"></span></th>
-            <th>Sức khỏe</th><th></th>
+            <th>Trạng thái</th><th></th>
           </tr></thead>
           <tbody id="chBody"></tbody>
         </table>
@@ -476,6 +475,7 @@
         <div class="form" style="grid-template-columns:repeat(2,1fr)">
           <div><label>Tiêu đề</label><input class="field" id="isTitle" placeholder="VD: kênh bay view, file lỗi..."></div>
           <div><label>Nguồn</label><select class="field" id="isSource"><option>Media</option><option>Seller</option></select></div>
+          <div><label>Loại vấn đề</label><select class="field" id="isType"><option>Sự cố kênh</option><option>Vi phạm</option><option>Lỗi sản xuất</option><option>Khác</option></select></div>
           <div><label>Kênh liên quan</label><select class="field" id="isChannel"></select></div>
           <div><label>Mức độ</label><select class="field" id="isSev"><option value="hi">Cao</option><option value="mid">Trung bình</option><option value="lo">Thấp</option></select></div>
           <div><label>Người phát hiện</label><select class="field" id="isReporter"></select></div>
@@ -486,8 +486,10 @@
         <div style="margin-top:12px"><button class="btn" id="btnSaveIssue">Lưu</button> <button class="btn ghost" id="btnCancelIssue">Hủy</button></div>
       </div>
       <div class="grid kpis" id="issueKpis" style="margin-bottom:14px"></div>
+      <div class="filters" style="margin-bottom:10px"><select id="isFilterType"><option value="">Mọi loại</option><option>Vi phạm</option><option>Lỗi sản xuất</option><option>Sự cố kênh</option><option>Khác</option></select></div>
+      <div id="issueFilterBar"></div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Vấn đề</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người phát hiện</th><th>Người xử lý</th><th>Hạn xử lý</th><th>Trạng thái</th><th></th></tr></thead>
+        <table><thead><tr><th>Vấn đề</th><th>Loại</th><th>Nguồn</th><th>Kênh</th><th>Mức độ</th><th>Người phát hiện</th><th>Người xử lý</th><th>Hạn xử lý</th><th>Trạng thái</th><th></th></tr></thead>
         <tbody id="issueBody"></tbody></table>
         <div class="empty" id="issueEmpty" style="display:none">Chưa có vấn đề nào.</div>
       </div></div>
@@ -502,7 +504,7 @@
     <section class="view" id="bySeller">
       <div class="topbar"><div><h1>Theo seller</h1><div class="sub">Gộp toàn bộ kênh của mỗi seller</div></div></div>
       <div class="card" style="padding:0"><div class="tbl-wrap"><table>
-        <thead><tr><th>Seller</th><th class="num">Số kênh</th><th class="num">Follower</th><th class="num">Đơn kỳ</th><th class="num">GMV ($)</th><th class="num">GMV (₫)</th><th class="num">Kênh đỏ</th><th>Sức khỏe</th></tr></thead>
+        <thead><tr><th>Seller</th><th class="num">Số kênh</th><th class="num">Follower</th><th class="num">Đơn kỳ</th><th class="num">GMV ($)</th><th class="num">GMV (₫)</th><th class="num">Kênh đỏ</th><th>Trạng thái</th></tr></thead>
         <tbody id="sellerBody"></tbody></table></div></div>
     </section>
 
@@ -532,7 +534,7 @@
         <div style="font-size:12.5px;font-weight:700;color:var(--green);margin:14px 0 8px">📡 KPI Seller (chủ kênh)</div>
         <div class="form" style="grid-template-columns:repeat(4,1fr)">
           <div><label>Ngưỡng cập nhật đúng nhịp (%)</label><input class="field" id="cfgSOntime" type="number" placeholder="90"></div>
-          <div><label>Vi phạm tối đa cho phép</label><input class="field" id="cfgSViol" type="number" placeholder="0"></div>
+          <div><label>Vấn đề mở tối đa cho phép</label><input class="field" id="cfgSViol" type="number" placeholder="0"></div>
           <div><label>Mục tiêu đơn / kỳ <span style="color:var(--muted);font-weight:500">(0 = bỏ qua)</span></label><input class="field" id="cfgSOrder" type="number" placeholder="0"></div>
           <div><label>Mục tiêu GMV ($/kỳ) <span style="color:var(--muted);font-weight:500">(0 = bỏ qua)</span></label><input class="field" id="cfgSGmv" type="number" placeholder="0"></div>
         </div>
@@ -544,7 +546,7 @@
         <div class="empty" id="kpiMediaEmpty" style="display:none">Chưa có order nào trong kỳ để chấm.</div>
       </div>
       <div class="card" id="kpiSellerCard" style="padding:0"><div style="padding:13px 16px 0"><h3>Seller / Chủ kênh</h3></div><div class="tbl-wrap"><table>
-        <thead><tr><th>Seller</th><th class="num">Số kênh</th><th class="num">Cập nhật đúng nhịp</th><th class="num">Vi phạm</th><th class="num">Đơn kỳ</th><th class="num">GMV ($)</th><th>Kết luận</th></tr></thead>
+        <thead><tr><th>Seller</th><th class="num">Số kênh</th><th class="num">Cập nhật đúng nhịp</th><th class="num">Vấn đề mở</th><th class="num">Đơn kỳ</th><th class="num">GMV ($)</th><th>Kết luận</th></tr></thead>
         <tbody id="kpiSellerBody"></tbody></table></div>
         <div class="empty" id="kpiSellerEmpty" style="display:none">Chưa có kênh nào.</div>
       </div>
@@ -660,7 +662,7 @@ let sortK='com',sortDir=-1,obDismissed=false,toastT,healthChart=null,trendDrawn=
 const fmtK=x=>{x=Number(x)||0;return x>=1000?(x/1000).toFixed(1)+'K':''+x;};
 const fmtVnd=usdK=>{const v=(Number(usdK)||0)*1000*RATE;return v>=1e9?(v/1e9).toFixed(2)+' tỷ₫':v>=1e6?(v/1e6).toFixed(0)+' tr₫':Math.round(v).toLocaleString('vi')+'₫';};
 const sign=x=>x>0?'<span class="pos">▲'+fmtK(x)+'</span>':x<0?'<span class="neg">▼'+fmtK(-x)+'</span>':'<span style="color:var(--muted)">—</span>';
-const hLabel={g:'Tốt',a:'Chú ý',r:'Vấn đề',n:'Chưa có DL'};
+const hLabel={g:'Tốt',a:'Chú ý',r:'Cần chú ý gấp',n:'Chưa có DL'};
 const hdot=h=>'<span class="dot-h '+h+'"></span>'+(hLabel[h]||'');
 const updChip=u=>u>=999?'<span class="chip late">chưa nhập</span>':u>3?'<span class="chip late">quá hạn '+u+'n</span>':u>=1?'<span class="chip due">nên c.nhật ('+u+'n)</span>':'<span class="chip ok">hôm nay</span>';
 const accChip=a=>a==='shop'?'<span class="chip ok">Đã bật shop</span>':'<span class="chip mut">Chưa · buff</span>';
@@ -793,7 +795,7 @@ async function loadData(){
       return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
-      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||''};});
+      return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||''};});
     if(isAdmin()){
       const {data:profs}=await sb.from('profiles').select('*').order('created_at');
       allUsers=profs||[];pendUsers=allUsers.filter(p=>p.status==='pending');
@@ -861,6 +863,8 @@ function renderAll(){
   fillSel('dashNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('dashChannel','Tất cả kênh',ch.map(c=>({v:c.id,t:c.n})));
   const sc=dashScope();window.gScope=sc;
+  // Số vấn đề đang mở theo kênh (gộp Vi phạm vào Vấn đề)
+  window.gOpenByCh={};(issues||[]).forEach(i=>{if(i.scode!=='done'&&i.channel_id){window.gOpenByCh[i.channel_id]=(window.gOpenByCh[i.channel_id]||0)+1;}});
   // Tập tên kênh đang có vấn đề ghi nhận (issue chưa đóng) — để gắn cờ 📌
   window.gOpenIssues=new Set((typeof issues!=='undefined'?issues:[]).filter(i=>i.scode!=='done').map(i=>i.ch));
   $('dashSub').textContent=sc.length+'/'+ch.length+' kênh · '+sellers.length+' seller · Kỳ: '+periodLabel()+(asOf?' · tính đến '+asOf:'')+' · 1$=26.000₫';
@@ -874,7 +878,7 @@ function renderAll(){
   const redCnt=sc.filter(c=>c.h=='r').length,amberCnt=sc.filter(c=>c.h=='a').length;
   const viewPerVid=totVid?Math.round(totV/totVid):0,conv=totV?(totOr/totV*1000):0;
   const shopCnt=sc.filter(c=>c.acc=='shop').length,shopPct=sc.length?Math.round(shopCnt/sc.length*100):0;
-  const totViol=sc.reduce((a,c)=>a+(c.violations||0),0),violCh=sc.filter(c=>c.violations>0).length;
+  const totViol=sc.reduce((a,c)=>a+((window.gOpenByCh&&window.gOpenByCh[c.id])||0),0),violCh=sc.filter(c=>(window.gOpenByCh&&window.gOpenByCh[c.id])).length;
   const avgF=sc.length?Math.round(totF/sc.length):0;
   $('kpis').innerHTML=[
    ['Tổng kênh<span class="help" title="Số kênh đang theo dõi trong phạm vi lọc hiện tại.">?</span>','TB '+fmtK(avgF)+' follower/kênh',sc.length.toLocaleString('vi'),'all'],
@@ -885,9 +889,9 @@ function renderAll(){
    ['GMV kỳ này<span class="help" title="Tổng giá trị đơn (USD) trong kỳ. Tự quy ra VND theo tỷ giá 26.000.">?</span>','≈ '+fmtVnd(totCom)+pc(totCom,totComP),'$'+totCom.toFixed(1)+'K','gmv'],
    ['Tổng video đăng','sản lượng media kỳ này',totVid.toLocaleString('vi'),'video'],
    ['Đã bật shop<span class="help" title="Số kênh đã bật TikTok Shop / tổng kênh trong phạm vi lọc.">?</span>',shopPct+'% kênh đã mở shop',shopCnt+' /'+sc.length,'shop'],
-   ['Tổng vi phạm<span class="help" title="Tổng số vi phạm đang ghi nhận trên các kênh — rủi ro cần xử lý.">?</span>','<span style="color:var(--red)">'+violCh+'</span> kênh dính vi phạm',totViol.toLocaleString('vi'),'viol'],
+   ['Vấn đề đang mở<span class="help" title="Tổng số vấn đề/sự cố chưa đóng trên các kênh.">?</span>','<span style="color:var(--red)">'+violCh+'</span> kênh có vấn đề',totViol.toLocaleString('vi'),'openiss'],
    ['Cần cập nhật<span class="help" title="Ưu tiên cập nhật hằng ngày. Quá 3 ngày chưa nhập = quá hạn.">?</span>','<span style="color:var(--red)">'+overdue+'</span> quá hạn (>3 ngày)',needToday+' /'+sc.length,'update'],
-   ['Kênh cần chú ý','<span style="color:var(--amber)">'+amberCnt+'</span> chú ý · <span style="color:var(--red)">'+redCnt+'</span> vấn đề',(amberCnt+redCnt)+' /'+sc.length,'attention'],
+   ['Kênh cần chú ý','<span style="color:var(--amber)">'+amberCnt+'</span> chú ý · <span style="color:var(--red)">'+redCnt+'</span> cần chú ý gấp',(amberCnt+redCnt)+' /'+sc.length,'attention'],
   ].map(k=>'<div class="card kpi'+(k[3]?' clk" onclick="drillKPI(\''+k[3]+'\')"':'"')+'><div class="label">'+k[0]+'</div><div class="val">'+k[2]+'</div><div class="delta">'+k[1]+'</div></div>').join('');
   $('navOverdue').textContent=overdue||'';
   // onboarding / getting-started
@@ -898,9 +902,9 @@ function renderAll(){
   // health
   const hc={g:sc.filter(c=>c.h=='g').length,a:sc.filter(c=>c.h=='a').length,r:sc.filter(c=>c.h=='r').length,n:sc.filter(c=>c.h=='n').length};
   $('healthTot').textContent=sc.length+' kênh';
-  $('healthLegend').innerHTML='<span class="lg-clk" onclick="drillKPI(\'h_g\')"><span class="dot-h g"></span>Tốt '+hc.g+'</span><span class="lg-clk" onclick="drillKPI(\'h_a\')"><span class="dot-h a"></span>Chú ý '+hc.a+'</span><span class="lg-clk" onclick="drillKPI(\'h_r\')"><span class="dot-h r"></span>Vấn đề '+hc.r+'</span><span class="lg-clk" onclick="drillKPI(\'h_n\')"><span class="dot-h n"></span>Chưa DL '+hc.n+'</span>';
+  $('healthLegend').innerHTML='<span class="lg-clk" onclick="drillKPI(\'h_g\')"><span class="dot-h g"></span>Tốt '+hc.g+'</span><span class="lg-clk" onclick="drillKPI(\'h_a\')"><span class="dot-h a"></span>Chú ý '+hc.a+'</span><span class="lg-clk" onclick="drillKPI(\'h_r\')"><span class="dot-h r"></span>Cần chú ý gấp '+hc.r+'</span><span class="lg-clk" onclick="drillKPI(\'h_n\')"><span class="dot-h n"></span>Chưa DL '+hc.n+'</span>';
   if(healthChart)healthChart.destroy();
-  if(window.Chart)healthChart=new Chart($('health'),{type:'doughnut',data:{labels:['Tốt','Chú ý','Vấn đề','Chưa DL'],datasets:[{data:[hc.g,hc.a,hc.r,hc.n],backgroundColor:['#3ecf8e','#f2c14e','#f06a6a','#8b92a7'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'66%'}});
+  if(window.Chart)healthChart=new Chart($('health'),{type:'doughnut',data:{labels:['Tốt','Chú ý','Cần chú ý gấp','Chưa DL'],datasets:[{data:[hc.g,hc.a,hc.r,hc.n],backgroundColor:['#3ecf8e','#f2c14e','#f06a6a','#8b92a7'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'66%'}});
   // gauges — tính trên các kênh ĐÃ có dữ liệu
   const withData=hc.g+hc.a+hc.r;
   drawGauge('gauge1','gauge1Txt',withData?hc.g/withData*100:0,'kênh khỏe','#3ecf8e');
@@ -926,7 +930,6 @@ function renderAll(){
   sc.filter(c=>c.d<0).forEach(c=>alerts.push({lv:'hi',ic:'▼',t:c.n+' — follower giảm '+(-c.d),w:'Kênh đang tụt'}));
   sc.filter(c=>c.vid<=2&&c.upd<999).forEach(c=>alerts.push({lv:'mid',ic:'⊘',t:c.n+' — chỉ '+c.vid+' video trong kỳ',w:'Dưới ngưỡng'}));
   sc.filter(c=>c.vP>0&&c.v<c.vP*0.7).forEach(c=>alerts.push({lv:'hi',ic:'📉',t:c.n+' — bay view '+Math.round((1-c.v/c.vP)*100)+'% so kỳ trước',w:'View '+fmtK(c.vP)+' → '+fmtK(c.v)}));
-  sc.filter(c=>c.violations>0).forEach(c=>alerts.push({lv:'mid',ic:'⚠',t:c.n+' — '+c.violations+' vi phạm',w:'Rủi ro kênh · '+c.o}));
   orders.filter(o=>o.deadline&&o.scode!=='done'&&String(o.deadline)<todayStr()).forEach(o=>alerts.push({lv:'hi',ic:'⏰',t:'Order trễ deadline: '+esc(o.p),w:'Hạn '+vnDate(o.deadline)+(o.who&&o.who!=='—'?' · '+esc(o.who):'')+' · seller '+esc(o.s)}));
   issues.filter(i=>i.scode!=='done'&&i.due&&String(i.due)<todayStr()).forEach(i=>alerts.push({lv:'hi',ic:'⏰',t:'Vấn đề trễ hạn xử lý: '+esc(i.t),w:'Hạn '+vnDate(i.due)+' · người xử lý: '+(i.who?esc(i.who):'CHƯA GÁN')+' · '+i.st[1]}));
   const ord={hi:0,mid:1,lo:2};alerts.sort((a,b)=>ord[a.lv]-ord[b.lv]);
@@ -973,29 +976,23 @@ function renderAll(){
   $('orderEmpty').style.display=orders.length?'none':'block';
   // issues
   const isOverdue=i=>i.scode!=='done'&&i.due&&String(i.due)<todayStr();
-  $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Chờ phản hồi',issues.filter(i=>i.st[0]=='waiting').length,'purple'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green'],['Trễ hạn xử lý',issues.filter(isOverdue).length,'red'],['Vi phạm (kênh)',ch.filter(c=>c.violations>0).length,'amber']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
+  $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Chờ phản hồi',issues.filter(i=>i.st[0]=='waiting').length,'purple'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green'],['Trễ hạn xử lý',issues.filter(isOverdue).length,'red']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
   const ic={hi:['rgba(240,106,106,.16)','var(--red)'],mid:['rgba(242,193,78,.16)','var(--amber)'],lo:['#2a2f3e','var(--muted)']},ist={open:['rgba(240,106,106,.16)','var(--red)'],doing:['rgba(242,193,78,.16)','var(--amber)'],waiting:['rgba(155,123,255,.16)','var(--purple)'],done:['rgba(62,207,142,.16)','var(--green)']};
-  // Dòng phái sinh: kênh có vi phạm (từ bộ đếm Violations của kênh) — chỉ xem, xử lý bằng cách sửa kênh về 0
-  const vioCh=ch.filter(c=>c.violations>0);
-  const vioRows=vioCh.map(c=>{const sev=c.violations>=3?'hi':'mid';
-    return '<tr style="background:'+ic[sev][0].replace('.16','.06')+'"><td><b>'+c.violations+' vi phạm</b><div style="font-size:10.5px;color:var(--muted)">từ bộ đếm Violations của kênh</div></td>'+
-      '<td><span class="chip" style="background:var(--panel2);color:var(--muted)">Kênh</span></td>'+
-      '<td style="color:var(--muted)">'+esc(c.n)+'</td>'+
-      '<td><span class="chip" style="background:'+ic[sev][0]+';color:'+ic[sev][1]+'">'+(sev=='hi'?'Cao':'TB')+'</span></td>'+
-      '<td style="color:var(--muted)">—</td>'+
-      '<td style="color:var(--muted)">'+esc(c.o)+'</td>'+
-      '<td style="color:var(--muted)">—</td>'+
-      '<td><span class="chip" style="background:'+ic.mid[0]+';color:'+ic.mid[1]+'">Cần xử lý</span></td>'+
-      '<td style="white-space:nowrap"><button class="btn ghost" style="font-size:11.5px;padding:5px 10px" title="Ghi nhận thành vấn đề để gán người xử lý + đổi trạng thái" onclick="drillIssue('+c.id+')">📝 Ghi nhận</button></td></tr>';}).join('');
-  $('issueBody').innerHTML=vioRows+issues.map(i=>{
+  const ifCh=window.gIssueFilterCh||'';const ifType=($('isFilterType')&&$('isFilterType').value)||'';
+  const fIssues=issues.filter(i=>(!ifCh||i.ch===ifCh)&&(!ifType||i.type===ifType));
+  if($('issueFilterBar'))$('issueFilterBar').innerHTML=ifCh?'<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px">Đang lọc theo kênh: <b>'+esc(ifCh)+'</b> <span style="cursor:pointer;color:var(--brand);margin-left:8px" onclick="clearIssueFilter()">✕ bỏ lọc</span></div>':'';
+  $('issueBody').innerHTML=fIssues.map(i=>{
     const canIssue=isAdmin()||(me&&me.role==='Media');
     const stCell=canIssue?'<select style="'+SELCSS+'" onchange="setIssueStatus('+i.id+',this.value)">'+selOpts([['open','Mới'],['doing','Đang xử lý'],['waiting','Chờ phản hồi'],['done','Đã đóng']],i.scode)+'</select>':'<span class="chip" style="background:'+ist[i.st[0]][0]+';color:'+ist[i.st[0]][1]+'">'+i.st[1]+'</span>';
     const whoCell=canIssue?'<select style="'+SELCSS+';min-width:150px" onchange="setIssueAssignee('+i.id+',this.value)">'+memberOpts(i.who)+'</select>':(i.who?esc(i.who):'<span style="color:var(--muted)">—</span>');
     const over=isOverdue(i);
     const dueCell=i.due?'<span'+(over?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(i.due)+(over?' ⚠':'')+'</span>':'<span style="color:var(--muted)">—</span>';
     const act=(canIssue?'<span title="Sửa vấn đề" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="editIssue('+i.id+')">✏️</span>':'')+(isAdmin()?'<span title="Xóa vấn đề" style="cursor:pointer" onclick="deleteIssue('+i.id+')">🗑️</span>':'');
-    return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+i.src+'</td><td style="color:var(--muted)">'+esc(i.ch)+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td style="color:var(--muted)">'+esc(i.reporter)+'</td><td>'+whoCell+'</td><td>'+dueCell+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
-  $('issueEmpty').style.display=(issues.length||vioCh.length)?'none':'block';
+    const chCell=i.channel_id?'<span style="cursor:pointer;text-decoration:underline" title="Mở kênh" onclick="editChannel('+i.channel_id+')">'+esc(i.ch)+'</span>':esc(i.ch);
+    const tCol=i.type==='Vi phạm'?'var(--red)':i.type==='Lỗi sản xuất'?'var(--amber)':'var(--muted)';
+    const typeCell=i.type?'<span class="chip" style="background:var(--panel2);color:'+tCol+'">'+esc(i.type)+'</span>':'<span style="color:var(--muted)">—</span>';
+    return '<tr><td><b>'+esc(i.t)+'</b></td><td>'+typeCell+'</td><td>'+i.src+'</td><td style="color:var(--muted)">'+chCell+'</td><td><span class="chip" style="background:'+ic[i.sev[0]][0]+';color:'+ic[i.sev[0]][1]+'">'+i.sev[1]+'</span></td><td style="color:var(--muted)">'+esc(i.reporter)+'</td><td>'+whoCell+'</td><td>'+dueCell+'</td><td>'+stCell+'</td><td>'+act+'</td></tr>';}).join('');
+  $('issueEmpty').style.display=fIssues.length?'none':'block';
   $('navIssues').textContent=issues.filter(i=>i.st[0]!='done').length||'';
   // by seller (toàn bộ kênh)
   const sl=[...new Set(ch.map(c=>c.s))].map(s=>{const g=ch.filter(c=>c.s===s);return {s,n:g.length,f:g.reduce((a,c)=>a+c.f,0),or:g.reduce((a,c)=>a+c.or,0),com:g.reduce((a,c)=>a+c.com,0),red:g.filter(c=>c.h=='r').length};});
@@ -1044,7 +1041,7 @@ function renderCh(){
       '<td>'+accChip(c.acc)+shopIc+'</td>'+
       '<td>'+esc(c.s)+'</td>'+
       '<td style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
-      '<td class="num"'+(c.violations>0?' style="color:var(--red);font-weight:700"':'')+'>'+(c.violations||0)+'</td>'+
+      '<td class="num">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
       '<td class="num">'+fmtK(c.f)+dlt+'</td>'+
       '<td class="num">'+pctTd+'</td>'+
       '<td class="num">'+fmtK(c.v)+'</td>'+
@@ -1052,8 +1049,8 @@ function renderCh(){
       '<td class="num">'+c.or+'</td>'+
       '<td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
       '<td>'+updChip(c.upd)+'</td>'+
-      '<td title="'+(healthReason(c).join(' · ')||'Ổn định')+'">'+hdot(c.h)+'</td>'+
-      '<td style="white-space:nowrap"><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
+      '<td title="'+(healthReason(c).join(' · ')||'Ổn định')+'" style="white-space:nowrap"><span class="dot-h '+c.h+'"></span> '+esc(healthStatusLabel(c))+'</td>'+
+      '<td style="white-space:nowrap"><span title="Báo vấn đề cho kênh này" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="drillIssue('+c.id+')">⚠️</span><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
   }).join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
@@ -1147,7 +1144,7 @@ $('btnSaveOrder').onclick=async()=>{
 };
 $('btnSaveIssue').onclick=async()=>{
   const cid=$('isChannel').value;const rc=(rawChannels||[]).find(x=>String(x.id)===String(cid));
-  const row={title:$('isTitle').value.trim(),source:$('isSource').value,channel_id:cid?Number(cid):null,channel_name:rc?rc.name:null,
+  const row={title:$('isTitle').value.trim(),source:$('isSource').value,issue_type:($('isType')&&$('isType').value)||null,channel_id:cid?Number(cid):null,channel_name:rc?rc.name:null,
     seller_id:rc?rc.seller_id:null,severity:$('isSev').value,status:($('isStatus')?$('isStatus').value:'open')||'open',
     due_date:($('isDue')&&$('isDue').value)||null,
     reporter:$('isReporter').value.trim()||(me.full_name||me.email),assignee:$('isAssignee').value.trim()||null,created_by:me.id};
@@ -1162,11 +1159,11 @@ $('btnSaveIssue').onclick=async()=>{
   await loadData();
 };
 let editingIssueId=null;
-function resetIssueForm(){editingIssueId=null;const h=$('issueForm').querySelector('h3');if(h)h.textContent='Ghi nhận vấn đề';if($('btnSaveIssue'))$('btnSaveIssue').textContent='Lưu';['isTitle','isDue'].forEach(i=>{if($(i))$(i).value='';});}
+function resetIssueForm(){editingIssueId=null;const h=$('issueForm').querySelector('h3');if(h)h.textContent='Ghi nhận vấn đề';if($('btnSaveIssue'))$('btnSaveIssue').textContent='Lưu';['isTitle','isDue'].forEach(i=>{if($(i))$(i).value='';});if($('isType'))$('isType').value='Sự cố kênh';}
 function editIssue(id){const i=issues.find(x=>String(x.id)===String(id));if(!i)return;editingIssueId=id;
   const f=$('issueForm');f.style.display='block';const h=f.querySelector('h3');if(h)h.textContent='Sửa vấn đề: '+i.t;if($('btnSaveIssue'))$('btnSaveIssue').textContent='Lưu thay đổi';
   $('isTitle').value=i.t||'';$('isSource').value=(i.src&&i.src!=='—')?i.src:'Media';if($('isChannel'))$('isChannel').value=i.channel_id||'';
-  $('isSev').value=i.sevCode||'mid';if($('isStatus'))$('isStatus').value=i.scode||'open';if($('isDue'))$('isDue').value=i.due||'';
+  $('isSev').value=i.sevCode||'mid';if($('isStatus'))$('isStatus').value=i.scode||'open';if($('isDue'))$('isDue').value=i.due||'';if($('isType')&&i.type)$('isType').value=i.type;
   if($('isReporter'))$('isReporter').value=(i.reporter&&i.reporter!=='—')?i.reporter:'';if($('isAssignee'))$('isAssignee').value=i.who||'';
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editIssue=editIssue;
@@ -1178,7 +1175,7 @@ $('btnSaveCh').onclick=async()=>{
   try{
     if(newSeller){const {data,error}=await sb.from('sellers').insert({name:newSeller}).select().single();if(error)throw error;sid=data.id;}
     const careList=[...document.querySelectorAll('#ncCare .careChk')].filter(c=>c.checked).map(c=>c.value);
-    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,shop_url:$('ncShop').value.trim()||null,violations:Number($('ncViol').value)||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
+    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,shop_url:$('ncShop').value.trim()||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
     if(editingId){const {error}=await sb.from('channels').update(rec).eq('id',editingId);if(error)throw error;await logAction('Sửa kênh','channels',rec.name);showToast('Đã lưu thay đổi ✓');}
     else{const {error}=await sb.from('channels').insert(rec);if(error)throw error;await logAction('Thêm kênh','channels',rec.name);showToast('Đã thêm kênh ✓');}
     $('chForm').style.display='none';resetChForm();
@@ -1188,12 +1185,12 @@ $('btnSaveCh').onclick=async()=>{
 };
 function resetChForm(){editingId=null;$('chFormTitle').textContent='Thêm kênh';$('btnSaveCh').textContent='Lưu kênh';
   document.querySelectorAll('#ncCare .careChk').forEach(c=>c.checked=false);
-  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncShop','ncViol','ncNote','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');}
+  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncShop','ncNote','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');}
 function editChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;editingId=id;
   $('chFormTitle').textContent='Sửa kênh: '+c.name;$('btnSaveCh').textContent='Lưu thay đổi';
   $('ncName').value=c.name||'';$('ncPlatform').value=c.platform||'TikTok';$('ncSeller').value=c.seller_id||'';{const careSet=new Set((c.care||'').split(',').map(x=>x.trim()).filter(Boolean));
    document.querySelectorAll('#ncCare .careChk').forEach(chk=>chk.checked=careSet.has(chk.value));
-   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncShop').value=c.shop_url||'';$('ncViol').value=c.violations!=null?c.violations:'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
+   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncShop').value=c.shop_url||'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
   $('chForm').style.display='block';selectView('channels');try{$('chForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editChannel=editChannel;
 // ===== Drill-down: bấm KPI / chú thích sức khỏe → xổ danh sách kênh chi tiết =====
@@ -1209,6 +1206,8 @@ function showDrill(title,rowsHtml,footHtml){
 function drillGo(id){closeDrill();editChannel(id);}window.drillGo=drillGo;
 function drillUpd(id){closeDrill();selectView('update');setTimeout(()=>{const s=document.getElementById('updCh');if(s){s.value=id;s.dispatchEvent(new Event('change'));}},60);}window.drillUpd=drillUpd;
 function drillView(v){closeDrill();selectView(v);}window.drillView=drillView;
+window.issuesByChannel=function(enc){window.gIssueFilterCh=decodeURIComponent(enc);selectView('issues');if(typeof renderAll==='function')renderAll();};
+window.clearIssueFilter=function(){window.gIssueFilterCh='';if(typeof renderAll==='function')renderAll();};
 // Lý do cụ thể vì sao một kênh ở trạng thái Chú ý / Vấn đề (suy ra từ healthRule)
 function healthReason(c){
   const r=[];
@@ -1218,16 +1217,27 @@ function healthReason(c){
   if(c.upd<999&&c.vid<=2)r.push('Chỉ '+c.vid+' video trong kỳ');
   if(c.d<0)r.push('Follower giảm '+fmtK(-c.d));
   if(c.vP>0&&c.v<c.vP*0.7)r.push('Bay view '+Math.round((1-c.v/c.vP)*100)+'% so kỳ trước');
-  if(c.violations>0)r.push(c.violations+' vi phạm');
   return r;
 }
 window.healthReason=healthReason;
+// Nhãn trạng thái NGẮN GỌN, nói rõ cần làm gì (tự cảnh báo theo việc chưa làm)
+function healthStatusLabel(c){
+  if(c.h==='g')return 'Tốt';
+  if(c.upd>=999)return 'Cần nhập số liệu';
+  if(c.upd>3)return 'Cần cập nhật (trễ '+c.upd+' ngày)';
+  if(c.d<0)return 'Follower giảm';
+  if(c.upd<999&&c.vid<=2)return 'Cần đăng video';
+  if(c.vP>0&&c.v<c.vP*0.7)return 'View tụt';
+  if(c.upd>=2)return 'Sắp đến hạn cập nhật';
+  return hLabel[c.h]||'';
+}
 // Mở thẳng form Ghi nhận vấn đề, điền sẵn kênh + lý do tự phát hiện
 function drillIssue(id){
   closeDrill();selectView('issues');
   setTimeout(()=>{const f=document.getElementById('issueForm');if(f)f.style.display='block';
     const c=(window.gScope||[]).find(x=>String(x.id)===String(id));
     const cs=document.getElementById('isChannel');if(cs)cs.value=id;
+    const ty=document.getElementById('isType');if(ty)ty.value='Vi phạm';
     const rp=document.getElementById('isReporter');if(rp&&!rp.value)rp.value=(typeof me!=='undefined'&&(me.full_name||me.email))||'';
     const ti=document.getElementById('isTitle');if(ti&&!ti.value&&c){const rs=healthReason(c);if(rs.length)ti.value=rs[0];}
     try{f.scrollIntoView({behavior:'smooth'});}catch(e){}
@@ -1237,7 +1247,7 @@ window.drillIssue=drillIssue;
 function drillKPI(key){
   const sc=window.gScope||[];
   let list=sc.slice(),title='',fmt=c=>'',act=c=>'drillGo('+c.id+')',foot='',builder=null;
-  const H={g:'🟢 Tốt',a:'🟠 Chú ý',r:'🔴 Vấn đề',n:'⚪ Chưa DL'};
+  const H={g:'🟢 Tốt',a:'🟠 Chú ý',r:'🔴 Cần chú ý gấp',n:'⚪ Chưa DL'};
   // Dòng cho kênh có vấn đề: hiện lý do + nút Ghi nhận
   const problemRow=c=>{const rs=healthReason(c);const col=c.h=='r'?'var(--red)':c.h=='a'?'var(--amber)':'var(--muted)';
     const reason=rs.length?'<div style="font-size:11.5px;color:'+col+';margin-top:3px;white-space:normal">⚠ '+rs.join(' · ')+'</div>':'';
@@ -1255,12 +1265,12 @@ function drillKPI(key){
     case 'gmv':title='GMV theo kênh';list.sort((a,b)=>b.com-a.com);fmt=c=>'$'+c.com.toFixed(1)+'K';break;
     case 'video':title='Video đăng theo kênh';list.sort((a,b)=>b.vid-a.vid);fmt=c=>c.vid+' video';break;
     case 'shop':title='Kênh đã bật shop';list=sc.filter(c=>c.acc=='shop');fmt=c=>'✓ Đã bật shop';break;
-    case 'viol':title='Kênh có vi phạm';list=sc.filter(c=>c.violations>0).sort((a,b)=>b.violations-a.violations);builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
+    case 'openiss':title='Kênh có vấn đề đang mở';list=sc.filter(c=>(window.gOpenByCh&&window.gOpenByCh[c.id])).sort((a,b)=>((window.gOpenByCh[b.id]||0)-(window.gOpenByCh[a.id]||0)));fmt=c=>'<span style="color:var(--red);font-weight:700">'+(window.gOpenByCh[c.id]||0)+' vấn đề</span>';act=c=>'closeDrill();issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')';foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
     case 'update':title='Kênh cần cập nhật';list=sc.filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1)).sort((a,b)=>b.upd-a.upd);fmt=c=>(c.upd>=999?'<span style="color:var(--red)">chưa từng nhập</span>':'đã '+c.upd+' ngày');act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
     case 'attention':title='Kênh cần chú ý';list=sc.filter(c=>c.h=='r'||c.h=='a').sort((a,b)=>(a.h=='r'?0:1)-(b.h=='r'?0:1));builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
     case 'h_g':title='Kênh khỏe (Tốt)';list=sc.filter(c=>c.h=='g');fmt=c=>'🟢 Tốt';break;
     case 'h_a':title='Kênh chú ý';list=sc.filter(c=>c.h=='a');builder=problemRow;break;
-    case 'h_r':title='Kênh có vấn đề';list=sc.filter(c=>c.h=='r');builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
+    case 'h_r':title='Kênh cần chú ý gấp';list=sc.filter(c=>c.h=='r');builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
     case 'h_n':title='Kênh chưa có dữ liệu';list=sc.filter(c=>c.h=='n');fmt=c=>'<span style="color:var(--muted)">chưa nhập số liệu</span>';act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
     default:return;
   }
@@ -1341,7 +1351,7 @@ function renderKPI(){
     const gc=ch.filter(c=>c.s===s);
     const overdue=gc.filter(c=>c.upd>3&&!(c.upd>=999&&c.age<1)).length;
     const ontime=gc.length?(gc.length-overdue)/gc.length*100:0;
-    const viol=gc.reduce((a,c)=>a+(c.violations||0),0);
+    const viol=gc.reduce((a,c)=>a+((window.gOpenByCh&&window.gOpenByCh[c.id])||0),0);
     const or=gc.reduce((a,c)=>a+c.or,0),com=gc.reduce((a,c)=>a+c.com,0);
     const pass=ontime>=S.ontime&&viol<=S.maxViol&&(!S.orderTarget||or>=S.orderTarget)&&(!S.gmvTarget||com*1000>=S.gmvTarget);
     return {s,n:gc.length,ontime,viol,or,com,pass};
@@ -1449,7 +1459,7 @@ function exportChannels(){
     'Status':rc.acc_status==='shop'?'Đã bật shop':'Chưa/buff','Thị trường':rc.market||'','Key/Niche/Ngách':rc.niche||'',
     'Followers':c.f||'','Mục tiêu follower':rc.follower_goal||'','% mục tiêu':c.goal?c.pct+'%':'','View kỳ':c.v||0,'Video kỳ':c.vid||0,
     'Đơn kỳ':c.or||0,'GMV (USD)':Math.round((c.com||0)*1000),'Δ follower':c.d||0,
-    'Cập nhật (ngày)':c.upd>=999?'chưa':(c.upd||0),'Sức khỏe':hLabel[c.h]||'','Violations':rc.violations||0,
+    'Cập nhật (ngày)':c.upd>=999?'chưa':(c.upd||0),'Trạng thái':hLabel[c.h]||'',
     'Mail':rc.mail||'','URL shop':rc.shop_url||'','Nơi đăng nhập':rc.login_place||'','IP':rc.ip||'','Proxy':rc.proxy||'','Phone đăng nhập':rc.phone_login||'',
     'Ngày bàn giao':vnDate(rc.handover_date)||'','Note':rc.note||''};});
   if(!rows.length)return showToast('Chưa có kênh để xuất');
@@ -1509,7 +1519,6 @@ async function importChannels(file){
           ip:String(pickVal(r,['IP','ip'])).trim()||null,
           proxy:String(pickVal(r,['Proxy','proxy'])).trim()||null,
           phone_login:String(pickVal(r,['Phone đăng nhập','Phone dang nhap','Phone'])).trim()||null,
-          violations:Number(String(pickVal(r,['Violations','violations'])).replace(/[^\d.-]/g,''))||null,
           note:String(pickVal(r,['Note','note','Ghi chú'])).trim()||null,
           follower_goal:Number(String(pickVal(r,['Mục tiêu follower','goal'])).replace(/[^\d.-]/g,''))||null};
         const {data:cins,error}=await sb.from('channels').insert(rec).select('id').single();
@@ -1592,6 +1601,7 @@ async function importOrderList(file){
 $('btnCancelOrder').onclick=()=>{$('orderForm').style.display='none';resetOrderForm();};
 $('btnAddIssue').onclick=()=>{const f=$('issueForm');const show=f.style.display=='none';if(show){resetIssueForm();if(!$('isReporter').value)$('isReporter').value=me.full_name||me.email;}f.style.display=show?'block':'none';};
 $('btnCancelIssue').onclick=()=>{$('issueForm').style.display='none';resetIssueForm();};
+if($('isFilterType'))$('isFilterType').onchange=()=>{if(typeof renderAll==='function')renderAll();};
 $('btnAddCh').onclick=()=>{const f=$('chForm');const show=f.style.display=='none';
   if(show){resetChForm();
     if(me.role==='Seller'){if(me.seller_id)$('ncSeller').value=me.seller_id;$('ncSeller').disabled=true;}else{$('ncSeller').disabled=false;}
