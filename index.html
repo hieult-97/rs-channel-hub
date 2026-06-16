@@ -406,8 +406,6 @@
           <div><label>Seller</label><select class="field" id="orSeller"></select></div>
           <div><label>Kênh sản xuất cho <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orChannel"></select></div>
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
-          <div style="grid-column:1/-1"><label>Title <span style="color:var(--muted);font-weight:500">(caption trả cho seller)</span></label><input class="field" id="orTitle" placeholder="Tiêu đề video để seller đăng"></div>
-          <div style="grid-column:1/-1"><label>Hashtag <span style="color:var(--muted);font-weight:500">(caption trả cho seller)</span></label><input class="field" id="orHashtag" placeholder="#fyp #jersey ..."></div>
           <div><label>Loại <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
           <div><label>Người sản xuất <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orProducer"></select></div>
           <div><label>Combo <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
@@ -949,7 +947,7 @@ function renderAll(){
     const stCell=canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts([['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']],o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>';
     const acceptCtrl=canAccept?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
     const delDisp=o.dlink?'<span style="white-space:nowrap"><span title="Xem link bài làm" style="cursor:pointer;color:var(--green);font-size:11px;font-weight:600" onclick="openOrderLink('+o.id+',\'dlink\')">✅ Bài làm</span> <span title="Copy link nghiệm thu" style="cursor:pointer;font-size:11px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'dlink\')">📋</span></span>':'';
-    const delBtn=(isAdmin()||me.role==='Media')?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap" onclick="setDeliveryLink('+o.id+')">'+(o.dlink?'✏️':'＋ link')+'</span>'+((o.dlink&&o.channel_id)?' <span title="Đẩy sang sổ video của kênh" style="cursor:pointer;font-size:12px" onclick="pushOrderToVideo('+o.id+')">📹→</span>':''):'';
+    const delBtn=(isAdmin()||me.role==='Media')?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="openDeliver('+o.id+')">📦 '+((o.title||o.hashtag||o.dlink)?'Sửa trả đơn':'Trả đơn')+'</span>'+((o.dlink&&o.channel_id)?' <span title="Đẩy sang sổ video của kênh" style="cursor:pointer;font-size:12px" onclick="pushOrderToVideo('+o.id+')">📹→</span>':''):'';
     const ngCell='<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">'+((delDisp||delBtn)?'<div style="display:flex;gap:6px;align-items:center">'+delDisp+delBtn+'</div>':'')+acceptCtrl+'</div>';
     const canProducer=isAdmin()||me.role==='Media';   // media → tự nhận / đổi người sản xuất
     const canEditCase=isAdmin()||me.role==='Seller';   // seller → sửa nội dung order (case)
@@ -966,8 +964,9 @@ function renderAll(){
         else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';}
       dlCell='<div'+((!done&&rem<0)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
-    const capCell=(txt,field)=>{const edit=canProducer?' <span title="Sửa" style="cursor:pointer;color:var(--brand);font-size:11px" onclick="setOrderCap('+o.id+',\''+field+'\')">✏️ Sửa</span>':'';
-      return !txt?'<td style="color:var(--muted);max-width:200px">—'+edit+'</td>':'<td style="max-width:200px"><div style="white-space:normal;font-size:12px;line-height:1.4;max-height:48px;overflow:hidden">'+esc(txt)+'</div><span title="Copy" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span>'+edit+'</td>';};
+    const capCell=(txt,field)=>!txt
+      ?'<td style="color:var(--muted);max-width:220px;font-size:11.5px;font-style:italic">Chưa trả</td>'
+      :'<td style="max-width:220px"><div style="white-space:pre-wrap;font-size:12px;line-height:1.45;max-height:96px;overflow:auto">'+esc(txt)+'</div><span title="Copy cả caption" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span></td>';
     return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td style="white-space:nowrap">'+o.d+'</td><td>'+o.s+'</td>'+prodCell+capCell(o.title,'title')+capCell(o.hashtag,'hashtag')+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=orders.length?'none':'block';
   // issues
@@ -1157,7 +1156,7 @@ window.renderToday=renderToday;
 $('btnSaveOrder').onclick=async()=>{
   const row={seller_id:$('orSeller').value?Number($('orSeller').value):null,product:$('orProduct').value.trim(),
     ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),format:$('orFormat').value.trim(),
-    ref_channel:$('orRef').value.trim()||null,product_link:($('orProductLink')&&$('orProductLink').value.trim())||null,title:($('orTitle')&&$('orTitle').value.trim())||null,hashtag:($('orHashtag')&&$('orHashtag').value.trim())||null,note:$('orNote').value.trim()||null,
+    ref_channel:$('orRef').value.trim()||null,product_link:($('orProductLink')&&$('orProductLink').value.trim())||null,note:$('orNote').value.trim()||null,
     channel_id:$('orChannel')&&$('orChannel').value?Number($('orChannel').value):null,image_url:imgJoin('order'),
     deadline:$('orDeadline').value||null};
   if(!row.product)return showToast('Nhập tên sản phẩm');
@@ -1420,6 +1419,25 @@ window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.setOrderCap=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const cur=o?(o[field]||''):'';const label=field==='title'?'Title (caption giao seller)':'Hashtag';const v=prompt('Sửa '+label+' (bỏ trống để xóa):',cur);if(v===null)return;updRow('orders',id,{[field]:v.trim()||null});};
+// Popup "Trả đơn": Media nhập Title + Hashtag (nhiều dòng) + link nghiệm thu, lưu xong chuyển "Chờ nghiệm thu".
+window.openDeliver=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
+  const escA=s=>String(s==null?'':s).replace(/"/g,'&quot;');
+  const ta=(lbl,fid,val,ph,rows)=>'<div style="margin-bottom:13px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">'+lbl+'</label><textarea id="'+fid+'" rows="'+(rows||4)+'" style="width:100%;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13.5px;font-family:inherit;line-height:1.55;resize:vertical" placeholder="'+ph+'">'+esc(val||'')+'</textarea></div>';
+  const html='<div style="padding:14px 16px">'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Sản phẩm: <b style="color:var(--text)">'+esc(o.p)+'</b></div>'
+    +ta('📝 Title (caption seller đăng — xuống dòng thoải mái)','dlvTitle',o.title,'VD:\nÁo Brazil custom siêu đẹp 🔥\nFreeship – đặt theo tên\n👉 link bio',5)
+    +ta('#️⃣ Hashtag','dlvHashtag',o.hashtag,'#fyp #jersey #brazil',3)
+    +'<div style="margin-bottom:13px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">🔗 Link bài đã làm (nghiệm thu)</label><input id="dlvLink" style="width:100%;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13.5px" placeholder="https://..." value="'+escA(o.dlink)+'"></div>'
+    +'<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer"><input type="checkbox" id="dlvWait"'+(o.scode==='edit'||o.scode==='idea'?' checked':'')+'> Chuyển trạng thái sang "Chờ nghiệm thu" sau khi lưu</label>'
+    +'<button class="btn" onclick="saveDeliver('+id+')">💾 Lưu & trả đơn</button></div>';
+  showDrill('📦 Trả đơn cho seller',html);};
+window.saveDeliver=async function(id){
+  const t=($('dlvTitle')?$('dlvTitle').value.trim():'')||null;
+  const h=($('dlvHashtag')?$('dlvHashtag').value.trim():'')||null;
+  const l=($('dlvLink')?$('dlvLink').value.trim():'')||null;
+  const patch={title:t,hashtag:h,delivery_link:l};
+  if($('dlvWait')&&$('dlvWait').checked)patch.status='wait';
+  closeDrill();await updRow('orders',id,patch);};
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
 function imgGallery(s){const arr=imgSplit(s);if(!arr.length)return '';return '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'+arr.map(u=>'<img src="'+esc(u)+'" style="max-width:100%;max-height:70vh;border-radius:10px;cursor:pointer" onclick="window.open(this.src,\'_blank\')">').join('')+'</div>';}
 window.viewIssueImg=function(id){const i=issues.find(x=>String(x.id)===String(id));if(!i||!i.img)return;showDrill('🖼 Ảnh — '+esc(i.t),'<div style="padding:12px 14px">'+imgGallery(i.img)+'</div>');};
@@ -1450,11 +1468,11 @@ function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)r
   $('orSeller').value=o.seller_id||'';if($('orChannel'))$('orChannel').value=o.channel_id||'';
   $('orProduct').value=o.p||'';$('orType').value=(o.t&&o.t!=='—')?o.t:'';$('orProducer').value=(o.who&&o.who!=='—')?o.who:'';
   $('orCombo').value=o.combo||'';$('orFormat').value=o.format||'';$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min=o.cdate||'';
-  $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';if($('orTitle'))$('orTitle').value=o.title||'';if($('orHashtag'))$('orHashtag').value=o.hashtag||'';$('orNote').value=o.note||'';
+  $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';$('orNote').value=o.note||'';
   imgSet('order',o.img);
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editOrder=editOrder;
-function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orTitle','orHashtag','orNote','orChannel'].forEach(i=>{if($(i))$(i).value='';});}
+function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel'].forEach(i=>{if($(i))$(i).value='';});}
 window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
 window.deleteSnapshot=(id)=>delRow('snapshots',id,'Xóa lần cập nhật này? (số liệu sẽ tính lại theo lần trước)');
 window.setIssueStatus=(id,v)=>updRow('issues',id,{status:v});
