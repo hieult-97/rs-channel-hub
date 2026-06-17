@@ -629,6 +629,10 @@ function vnDateTime(s){if(!s)return '';const d=new Date(s);if(isNaN(d))return ''
 function daysSince(dateStr){if(!dateStr)return 999;const d=new Date(String(dateStr).slice(0,10)+'T00:00:00');const t=new Date(todayStr()+'T00:00:00');return Math.round((t-d)/86400000);}
 function vnDate(s){const p=String(s||'').slice(0,10).split('-');return (p.length===3&&p[0])?p[2]+'/'+p[1]+'/'+p[0]:'';}// YYYY-MM-DD → DD/MM/YYYY
 function daysLeft(dateStr){if(!dateStr)return null;return Math.round((new Date(String(dateStr).slice(0,10)+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);}
+// "Chưa giao": media còn phải làm (Ý tưởng/Đang làm). Khi đã chuyển Chờ nghiệm thu / Done = đã giao.
+function notDelivered(o){return o.scode==='idea'||o.scode==='edit';}
+// Trễ hạn = chưa giao mà quá deadline (không tính đơn đang chờ seller nghiệm thu).
+function orderOverdue(o){return o.deadline&&notDelivered(o)&&String(o.deadline)<todayStr();}
 function odCode(dstr,seq){return 'OD'+dstr+String(seq).padStart(2,'0');}// OD + YYYYMMDD + STT
 function nextOrderSeq(dstr){let mx=0;(orders||[]).forEach(o=>{const c=o.code||'';if(c.indexOf('OD'+dstr)===0){const n=parseInt(c.slice(10),10)||0;if(n>mx)mx=n;}});return mx+1;}
 async function backfillOrderCodes(){if(!isSD())return;const ms=(orders||[]).filter(o=>!o.code);if(!ms.length)return;
@@ -887,7 +891,7 @@ function renderAll(){
   sc.filter(c=>c.d<0).forEach(c=>alerts.push({lv:'hi',ic:'▼',t:c.n+' — follower giảm '+(-c.d),w:'Kênh đang tụt'}));
   sc.filter(c=>c.vid<=2&&c.upd<999).forEach(c=>alerts.push({lv:'mid',ic:'⊘',t:c.n+' — chỉ '+c.vid+' video trong kỳ',w:'Dưới ngưỡng'}));
   sc.filter(c=>c.vP>0&&c.v<c.vP*0.7).forEach(c=>alerts.push({lv:'hi',ic:'📉',t:c.n+' — bay view '+Math.round((1-c.v/c.vP)*100)+'% so kỳ trước',w:'View '+fmtK(c.vP)+' → '+fmtK(c.v)}));
-  orders.filter(o=>o.deadline&&o.scode!=='done'&&String(o.deadline)<todayStr()).forEach(o=>alerts.push({lv:'hi',ic:'⏰',t:'Order trễ deadline: '+esc(o.p),w:'Hạn '+vnDate(o.deadline)+(o.who&&o.who!=='—'?' · '+esc(o.who):'')+' · seller '+esc(o.s)}));
+  orders.filter(orderOverdue).forEach(o=>alerts.push({lv:'hi',ic:'⏰',t:'Order trễ deadline (chưa giao): '+esc(o.p),w:'Hạn '+vnDate(o.deadline)+(o.who&&o.who!=='—'?' · '+esc(o.who):'')+' · seller '+esc(o.s)}));
   issues.filter(i=>i.scode!=='done'&&i.due&&String(i.due)<todayStr()).forEach(i=>alerts.push({lv:'hi',ic:'⏰',t:'Vấn đề trễ hạn xử lý: '+esc(i.t),w:'Hạn '+vnDate(i.due)+' · người xử lý: '+(i.who?esc(i.who):'CHƯA GÁN')+' · '+i.st[1]}));
   const ord={hi:0,mid:1,lo:2};alerts.sort((a,b)=>ord[a.lv]-ord[b.lv]);
   window.gAlerts=alerts;
@@ -1062,7 +1066,7 @@ if($('btnBulkSave'))$('btnBulkSave').onclick=saveBulkUpd;
 // ===== Việc hôm nay =====
 function todayCounts(){const today=todayStr(),staff=isAdmin(),isM=me&&me.role==='Media',isS=me&&me.role==='Seller';const mySeller=(me&&me.seller_id)?chSellerName(me.seller_id):'';
   const myOrders=(orders||[]).filter(o=>staff||(isM&&o.who===me.full_name)||(isS&&o.s===mySeller));
-  const ordDue=myOrders.filter(o=>o.scode!=='done'&&o.deadline&&String(o.deadline)<=today);
+  const ordDue=myOrders.filter(o=>notDelivered(o)&&o.deadline&&String(o.deadline)<=today);
   const ordWait=myOrders.filter(o=>o.scode==='wait');
   // "còn phải làm": Media = đơn chưa giao (idea/edit); Seller = đơn chờ nghiệm thu; còn lại = mọi đơn chưa Done
   const ordTodo=myOrders.filter(o=>isM?(o.scode==='idea'||o.scode==='edit'):(isS?o.scode==='wait':o.scode!=='done'));
@@ -1290,7 +1294,7 @@ function renderKPI(){
   const mrows=names.map(nm=>{
     const g=ords.filter(o=>o.who===nm);
     const req=g.length,done=g.filter(o=>o.scode==='done').length;
-    const late=g.filter(o=>o.scode!=='done'&&o.deadline&&String(o.deadline)<today).length;
+    const late=g.filter(orderOverdue).length;
     const reworked=g.filter(o=>o.scode==='done'&&o.rework>0).length;
     const hit=req?done/req*100:0,ontime=req?(req-late)/req*100:0;
     const quotaPct=target?done/target*100:0;
@@ -1366,7 +1370,7 @@ window.saveDeliver=async function(id){
   closeDrill();await updRow('orders',id,patch);};
 function renderOrders(){if(!$('orderBody'))return;
   const oc={idea:['rgba(91,140,255,.16)','var(--brand)'],edit:['rgba(242,193,78,.16)','var(--amber)'],wait:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)']};
-  const overdueOrders=orders.filter(o=>o.deadline&&o.scode!=='done'&&String(o.deadline)<todayStr()).length;
+  const overdueOrders=orders.filter(orderOverdue).length;
   $('orderKpis').innerHTML=[['Order',orders.length,''],['Đang làm',orders.filter(o=>o.st[0]=='edit').length,'amber'],['Chờ nghiệm thu',orders.filter(o=>o.st[0]=='wait').length,'brand'],['Done',orders.filter(o=>o.st[0]=='done').length,'green'],['Trễ hạn',overdueOrders,'red']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
   window.gProducerNames=[...new Set([...(mediaNames||[]),...orders.map(o=>o.who).filter(x=>x&&x!=='—')])].sort();
   // Mã order = YYYYMMDD + STT theo ngày (theo thứ tự tạo)
@@ -1401,12 +1405,14 @@ function renderOrders(){if(!$('orderBody'))return;
     const editBtn=canEditCase?'<span title="Sửa order (case)" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="editOrder('+o.id+')">✏️</span>':'';
     const act=editBtn+(isAdmin()?'<span title="Đánh dấu trả lại / làm lại (+1, giảm chất lượng KPI)" style="cursor:pointer;margin-right:10px" onclick="reworkOrder('+o.id+')">↩'+(o.rework?'<sup style="color:var(--red)">'+o.rework+'</sup>':'')+'</span><span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'');
     let dlCell='<span style="color:var(--muted)">—</span>';
-    if(o.deadline){const rem=daysLeft(o.deadline),done=o.scode==='done';let badge='';
-      if(!done){if(rem>1)badge='<div style="font-size:10.5px;color:var(--green)">còn '+rem+' ngày</div>';
-        else if(rem===1)badge='<div style="font-size:10.5px;color:var(--amber);font-weight:700">còn 1 ngày</div>';
-        else if(rem===0)badge='<div style="font-size:10.5px;color:var(--amber);font-weight:700">hôm nay</div>';
-        else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';}
-      dlCell='<div'+((!done&&rem<0)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
+    if(o.deadline){const rem=daysLeft(o.deadline),delivered=!notDelivered(o);let badge='';
+      if(o.scode==='done')badge='';
+      else if(delivered)badge='<div style="font-size:10.5px;color:var(--green)">đã giao · chờ duyệt</div>';
+      else if(rem>1)badge='<div style="font-size:10.5px;color:var(--green)">còn '+rem+' ngày</div>';
+      else if(rem===1)badge='<div style="font-size:10.5px;color:var(--amber);font-weight:700">còn 1 ngày</div>';
+      else if(rem===0)badge='<div style="font-size:10.5px;color:var(--amber);font-weight:700">hôm nay</div>';
+      else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';
+      dlCell='<div'+(orderOverdue(o)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
     return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td style="white-space:nowrap">'+o.d+'</td><td>'+o.s+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td><td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=list.length?'none':'block';
@@ -1416,7 +1422,7 @@ function renderMediaLoad(){if(!$('mediaLoadBody'))return;const today=todayStr();
   const stat={};const ensure=n=>stat[n]||(stat[n]={edit:0,wait:0,over:0});
   (orders||[]).forEach(o=>{if(o.scode==='done')return;const n=(o.who&&o.who!=='—')?o.who:'(chưa gán)';const s=ensure(n);
     if(o.scode==='wait')s.wait++;else s.edit++;
-    if(o.deadline&&String(o.deadline)<today)s.over++;});
+    if(orderOverdue(o))s.over++;});
   const rows=Object.keys(stat).sort((a,b)=>(stat[b].edit+stat[b].wait)-(stat[a].edit+stat[a].wait));
   $('mediaLoadBody').innerHTML=rows.map(n=>{const s=stat[n];const tot=s.edit+s.wait;return '<tr><td><b>'+esc(n)+'</b></td><td class="num">'+s.edit+'</td><td class="num">'+s.wait+'</td><td class="num"'+(s.over?' style="color:var(--red);font-weight:700"':'')+'>'+s.over+'</td><td class="num"><b>'+tot+'</b></td></tr>';}).join('')||'<tr><td class="empty" colspan="5">Không có đơn đang xử lý 🎉</td></tr>';}
 window.renderMediaLoad=renderMediaLoad;
