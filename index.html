@@ -1361,6 +1361,15 @@ window.openDeliver=function(id){const o=orders.find(x=>String(x.id)===String(id)
     +'<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer"><input type="checkbox" id="dlvWait"'+(o.scode==='edit'||o.scode==='idea'?' checked':'')+'> Chuyển trạng thái sang "Chờ nghiệm thu" sau khi lưu</label>'
     +'<button class="btn" onclick="saveDeliver('+id+')">💾 Lưu & trả đơn</button></div>';
   showDrill('📦 Trả đơn cho seller',html);};
+// Seller xem (chỉ đọc + copy) gói trả đơn media đã giao
+window.viewDeliver=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
+  const blk=(lbl,txt,field)=>!txt?'':'<div style="margin-bottom:12px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">'+lbl+' <span style="cursor:pointer;color:var(--brand);text-transform:none;font-weight:600" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span></div><div style="font-size:13.5px;white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px">'+esc(txt)+'</div></div>';
+  let html='<div style="padding:14px 16px"><div style="font-size:12px;color:var(--muted);margin-bottom:12px">Sản phẩm: <b style="color:var(--text)">'+esc(o.p)+'</b></div>'
+    +(blk('📝 Title (caption đăng)',o.title,'title')||'<div style="color:var(--muted);font-size:12.5px;margin-bottom:10px">Chưa có Title</div>')
+    +(blk('#️⃣ Hashtag',o.hashtag,'hashtag')||'<div style="color:var(--muted);font-size:12.5px;margin-bottom:10px">Chưa có Hashtag</div>')
+    +(o.dlink?'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">🔗 Link bài đã làm <span style="cursor:pointer;color:var(--brand);text-transform:none;font-weight:600" onclick="copyOrderLink('+o.id+',\'dlink\')">📋 Copy</span></div><div style="font-size:13px;word-break:break-all;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px">'+esc(o.dlink)+'</div>':'')
+    +'</div>';
+  showDrill('📦 Trả đơn — '+esc(o.code||o.p),html);};
 window.saveDeliver=async function(id){
   const t=($('dlvTitle')?$('dlvTitle').value.trim():'')||null;
   const h=($('dlvHashtag')?$('dlvHashtag').value.trim():'')||null;
@@ -1397,8 +1406,10 @@ function renderOrders(){if(!$('orderBody'))return;
     const stCell=canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts([['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']],o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>';
     const acceptCtrl=canAccept?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
     const delDisp=o.dlink?'<span style="white-space:nowrap"><span title="Xem link bài làm" style="cursor:pointer;color:var(--green);font-size:11px;font-weight:600" onclick="openOrderLink('+o.id+',\'dlink\')">✅ Bài làm</span> <span title="Copy link nghiệm thu" style="cursor:pointer;font-size:11px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'dlink\')">📋</span></span>':'';
-    const delBtn=(isAdmin()||me.role==='Media')?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="openDeliver('+o.id+')">📦 '+((o.title||o.hashtag||o.dlink)?'Sửa trả đơn':'Trả đơn')+'</span>':'';
-    const ngCell='<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">'+((delDisp||delBtn)?'<div style="display:flex;gap:6px;align-items:center">'+delDisp+delBtn+'</div>':'')+acceptCtrl+'</div>';
+    const canProd0=isAdmin()||me.role==='Media';
+    const delBtn=canProd0?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="openDeliver('+o.id+')">📦 '+((o.title||o.hashtag||o.dlink)?'Sửa trả đơn':'Trả đơn')+'</span>':'';
+    const viewBtn=(!canProd0&&(o.title||o.hashtag))?'<span title="Xem Title/Hashtag media đã trả" style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="viewDeliver('+o.id+')">📦 Xem trả đơn</span>':'';
+    const ngCell='<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">'+((delDisp||delBtn||viewBtn)?'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+delDisp+delBtn+viewBtn+'</div>':'')+acceptCtrl+'</div>';
     const canProducer=isAdmin()||me.role==='Media';
     const canEditCase=isAdmin()||me.role==='Seller';
     const whoCell=canProducer?'<select style="'+SELCSS+';width:140px" onchange="setOrderProducer('+o.id+',this.value)">'+producerOpts(o.who)+'</select>':((o.who&&o.who!=='—')?esc(o.who):'<span style="color:var(--muted)">—</span>');
