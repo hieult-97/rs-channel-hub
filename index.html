@@ -387,7 +387,7 @@
         <input id="ofSearch" placeholder="Tìm mã / sản phẩm / seller..." oninput="renderOrders()" style="min-width:240px">
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Mã order</th><th>Ngày order</th><th>Seller</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái</th><th>Nghiệm thu</th><th>Time order</th><th>Time done</th><th></th></tr></thead>
+        <table><thead><tr><th>Mã order</th><th>Seller</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>TG xử lý</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
       </div></div>
@@ -635,6 +635,8 @@ function notDelivered(o){return o.scode==='idea'||o.scode==='edit';}
 function orderOverdue(o){return o.deadline&&notDelivered(o)&&String(o.deadline)<todayStr();}
 // Khoảng thời gian giữa 2 mốc ISO → "x giờ" / "x ngày"
 function durTxt(a,b){if(!a||!b)return '';const ms=new Date(b)-new Date(a);if(isNaN(ms)||ms<0)return '';const h=ms/3600000;return h<24?(Math.round(h*10)/10)+' giờ':(Math.round(h/24*10)/10)+' ngày';}
+// Chi tiết tới phút: "X phút" / "X giờ Y phút" / "X ngày Y giờ"
+function durFull(a,b){if(!a||!b)return '';let ms=new Date(b)-new Date(a);if(isNaN(ms)||ms<0)return '';const m=Math.round(ms/60000);if(m<60)return m+' phút';const h=Math.floor(m/60),mm=m%60;if(h<24)return h+' giờ'+(mm?' '+mm+' phút':'');const d=Math.floor(h/24),hh=h%24;return d+' ngày'+(hh?' '+hh+' giờ':'');}
 function odCode(dstr,seq){return 'OD'+dstr+String(seq).padStart(2,'0');}// OD + YYYYMMDD + STT
 function nextOrderSeq(dstr){let mx=0;(orders||[]).forEach(o=>{const c=o.code||'';if(c.indexOf('OD'+dstr)===0){const n=parseInt(c.slice(10),10)||0;if(n>mx)mx=n;}});return mx+1;}
 async function backfillOrderCodes(){if(!isSD())return;const ms=(orders||[]).filter(o=>!o.code);if(!ms.length)return;
@@ -755,7 +757,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Done':'',note:o.note||'',ref:o.ref_channel||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||'',img:i.image_url||''};});
@@ -1346,8 +1348,12 @@ async function delRow(table,id,msg){if(!confirm(msg))return;const {error}=await 
 async function updRow(table,id,patch){const {error}=await sb.from(table).update(patch).eq('id',id);if(error)return topErr(error.message);await logAction('Sửa',table,'id='+id+' '+JSON.stringify(patch));showToast('Đã cập nhật ✓');await loadData();}
 function deleteChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;delRow('channels',id,'Xóa kênh "'+c.name+'"? Snapshot của kênh cũng bị xóa.');}
 window.deleteChannel=deleteChannel;
-window.setOrderStatus=(id,v)=>{const o=orders.find(x=>String(x.id)===String(id));const patch={status:v};if(v==='done'){if(!(o&&o.doneAt))patch.done_at=new Date().toISOString();}else patch.done_at=null;updRow('orders',id,patch);};
-window.toggleAccept=(id,v)=>updRow('orders',id,{accepted:v==='1'});
+window.setOrderStatus=(id,v)=>{const o=orders.find(x=>String(x.id)===String(id));const patch={status:v};const now=new Date().toISOString();
+  if(v==='done'){patch.accepted=true;if(!(o&&o.doneAt))patch.done_at=now;}
+  else{patch.accepted=false;patch.done_at=null;}
+  if(v==='wait')patch.delivered_at=now;                       // media giao
+  else if(v==='idea'||v==='edit')patch.delivered_at=null;     // quay về sản xuất → bỏ mốc giao
+  updRow('orders',id,patch);};
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.setOrderCap=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const cur=o?(o[field]||''):'';const label=field==='title'?'Title (caption giao seller)':'Hashtag';const v=prompt('Sửa '+label+' (bỏ trống để xóa):',cur);if(v===null)return;updRow('orders',id,{[field]:v.trim()||null});};
@@ -1403,15 +1409,16 @@ function renderOrders(){if(!$('orderBody'))return;
   const rank=o=>o.scode==='done'?2:1;
   list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;if(ra===1){const da=a.deadline||'9999-99-99',db=b.deadline||'9999-99-99';if(da!==db)return da<db?-1:1;}return (b.id||0)-(a.id||0);});
   $('orderBody').innerHTML=list.map(o=>{
-    const canStatus=isAdmin()||me.role==='Media';
-    const canAccept=isAdmin()||me.role==='Seller';
-    const stCell=canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts([['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']],o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>';
-    const acceptCtrl=canAccept?'<select style="'+SELCSS+'" onchange="toggleAccept('+o.id+',this.value)">'+selOpts([['0','Chưa'],['1','Done']],o.accepted?'1':'0')+'</select>':(o.ng?'<span class="chip ok">'+o.ng+'</span>':'<span style="color:var(--muted)">—</span>');
+    // Media kéo tối đa đến "Chờ nghiệm thu"; Seller/Admin mới chốt "Done".
+    const mediaOnly=me.role==='Media'&&!isAdmin();
+    const canStatus=isAdmin()||me.role==='Media'||me.role==='Seller';
+    const stList=mediaOnly?[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu']]:[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']];
+    const stCell=(mediaOnly&&o.scode==='done')?'<span class="chip" style="background:'+oc.done[0]+';color:'+oc.done[1]+'">Done</span>':(canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts(stList,o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>');
     const delDisp=o.dlink?'<span style="white-space:nowrap"><span title="Xem link bài làm" style="cursor:pointer;color:var(--green);font-size:11px;font-weight:600" onclick="openOrderLink('+o.id+',\'dlink\')">✅ Bài làm</span> <span title="Copy link nghiệm thu" style="cursor:pointer;font-size:11px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'dlink\')">📋</span></span>':'';
     const canProd0=isAdmin()||me.role==='Media';
     const delBtn=canProd0?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="openDeliver('+o.id+')">📦 '+((o.title||o.hashtag||o.dlink)?'Sửa trả đơn':'Trả đơn')+'</span>':'';
     const viewBtn=(!canProd0&&(o.title||o.hashtag))?'<span title="Xem Title/Hashtag media đã trả" style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="viewDeliver('+o.id+')">📦 Xem trả đơn</span>':'';
-    const ngCell='<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">'+((delDisp||delBtn||viewBtn)?'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+delDisp+delBtn+viewBtn+'</div>':'')+acceptCtrl+'</div>';
+    const ngCell='<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">'+((delDisp||delBtn||viewBtn)?'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+delDisp+delBtn+viewBtn+'</div>':'<span style="color:var(--muted)">—</span>')+'</div>';
     const canProducer=isAdmin()||me.role==='Media';
     const canEditCase=isAdmin()||me.role==='Seller';
     const whoCell=canProducer?'<select style="'+SELCSS+';width:140px" onchange="setOrderProducer('+o.id+',this.value)">'+producerOpts(o.who)+'</select>':((o.who&&o.who!=='—')?esc(o.who):'<span style="color:var(--muted)">—</span>');
@@ -1427,12 +1434,11 @@ function renderOrders(){if(!$('orderBody'))return;
       else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';
       dlCell='<div'+(orderOverdue(o)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
-    const tOrder=o.cAt?vnDateTime(o.cAt):'—';
-    const dur=durTxt(o.cAt,o.doneAt);
-    const tDone=o.doneAt?vnDateTime(o.doneAt)+(dur?'<div style="font-size:10px;color:var(--green)">⏱ '+dur+'</div>':''):'<span style="color:var(--muted)">—</span>';
-    const tOrderCell='<td style="white-space:nowrap;font-size:11px;color:var(--muted)">'+tOrder+'</td>';
-    const tDoneCell='<td style="white-space:nowrap;font-size:11px">'+tDone+'</td>';
-    return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td style="white-space:nowrap">'+o.d+'</td><td>'+o.s+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+tOrderCell+tDoneCell+'<td>'+act+'</td></tr>';}).join('');
+    const nowISO=new Date().toISOString();
+    const tCell=o.doneAt
+      ?'<td style="white-space:nowrap;font-size:12px;color:var(--green);font-weight:600" title="Tổng từ tạo đơn đến Done — bấm 🔎 Chi tiết xem từng chặng">✔ '+(durTxt(o.cAt,o.doneAt)||'xong')+'</td>'
+      :'<td style="white-space:nowrap;font-size:11px;color:var(--muted)" title="Đơn đã mở bao lâu">⏳ '+(durTxt(o.cAt,nowISO)||'—')+'</td>';
+    return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td>'+o.s+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+tCell+'<td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=list.length?'none':'block';
 }
 window.renderOrders=renderOrders;
@@ -1453,7 +1459,14 @@ window.viewOrderDetail=function(id){const o=orders.find(x=>String(x.id)===String
   fields.forEach(r=>{html+='<div style="margin-bottom:9px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+r[0]+'</div><div style="font-size:13.5px;word-break:break-word;white-space:pre-wrap">'+esc(r[1])+'</div></div>';});
   const capBlock=(lbl,txt,field)=>!txt?'':'<div style="margin-bottom:11px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+lbl+' <span style="cursor:pointer;color:var(--brand);text-transform:none;font-weight:600" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span></div><div style="font-size:13.5px;white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:4px">'+esc(txt)+'</div></div>';
   html+=capBlock('📝 Title (caption đăng)',o.title,'title')+capBlock('#️⃣ Hashtag',o.hashtag,'hashtag');
-  if(o.img)html+='<div style="margin-top:4px">'+imgGallery(o.img)+'</div>';
+  // Dòng thời gian xử lý (chi tiết tới phút)
+  const tl=(ic,lbl,when,extra)=>!when?'':'<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0"><span>'+ic+' '+lbl+'</span><span style="text-align:right">'+vnDateTime(when)+(extra?'<div style="font-size:11px;color:var(--green)">'+extra+'</div>':'')+'</span></div>';
+  let tblock=tl('🆕','Tạo đơn',o.cAt,'')
+    +tl('📦','Media giao',o.deliveredAt,durFull(o.cAt,o.deliveredAt)?'media làm: '+durFull(o.cAt,o.deliveredAt):'')
+    +tl('✔','Seller done',o.doneAt,durFull(o.deliveredAt,o.doneAt)?'seller duyệt: '+durFull(o.deliveredAt,o.doneAt):'');
+  if(o.doneAt&&durFull(o.cAt,o.doneAt))tblock+='<div style="display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:5px;padding-top:6px;font-weight:700"><span>⏱ Tổng thời gian</span><span>'+durFull(o.cAt,o.doneAt)+'</span></div>';
+  if(tblock)html+='<div style="margin:6px 0 2px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">Thời gian xử lý</div><div style="font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px">'+tblock+'</div>';
+  if(o.img)html+='<div style="margin-top:8px">'+imgGallery(o.img)+'</div>';
   html+='</div>';
   showDrill('🔎 Chi tiết order '+esc(o.code||''),html);};
 function fallbackCopy(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Đã copy link ✓');}catch(e){prompt('Copy link (Ctrl+C):',t);}ta.remove();}
@@ -1541,7 +1554,7 @@ function backupAll(){
   const wb=XLSX.utils.book_new();
   const chN={};(rawChannels||[]).forEach(rc=>chN[rc.id]=rc.name);
   const chRows=(rawChannels||[]).map(rc=>({'URL kênh':rc.name,'Sàn':rc.platform||'','Seller':chSellerName(rc.seller_id),'Người Care':rc.care||'','Status':rc.acc_status==='shop'?'Đã bật shop':'Chưa/buff','Thị trường':rc.market||'','Niche':rc.niche||'','Mục tiêu follower':rc.follower_goal||'','Mail':rc.mail||'','URL shop':rc.shop_url||'','Ngày bàn giao':vnDate(rc.handover_date)||'','Note':rc.note||''}));
-  const orRows=(orders||[]).map(o=>({'Mã order':o.code||window.gOrderCode[o.id]||'','Ngày order':o.d,'Seller':o.s,'Sản phẩm':o.p,'Kênh sản xuất':o.chn||'','Người sản xuất':(o.who&&o.who!=='—')?o.who:'','Deadline':vnDate(o.deadline)||'','Trạng thái':o.st[1],'Nghiệm thu':o.accepted?'Done':'Chưa','Time order':o.cAt?vnDateTime(o.cAt):'','Time done':o.doneAt?vnDateTime(o.doneAt):'','Thời gian xử lý':durTxt(o.cAt,o.doneAt),'Title':o.title||'','Hashtag':o.hashtag||'','Link nghiệm thu':o.dlink||'','Link sản phẩm':o.plink||'','Trả lại (lần)':o.rework||0,'Lý do trả lại':o.reject||''}));
+  const orRows=(orders||[]).map(o=>({'Mã order':o.code||window.gOrderCode[o.id]||'','Ngày order':o.d,'Seller':o.s,'Sản phẩm':o.p,'Kênh sản xuất':o.chn||'','Người sản xuất':(o.who&&o.who!=='—')?o.who:'','Deadline':vnDate(o.deadline)||'','Trạng thái':o.st[1],'Nghiệm thu':o.accepted?'Done':'Chưa','Time order':o.cAt?vnDateTime(o.cAt):'','Time giao':o.deliveredAt?vnDateTime(o.deliveredAt):'','Time done':o.doneAt?vnDateTime(o.doneAt):'','TG media (order→giao)':durTxt(o.cAt,o.deliveredAt),'TG duyệt (giao→done)':durTxt(o.deliveredAt,o.doneAt),'Title':o.title||'','Hashtag':o.hashtag||'','Link nghiệm thu':o.dlink||'','Link sản phẩm':o.plink||'','Trả lại (lần)':o.rework||0,'Lý do trả lại':o.reject||''}));
   const snRows=(rawSnaps||[]).map(s=>({'Ngày':vnDate(s.period_date),'Kênh':chN[s.channel_id]||s.channel_id,'Follower':s.followers||0,'View kỳ':s.views||0,'Video':s.videos||0,'Đơn':s.orders||0,'GMV (USD)':s.gmv_usd||0,'Nhập lúc':s.created_at?vnDateTime(s.created_at):''}));
   const isRows=(issues||[]).map(i=>({'Tiêu đề':i.t,'Loại':i.type||'','Nguồn':i.src||'','Kênh':i.ch||'','Mức độ':i.sev[1],'Trạng thái':i.st[1],'Người phát hiện':i.reporter||'','Người xử lý':i.who||'','Hạn xử lý':vnDate(i.due)||'','Ảnh':i.img?'có':''}));
   const add=(rows,name)=>{XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{'(trống)':''}]),name);};
