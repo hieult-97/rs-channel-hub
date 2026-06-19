@@ -387,7 +387,7 @@
         <input id="ofSearch" placeholder="Tìm mã / sản phẩm / seller..." oninput="renderOrders()" style="min-width:240px">
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Mã order</th><th>Seller</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>TG xử lý</th><th></th></tr></thead>
+        <table><thead><tr><th>Mã order</th><th>Seller</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>Thời gian</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
       </div></div>
@@ -1406,9 +1406,9 @@ function renderOrders(){if(!$('orderBody'))return;
     if(fQ){const hay=((o.code||window.gOrderCode[o.id]||'')+' '+(o.p||'')+' '+(o.s||'')).toLowerCase();if(!hay.includes(fQ))return false;}
     return true;};
   let list=orders.filter(inFilter);
-  // Sắp xếp: chưa Done & có deadline gấp lên đầu; Done xuống cuối
-  const rank=o=>o.scode==='done'?2:1;
-  list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;if(ra===1){const da=a.deadline||'9999-99-99',db=b.deadline||'9999-99-99';if(da!==db)return da<db?-1:1;}return (b.id||0)-(a.id||0);});
+  // Sắp xếp ưu tiên: (0) Chưa trả/đang làm lên đầu — tránh miss; (1) Chờ nghiệm thu; (2) Done xuống cuối. Trong nhóm: deadline gấp trước.
+  const rank=o=>o.scode==='done'?2:(notDelivered(o)?0:1);
+  list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;if(ra<2){const da=a.deadline||'9999-99-99',db=b.deadline||'9999-99-99';if(da!==db)return da<db?-1:1;}return (b.id||0)-(a.id||0);});
   $('orderBody').innerHTML=list.map(o=>{
     // Media kéo tối đa đến "Chờ nghiệm thu"; Seller/Admin mới chốt "Done".
     const mediaOnly=me.role==='Media'&&!isAdmin();
@@ -1436,8 +1436,18 @@ function renderOrders(){if(!$('orderBody'))return;
       dlCell='<div'+(orderOverdue(o)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
     const nowISO=new Date().toISOString();
-    const tInner=o.doneAt?'<span style="color:var(--green);font-weight:600">✓ '+(durTxt(o.cAt,o.doneAt)||'xong')+'</span>':'<span style="color:var(--muted)">⏳ '+(durTxt(o.cAt,nowISO)||'—')+'</span>';
-    const tCell='<td style="white-space:nowrap;font-size:12px;cursor:pointer" title="Bấm xem chi tiết thời gian từng chặng" onclick="viewOrderTime('+o.id+')">'+tInner+' <span style="color:var(--brand);font-size:10px">🔎</span></td>';
+    const shortDT=x=>x?vnDateTime(x).replace(/\/\d{4} /,' '):'—';
+    let dur2;
+    if(o.doneAt){
+      dur2=o.deliveredAt
+        ?'<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ media '+(durTxt(o.cAt,o.deliveredAt)||'—')+' · duyệt '+(durTxt(o.deliveredAt,o.doneAt)||'—')+'</div>'
+        :'<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ tổng '+(durTxt(o.cAt,o.doneAt)||'xong')+'</div>';
+    }else if(o.deliveredAt){ // media đã giao, đang chờ seller duyệt
+      dur2='<div style="font-size:10.5px"><span style="color:var(--green)">📦 media '+(durTxt(o.cAt,o.deliveredAt)||'—')+'</span> · <span style="color:var(--amber);font-weight:600">⏳ chờ duyệt '+(durTxt(o.deliveredAt,nowISO)||'')+'</span></div>';
+    }else{ // media đang làm
+      dur2='<div style="font-size:10.5px;color:var(--muted)">⏳ media đang làm '+(durTxt(o.cAt,nowISO)||'—')+'</div>';
+    }
+    const tCell='<td style="white-space:nowrap;cursor:pointer" title="Bấm xem chi tiết thời gian từng chặng" onclick="viewOrderTime('+o.id+')"><div style="font-size:11.5px">🆕 '+shortDT(o.cAt)+' <span style="color:var(--brand);font-size:10px">🔎</span></div>'+dur2+'</td>';
     return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td>'+o.s+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+tCell+'<td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=list.length?'none':'block';
 }
