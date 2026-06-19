@@ -1383,7 +1383,7 @@ window.saveDeliver=async function(id){
   const h=($('dlvHashtag')?$('dlvHashtag').value.trim():'')||null;
   const l=($('dlvLink')?$('dlvLink').value.trim():'')||null;
   const patch={title:t,hashtag:h,delivery_link:l};
-  if($('dlvWait')&&$('dlvWait').checked)patch.status='wait';
+  if($('dlvWait')&&$('dlvWait').checked){patch.status='wait';const o=orders.find(x=>String(x.id)===String(id));if(!(o&&o.deliveredAt))patch.delivered_at=new Date().toISOString();}
   closeDrill();await updRow('orders',id,patch);};
 function renderOrders(){if(!$('orderBody'))return;
   const oc={idea:['rgba(91,140,255,.16)','var(--brand)'],edit:['rgba(242,193,78,.16)','var(--amber)'],wait:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)']};
