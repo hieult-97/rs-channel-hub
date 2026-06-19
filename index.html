@@ -637,6 +637,7 @@ function orderOverdue(o){return o.deadline&&notDelivered(o)&&String(o.deadline)<
 function durTxt(a,b){if(!a||!b)return '';const ms=new Date(b)-new Date(a);if(isNaN(ms)||ms<0)return '';const h=ms/3600000;return h<24?(Math.round(h*10)/10)+' giờ':(Math.round(h/24*10)/10)+' ngày';}
 // Chi tiết tới phút: "X phút" / "X giờ Y phút" / "X ngày Y giờ"
 function durFull(a,b){if(!a||!b)return '';let ms=new Date(b)-new Date(a);if(isNaN(ms)||ms<0)return '';const m=Math.round(ms/60000);if(m<60)return m+' phút';const h=Math.floor(m/60),mm=m%60;if(h<24)return h+' giờ'+(mm?' '+mm+' phút':'');const d=Math.floor(h/24),hh=h%24;return d+' ngày'+(hh?' '+hh+' giờ':'');}
+function addDays(isoDate,n){const d=new Date((isoDate||todayStr())+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 function odCode(dstr,seq){return 'OD'+dstr+String(seq).padStart(2,'0');}// OD + YYYYMMDD + STT
 function nextOrderSeq(dstr){let mx=0;(orders||[]).forEach(o=>{const c=o.code||'';if(c.indexOf('OD'+dstr)===0){const n=parseInt(c.slice(10),10)||0;if(n>mx)mx=n;}});return mx+1;}
 async function backfillOrderCodes(){if(!isSD())return;const ms=(orders||[]).filter(o=>!o.code);if(!ms.length)return;
@@ -1105,7 +1106,7 @@ $('btnSaveOrder').onclick=async()=>{
   $('btnSaveOrder').disabled=true;
   let error;
   if(editingOrderId){({error}=await sb.from('orders').update(row).eq('id',editingOrderId));}
-  else{row.status='edit';row.created_by=me.id;const td=todayStr().replace(/-/g,'');row.order_code=odCode(td,nextOrderSeq(td));({error}=await sb.from('orders').insert(row));}
+  else{if(!row.deadline)row.deadline=addDays(todayStr(),1);row.status='edit';row.created_by=me.id;const td=todayStr().replace(/-/g,'');row.order_code=odCode(td,nextOrderSeq(td));({error}=await sb.from('orders').insert(row));}
   $('btnSaveOrder').disabled=false;
   if(error)return topErr(error.message);
   await logAction(editingOrderId?'Sửa order':'Tạo order','orders',row.product);
@@ -1502,7 +1503,8 @@ function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)r
   imgSet('order',o.img);
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editOrder=editOrder;
-function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel'].forEach(i=>{if($(i))$(i).value='';});}
+function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel'].forEach(i=>{if($(i))$(i).value='';});
+  if($('orDeadline')){$('orDeadline').min=todayStr();$('orDeadline').value=addDays(todayStr(),1);}}  // mặc định +24 giờ, vẫn sửa dài hơn được
 window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
 window.deleteSnapshot=(id)=>delRow('snapshots',id,'Xóa lần cập nhật này? (số liệu sẽ tính lại theo lần trước)');
 window.setIssueStatus=(id,v)=>updRow('issues',id,{status:v});
@@ -1516,6 +1518,32 @@ window.linkSeller=(id,sid)=>{if(!isSD())return topErr('Chỉ SD được gán se
 function selOpts(opts,cur){return opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('');}
 const SELCSS='background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12px';
 async function ensureSeller(name){name=(name||'Seller').trim();const {data:ex}=await sb.from('sellers').select('id').eq('name',name).maybeSingle();if(ex)return ex.id;const {data:ns,error}=await sb.from('sellers').insert({name}).select('id').single();if(error)throw error;return ns.id;}
+// Nạp danh mục Loại/Combo/Format vào form tạo order (kèm tùy chọn "+ Thêm mới")
+async function loadOrderOpts(){try{
+  const {data,error}=await sb.from('order_options').select('kind,label').order('label');
+  if(error)throw error;
+  const g={type:[],combo:[],format:[]};(data||[]).forEach(o=>{if(g[o.kind])g[o.kind].push(o.label);});
+  const fill=(id,kind)=>{const sel=$(id);if(!sel)return;const cur=sel.value;
+    sel.innerHTML='<option value="">— không chọn —</option>'+g[kind].map(l=>'<option>'+esc(l)+'</option>').join('')+'<option value="__add__">＋ Thêm mới…</option>';
+    if(cur&&g[kind].includes(cur))sel.value=cur;};
+  fill('orType','type');fill('orCombo','combo');fill('orFormat','format');
+}catch(e){}}
+window.orderOptChange=async function(kind,sel){
+  if(!sel||sel.value!=='__add__')return;
+  const lbl={type:'loại sản phẩm',combo:'combo',format:'format'}[kind]||kind;
+  const v=(prompt('Thêm '+lbl+' mới:')||'').trim();
+  if(!v){sel.value='';return;}
+  try{const {error}=await sb.from('order_options').insert({kind,label:v});if(error)throw error;
+    await loadOrderOpts();sel.value=v;showToast('Đã thêm ✓');
+  }catch(e){topErr(e.message||String(e));sel.value='';}
+};
+// Nạp danh sách người sản xuất (thành viên đã duyệt, không phải Seller) vào form
+async function loadProducers(){try{
+  const {data,error}=await sb.from('profiles').select('full_name,role,status');
+  if(error)throw error;
+  mediaNames=[...new Set((data||[]).filter(p=>p.status==='approved'&&p.full_name&&p.role!=='Seller').map(p=>p.full_name))].sort();
+  const sel=$('orProducer');if(sel){const cur=sel.value;sel.innerHTML='<option value="">— chưa gán —</option>'+mediaNames.map(n=>'<option>'+esc(n)+'</option>').join('');if(cur&&mediaNames.includes(cur))sel.value=cur;}
+}catch(e){}}
 async function syncSellers(){if(!isSD())return;try{
   const {data:profs}=await sb.from('profiles').select('id,full_name,role,seller_id').eq('role','Seller');
   const {data:srows}=await sb.from('sellers').select('id,name');const rows=srows||[];let changed=false;
