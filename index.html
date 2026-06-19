@@ -1437,14 +1437,17 @@ function renderOrders(){if(!$('orderBody'))return;
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
     const nowISO=new Date().toISOString();
     const shortDT=x=>x?vnDateTime(x).replace(/\/\d{4} /,' '):'—';
+    // Phân nhánh theo TRẠNG THÁI THẬT (scode), không theo việc có mốc giờ hay chưa.
     let dur2;
-    if(o.doneAt){
+    if(o.scode==='done'){
+      if(o.deliveredAt&&o.doneAt)dur2='<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ media '+durTxt(o.cAt,o.deliveredAt)+' · duyệt '+durTxt(o.deliveredAt,o.doneAt)+'</div>';
+      else if(o.doneAt)dur2='<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ tổng '+(durTxt(o.cAt,o.doneAt)||'xong')+'</div>';
+      else dur2='<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ Done</div>';
+    }else if(o.scode==='wait'){ // đã giao, chờ seller duyệt
       dur2=o.deliveredAt
-        ?'<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ media '+(durTxt(o.cAt,o.deliveredAt)||'—')+' · duyệt '+(durTxt(o.deliveredAt,o.doneAt)||'—')+'</div>'
-        :'<div style="font-size:10.5px;color:var(--green);font-weight:600">✓ tổng '+(durTxt(o.cAt,o.doneAt)||'xong')+'</div>';
-    }else if(o.deliveredAt){ // media đã giao, đang chờ seller duyệt
-      dur2='<div style="font-size:10.5px"><span style="color:var(--green)">📦 media '+(durTxt(o.cAt,o.deliveredAt)||'—')+'</span> · <span style="color:var(--amber);font-weight:600">⏳ chờ duyệt '+(durTxt(o.deliveredAt,nowISO)||'')+'</span></div>';
-    }else{ // media đang làm
+        ?'<div style="font-size:10.5px"><span style="color:var(--green)">📦 media '+durTxt(o.cAt,o.deliveredAt)+'</span> · <span style="color:var(--amber);font-weight:600">⏳ chờ duyệt '+(durTxt(o.deliveredAt,nowISO)||'')+'</span></div>'
+        :'<div style="font-size:10.5px;color:var(--amber);font-weight:600">📦 đã giao · ⏳ chờ duyệt</div>';
+    }else{ // idea/edit: media đang làm
       dur2='<div style="font-size:10.5px;color:var(--muted)">⏳ media đang làm '+(durTxt(o.cAt,nowISO)||'—')+'</div>';
     }
     const tCell='<td style="white-space:nowrap;cursor:pointer" title="Bấm xem chi tiết thời gian từng chặng" onclick="viewOrderTime('+o.id+')"><div style="font-size:11.5px">🆕 '+shortDT(o.cAt)+' <span style="color:var(--brand);font-size:10px">🔎</span></div>'+dur2+'</td>';
