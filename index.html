@@ -1435,9 +1435,8 @@ function renderOrders(){if(!$('orderBody'))return;
       dlCell='<div'+(orderOverdue(o)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
     const nowISO=new Date().toISOString();
-    const tCell=o.doneAt
-      ?'<td style="white-space:nowrap;font-size:12px;color:var(--green);font-weight:600" title="Tổng từ tạo đơn đến Done — bấm 🔎 Chi tiết xem từng chặng">✔ '+(durTxt(o.cAt,o.doneAt)||'xong')+'</td>'
-      :'<td style="white-space:nowrap;font-size:11px;color:var(--muted)" title="Đơn đã mở bao lâu">⏳ '+(durTxt(o.cAt,nowISO)||'—')+'</td>';
+    const tInner=o.doneAt?'<span style="color:var(--green);font-weight:600">✓ '+(durTxt(o.cAt,o.doneAt)||'xong')+'</span>':'<span style="color:var(--muted)">⏳ '+(durTxt(o.cAt,nowISO)||'—')+'</span>';
+    const tCell='<td style="white-space:nowrap;font-size:12px;cursor:pointer" title="Bấm xem chi tiết thời gian từng chặng" onclick="viewOrderDetail('+o.id+')">'+tInner+' <span style="color:var(--brand);font-size:10px">🔎</span></td>';
     return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td>'+o.s+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+tCell+'<td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=list.length?'none':'block';
 }
