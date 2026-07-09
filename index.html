@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.6</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.7</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -222,7 +222,7 @@
       <a data-view="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Bảng tin</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.6</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.7</b></div>
   </aside>
 
   <main class="main">
@@ -1520,7 +1520,7 @@ function renderOrders(){if(!$('orderBody'))return;
       else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';
       dlCell='<div'+(orderOverdue(o)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
     const canProdK=isAdmin()||me.role==='Media';
-    const wOpts=(orderOpts&&orderOpts.worktype)?orderOpts.worktype:[];
+    const wOpts=(orderOpts&&orderOpts.worktype&&orderOpts.worktype.length)?orderOpts.worktype:ORDER_WORKTYPES;
     const wList=(o.worktype&&!wOpts.includes(o.worktype))?[o.worktype].concat(wOpts):wOpts;
     const kindLine=canProdK
       ?'<div style="display:flex;align-items:center;gap:5px;margin:2px 0"><select style="'+SELCSS+';font-size:10.5px;max-width:130px" onchange="setOrderWork('+o.id+',this.value)"><option value="">🎬 chọn kiểu…</option>'+wList.map(w=>'<option'+(o.worktype===w?' selected':'')+'>'+esc(w)+'</option>').join('')+'</select>'+(o.qty?'<span style="font-size:10.5px;color:var(--muted)">×'+o.qty+'</span>':'')+'</div>'
@@ -2099,6 +2099,7 @@ async function loadOrderOpts(){
   }catch(e){orderOpts={type:flattenTypes(),combo:ORDER_COMBOS.slice(),format:ORDER_FORMATS.slice(),account:[]};}
   if(!orderOpts.worktype||!orderOpts.worktype.length)orderOpts.worktype=ORDER_WORKTYPES.slice();  // luôn có 4 kiểu mặc định
   fillOrderSelects();
+  if(typeof renderOrders==='function'&&$('orderBody'))renderOrders();  // vẽ lại bảng để dropdown kiểu có options
 }
 function fillOrderSelects(){
   const groups={};orderOpts.type.forEach(l=>{const g=String(l).split(' - ')[0];(groups[g]=groups[g]||[]).push(l);});
