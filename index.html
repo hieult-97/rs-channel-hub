@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.1</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.3</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -219,7 +219,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.1</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.3</b></div>
   </aside>
 
   <main class="main">
@@ -418,6 +418,7 @@
         <table><thead><tr><th>Mã order</th><th>Seller</th><th>Tên TK</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>Thời gian</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
+        <div id="orderPager" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)"></div>
       </div></div>
     </section>
 
@@ -1495,7 +1496,12 @@ function renderOrders(){if(!$('orderBody'))return;
   // Sắp xếp ưu tiên: (0) Chưa trả/đang làm lên đầu — tránh miss; (1) Chờ nghiệm thu; (2) Done xuống cuối. Trong nhóm: deadline gấp trước.
   const rank=o=>o.scode==='done'?2:(notDelivered(o)?0:1);
   list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;if(ra<2){const da=a.deadline||'9999-99-99',db=b.deadline||'9999-99-99';if(da!==db)return da<db?-1:1;}return (b.id||0)-(a.id||0);});
-  $('orderBody').innerHTML=list.map(o=>{
+  // Phân trang
+  const total=list.length,ps=window.gOrderPageSize||20,pages=Math.max(1,Math.ceil(total/ps));
+  if(!window.gOrderPage||window.gOrderPage>pages)window.gOrderPage=Math.min(window.gOrderPage||1,pages);
+  const pg=window.gOrderPage,from=total?(pg-1)*ps:0;const pageList=list.slice(from,from+ps);
+  renderOrderPager(total,pg,pages,from,pageList.length);
+  $('orderBody').innerHTML=pageList.map(o=>{
     // Media kéo tối đa đến "Chờ nghiệm thu"; Seller/Admin mới chốt "Done".
     const mediaOnly=me.role==='Media'&&!isAdmin();
     const canStatus=isAdmin()||me.role==='Media'||me.role==='Seller';
@@ -1547,6 +1553,16 @@ function renderOrders(){if(!$('orderBody'))return;
   $('orderEmpty').style.display=list.length?'none':'block';
 }
 window.renderOrders=renderOrders;
+function renderOrderPager(total,pg,pages,from,shown){const el=$('orderPager');if(!el)return;
+  if(!total){el.innerHTML='';return;}
+  const ps=window.gOrderPageSize||20,to=from+shown;
+  const sizeSel='<select onchange="setOrderPageSize(this.value)" style="'+SELCSS+'">'+[10,20,50,100].map(n=>'<option value="'+n+'"'+(ps===n?' selected':'')+'>'+n+'</option>').join('')+'<option value="all"'+(ps>=99999?' selected':'')+'>Tất cả</option></select>';
+  const btn=(lbl,p,dis,cur)=>'<button class="btn ghost" style="padding:5px 10px;min-width:34px'+(cur?';background:var(--brand);color:#fff;font-weight:700':'')+'"'+(dis?' disabled':'')+' onclick="goOrderPage('+p+')">'+lbl+'</button>';
+  let nums='';for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-pg)<=2)nums+=btn(i,i,false,i===pg);else if(Math.abs(i-pg)===3)nums+='<span style="padding:0 4px;color:var(--muted)">…</span>';}
+  el.innerHTML='<div style="font-size:12.5px;color:var(--muted)">Hiện <b>'+(total?from+1:0)+'–'+to+'</b> / tổng <b>'+total+'</b> order · '+sizeSel+' mỗi trang</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'+btn('‹',pg-1,pg<=1,false)+nums+btn('›',pg+1,pg>=pages,false)+'</div>';}
+window.setOrderPageSize=function(v){window.gOrderPageSize=(v==='all')?99999:Number(v);window.gOrderPage=1;renderOrders();};
+window.goOrderPage=function(p){window.gOrderPage=Math.max(1,p);renderOrders();};
 function renderMediaLoad(){if(!$('mediaLoadBody'))return;const today=todayStr();
   const stat={};const ensure=n=>stat[n]||(stat[n]={edit:0,wait:0,over:0});
   (orders||[]).forEach(o=>{if(o.scode==='done')return;const n=(o.who&&o.who!=='—')?o.who:'(chưa gán)';const s=ensure(n);
@@ -1946,6 +1962,19 @@ $('postSend').onclick=async()=>{const b=$('postInput').value.trim();if(!b&&!imgS
 $('obX').onclick=()=>{obDismissed=true;$('onboard').style.display='none';};
 function syncSide(){$('side').classList.toggle('collapsed',window.innerWidth<=760);}
 window.addEventListener('resize',syncSide);syncSide();
+// ===== Tự làm mới dữ liệu (thấy thay đổi của người khác mà không cần F5) =====
+function canAutoRefresh(){
+  if(typeof me==='undefined'||!me||me.status!=='approved'||document.hidden)return false;
+  if(document.getElementById('drillWrap'))return false;                 // đang mở popup
+  if(['chForm','orderForm','issueForm','vidForm'].some(id=>{const f=$(id);return f&&f.style.display!=='none';}))return false; // form đang mở
+  const ae=document.activeElement;if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return false;  // đang gõ/chọn
+  if(document.querySelector('[data-dirty="1"]'))return false;           // lưới nhập nhanh có ô chưa lưu
+  return true;
+}
+async function autoRefresh(){if(canAutoRefresh()){try{await loadData();}catch(e){}}}
+setInterval(autoRefresh,40000);                                        // 40 giây/lần
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)autoRefresh();});
+window.addEventListener('focus',autoRefresh);
 
 // growth
 function snapsAsc(cid){return rawSnaps.filter(s=>s.channel_id===cid).slice().sort((a,b)=>{const ka=String(a.created_at||a.period_date||''),kb=String(b.created_at||b.period_date||'');return ka<kb?-1:(ka>kb?1:0);});}
