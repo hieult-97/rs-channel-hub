@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.5</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.6</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -222,7 +222,7 @@
       <a data-view="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Bảng tin</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.5</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.6</b></div>
   </aside>
 
   <main class="main">
@@ -336,21 +336,22 @@
         <select id="fSeller"><option value="">Tất cả seller</option></select>
         <select id="fNiche"><option value="">Tất cả niche</option></select>
         <select id="fStage"><option value="">Mọi giai đoạn</option><option value="trang">Trắng</option><option value="nuoi">Đang nuôi</option><option value="ready">Đủ điều kiện bàn giao</option><option value="done">Đã bàn giao</option><option value="error">🚫 Lỗi / Bị khóa</option><option value="dead">⏸ Dừng sản xuất</option></select>
+        <button class="btn ghost" onclick="openColChooser()" title="Chọn cột hiển thị / ẩn">⚙️ Cột</button>
         <span class="cnt" id="chCount"></span>
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
         <table>
           <thead><tr>
             <th class="sortable stick" data-k="n">Kênh <span class="ar"></span></th>
-            <th class="sortable" data-k="niche">Niche <span class="ar"></span></th>
-            <th>Shop</th><th>Tên TK</th><th>Giai đoạn</th><th>Seller</th><th>Người Care</th><th class="num">Vấn đề đang mở</th>
-            <th class="sortable num" data-k="f">Follower <span class="ar"></span></th>
-            <th class="sortable num" data-k="pct">% Mục tiêu <span class="ar"></span></th>
-            <th class="sortable num" data-k="v">View <span class="ar"></span></th>
-            <th class="sortable num" data-k="vid">Video <span class="ar"></span></th>
-            <th class="sortable num" data-k="or">Đơn <span class="ar"></span></th>
-            <th class="sortable num" data-k="com">GMV ($) <span class="ar"></span></th>
-            <th class="sortable num" data-k="upd">Cập nhật <span class="ar"></span></th>
+            <th class="sortable c-niche" data-k="niche">Niche <span class="ar"></span></th>
+            <th class="c-shop">Shop</th><th class="c-acct">Tên TK</th><th class="c-stage">Giai đoạn</th><th class="c-seller">Seller</th><th class="c-care">Người Care</th><th class="num c-issue">Vấn đề đang mở</th>
+            <th class="sortable num c-f" data-k="f">Follower <span class="ar"></span></th>
+            <th class="sortable num c-pct" data-k="pct">% Mục tiêu <span class="ar"></span></th>
+            <th class="sortable num c-v" data-k="v">View <span class="ar"></span></th>
+            <th class="sortable num c-vid" data-k="vid">Video <span class="ar"></span></th>
+            <th class="sortable num c-or" data-k="or">Đơn <span class="ar"></span></th>
+            <th class="sortable num c-com" data-k="com">GMV ($) <span class="ar"></span></th>
+            <th class="sortable num c-upd" data-k="upd">Cập nhật <span class="ar"></span></th>
             <th style="position:sticky;right:0;background:var(--panel2);box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"></th>
           </tr></thead>
           <tbody id="chBody"></tbody>
@@ -1022,6 +1023,15 @@ function renderAll(){
     $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap">'+(isSD()?('<select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')):'<span style="color:var(--muted)">chỉ SD</span>')+'</td></tr>').join('');
   }
 }
+const CH_COLS=[['niche','Niche'],['shop','Shop'],['acct','Tên TK'],['stage','Giai đoạn'],['seller','Seller'],['care','Người Care'],['issue','Vấn đề đang mở'],['f','Follower'],['pct','% Mục tiêu'],['v','View'],['vid','Video'],['or','Đơn'],['com','GMV'],['upd','Cập nhật']];
+const CH_COLS_DEFHIDE=['f','pct','v','vid','or','com','upd'];  // mặc định ẩn nhóm số liệu GMV cho gọn
+function chHidden(){try{const s=localStorage.getItem('rs_ch_hidden');return new Set(s?JSON.parse(s):CH_COLS_DEFHIDE);}catch(e){return new Set(CH_COLS_DEFHIDE);}}
+function applyColVis(){const hid=chHidden();CH_COLS.forEach(([k])=>{document.querySelectorAll('.c-'+k).forEach(el=>{el.style.display=hid.has(k)?'none':'';});});}
+window.openColChooser=function(){const hid=chHidden();
+  const items=CH_COLS.map(([k,l])=>'<label style="display:flex;align-items:center;gap:9px;padding:7px 4px;cursor:pointer;font-size:13.5px"><input type="checkbox" data-col="'+k+'"'+(hid.has(k)?'':' checked')+'> '+esc(l)+'</label>').join('');
+  showDrill('⚙️ Chọn cột hiển thị','<div style="padding:12px 16px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Tích = hiện · bỏ tích = ẩn. Lưu theo máy của bạn.</div>'+items+'<div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="saveColChooser()">Áp dụng</button><button class="btn ghost" onclick="resetColChooser()">Về mặc định</button></div></div>');};
+window.saveColChooser=function(){const hid=[];document.querySelectorAll('#drillWrap input[data-col]').forEach(cb=>{if(!cb.checked)hid.push(cb.dataset.col);});try{localStorage.setItem('rs_ch_hidden',JSON.stringify(hid));}catch(e){}applyColVis();closeDrill();showToast('Đã lưu cột hiển thị ✓');};
+window.resetColChooser=function(){try{localStorage.removeItem('rs_ch_hidden');}catch(e){}applyColVis();closeDrill();showToast('Đã về mặc định ✓');};
 function renderCh(){
   const fS=$('fSearch'),fSe=$('fSeller'),fN=$('fNiche'),fH=$('fHealth'),fSt=$('fStage');
   fillSel('fSeller','Tất cả seller',[...new Set(ch.map(c=>c.s))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
@@ -1035,25 +1045,26 @@ function renderCh(){
     const pctTd=c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>';
     const dlt=c.d?' <span style="font-size:10.5px;color:'+(c.d>0?'var(--green)':'var(--red)')+'">'+sign(c.d)+'</span>':'';
     return '<tr><td class="stick"><b>'+esc(c.n)+'</b> <span title="Copy URL kênh" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyEnc(\''+encodeURIComponent(c.n).replace(/'/g,'%27')+'\')">📋</span>'+pin+sub+'</td>'+
-      '<td style="color:var(--muted)">'+esc(c.niche)+'</td>'+
-      '<td>'+accChip(c.acc)+shopIc+'</td>'+
-      '<td style="white-space:nowrap;font-weight:600">'+(c.acct?esc(c.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+
-      '<td style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+'" onchange="setChannelStage('+c.id+',this.value)"><option value="">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
-      '<td>'+esc(c.s)+'</td>'+
-      '<td style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
-      '<td class="num">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
-      '<td class="num">'+fmtK(c.f)+dlt+'</td>'+
-      '<td class="num">'+pctTd+'</td>'+
-      '<td class="num">'+fmtK(c.v)+'</td>'+
-      '<td class="num"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td>'+
-      '<td class="num">'+c.or+'</td>'+
-      '<td class="num" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
-      '<td>'+updChip(c.upd)+'</td>'+
+      '<td class="c-niche" style="color:var(--muted)">'+esc(c.niche)+'</td>'+
+      '<td class="c-shop">'+accChip(c.acc)+shopIc+'</td>'+
+      '<td class="c-acct" style="white-space:nowrap;font-weight:600">'+(c.acct?esc(c.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+
+      '<td class="c-stage" style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+'" onchange="setChannelStage('+c.id+',this.value)"><option value="">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
+      '<td class="c-seller">'+esc(c.s)+'</td>'+
+      '<td class="c-care" style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
+      '<td class="num c-issue">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
+      '<td class="num c-f">'+fmtK(c.f)+dlt+'</td>'+
+      '<td class="num c-pct">'+pctTd+'</td>'+
+      '<td class="num c-v">'+fmtK(c.v)+'</td>'+
+      '<td class="num c-vid"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td>'+
+      '<td class="num c-or">'+c.or+'</td>'+
+      '<td class="num c-com" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
+      '<td class="c-upd">'+updChip(c.upd)+'</td>'+
       '<td style="white-space:nowrap;position:sticky;right:0;background:var(--panel);box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"><span title="Báo vấn đề cho kênh này" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="drillIssue('+c.id+')">⚠️</span><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
   }).join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
   document.querySelectorAll('#channels th.sortable').forEach(th=>{th.querySelector('.ar').textContent=th.dataset.k===sortK?(sortDir<0?'▼':'▲'):'';});
+  applyColVis();
 }
 function renderHist(){
   const cName=id=>{const c=(rawChannels||[]).find(x=>x.id===id);return c?c.name:'—';};
@@ -2076,6 +2087,7 @@ try{applyTheme(localStorage.getItem('rs_theme')||'light');}catch(e){applyTheme('
 // danh mục Order (chọn sẵn, đỡ gõ lại)
 const ORDER_TYPES={Clothing:['T-shirt','Pajamas','Polo','Jersey','Hawaii','Bikini','Pants','Hoodie','Pet Shirt'],Accessories:['Sash-Stole-Scarf','Towel','Table Runner','Badana','Poster','Tapestry','Flag','Tote bag','Mug/Tumbler','Car Hanging','Pillow Cover','Phone Cases','Graduation Fan','Graduation Cap','Baseballs','Clipboard','keychain','Headband']};
 const ORDER_COMBOS=['Combo 12 templates - 1','Combo 12 templates - 2','Combo 12 templates - 3','Combo 12 templates - 4','Combo lẻ - 5','Combo lẻ - 6','Combo lẻ - 7','Order lẻ'];
+const ORDER_WORKTYPES=['Ảnh AI','Video AI','Quay chụp','Livestream'];
 const ORDER_FORMATS=['1. Format Mix & Match - group','2. Format Promotion - Giới thiệu màu mới','3. Format Story - Quote - Dry Joke','4. Format Product demo - focus - unfolding','5. Format Product demo - focus - zooming trasition','6. Format Product demo - focus - zooming','7. Format Product demo - focus - quay cận 1 sản phẩm','8. Format Product demo - focus - quay cận 2 sản phẩm','9. Format Outfit Check - single female model 1','10. Format Outfit Check - single male model 1','11. Format Outfit Check - single female model 2','12. Format Outfit Check - single male model 2','13. Format Outfit Check - Couple Model','14. Format UGC - Reaction 1','15. Format Review mặc hàng ngày - single model (Consistent character) 1','16. Format Review mặc hàng ngày - single model (Consistent character) 2','17. Format Mix & match đi trên máy chạy bộ - single model (Consistent character)','18. Format Outfit Check - single female model 3','19. Format UGC - Reaction 2','20. Format Outfit Check - single female model 4','21. Format Promotion - multi scene (Script)','22. Format Outfit Check mirror selfie - single model (Consistent character)','23. Format GRWM','24. Format BTS Photoshoot','25. Format BTS quá trình sản xuất','26. Format Review deep dive sản phẩm','27. Format Review trên mannequin','28. Format Sale campaign','29. Format Packaging - unboxing','30. Format Mix & Match theo palette','31. Format Mix & Match phụ kiện','32. Format Mix & Match 4 cách T‑shirt & phụ kiện','33. Format Outfit Check - Áo Hoodie','34. Format BTS gói đơn hàng','35. Format Micro‑vlog','36. Format Trend - Challenge'];
 let orderOpts={type:[],combo:[],format:[]};
 function flattenTypes(){const a=[];for(const g in ORDER_TYPES)ORDER_TYPES[g].forEach(t=>a.push(g+' - '+t));return a;}
@@ -2085,6 +2097,7 @@ async function loadOrderOpts(){
     else{orderOpts={type:[],combo:[],format:[],account:[],worktype:[]};data.forEach(o=>{if(orderOpts[o.kind])orderOpts[o.kind].push(o.label);});
       if(!orderOpts.type.length)orderOpts.type=flattenTypes();if(!orderOpts.combo.length)orderOpts.combo=ORDER_COMBOS.slice();if(!orderOpts.format.length)orderOpts.format=ORDER_FORMATS.slice();}
   }catch(e){orderOpts={type:flattenTypes(),combo:ORDER_COMBOS.slice(),format:ORDER_FORMATS.slice(),account:[]};}
+  if(!orderOpts.worktype||!orderOpts.worktype.length)orderOpts.worktype=ORDER_WORKTYPES.slice();  // luôn có 4 kiểu mặc định
   fillOrderSelects();
 }
 function fillOrderSelects(){
