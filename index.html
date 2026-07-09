@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.9</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.1</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -219,7 +219,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.9</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.1</b></div>
   </aside>
 
   <main class="main">
@@ -341,7 +341,7 @@
           <thead><tr>
             <th class="sortable stick" data-k="n">Kênh <span class="ar"></span></th>
             <th class="sortable c-niche" data-k="niche">Niche <span class="ar"></span></th>
-            <th class="c-shop">Shop</th><th class="c-acct">Tên TK</th><th class="c-stage">Giai đoạn</th><th class="c-seller">Seller</th><th class="c-care">Người Care</th><th class="num c-issue">Vấn đề đang mở</th>
+            <th class="c-shop">Shop</th><th class="c-acct">Tên TK</th><th class="sortable c-stage" data-k="stage">Giai đoạn <span class="ar"></span></th><th class="sortable c-seller" data-k="s">Seller <span class="ar"></span></th><th class="sortable c-care" data-k="o">Người Care <span class="ar"></span></th><th class="num c-issue">Vấn đề đang mở</th>
             <th class="sortable num c-f" data-k="f">Follower <span class="ar"></span></th>
             <th class="sortable num c-pct" data-k="pct">% Mục tiêu <span class="ar"></span></th>
             <th class="sortable num c-v" data-k="v">View <span class="ar"></span></th>
@@ -1036,18 +1036,20 @@ function renderCh(){
   fillSel('fSeller','Tất cả seller',[...new Set(ch.map(c=>c.s))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('fNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH||!fH.value||c.h===fH.value)&&(!fSt||!fSt.value||c.stage===fSt.value));
-  rows.sort((a,b)=>{const ra=a.stage==='dead'?1:0,rb=b.stage==='dead'?1:0;if(ra!==rb)return ra-rb;let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
+  const sv=c=>sortK==='stage'?stageLabel(c.stage):c[sortK];
+  rows.sort((a,b)=>{const ra=a.stage==='dead'?1:0,rb=b.stage==='dead'?1:0;if(ra!==rb)return ra-rb;let x=sv(a),y=sv(b);if(typeof x=='string'||typeof y=='string')return String(x||'').localeCompare(String(y||''))*sortDir;return ((x||0)-(y||0))*sortDir;});
   $('chBody').innerHTML=rows.map(c=>{
     const shopIc=c.shop?'<div style="margin-top:4px;white-space:nowrap">'+linkSnippet(c.shop,'Shop')+'</div>':'';
     const pin=window.gOpenIssues&&window.gOpenIssues.has(c.n)?' <span title="Đã có vấn đề ghi nhận đang mở" style="cursor:help">📌</span>':'';
     const sub='<div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+esc(c.plat)+(c.market&&c.market!=='—'?' · '+esc(c.market):'')+'</div>';
     const pctTd=c.goal?'<span style="color:'+(c.pct>=100?'var(--green)':c.pct>=50?'var(--text)':'var(--amber)')+';font-weight:700">'+c.pct+'%</span>':'<span style="color:var(--muted)">—</span>';
     const dlt=c.d?' <span style="font-size:10.5px;color:'+(c.d>0?'var(--green)':'var(--red)')+'">'+sign(c.d)+'</span>':'';
-    return '<tr><td class="stick"><b>'+esc(c.n)+'</b> <span title="Copy URL kênh" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyEnc(\''+encodeURIComponent(c.n).replace(/'/g,'%27')+'\')">📋</span>'+pin+sub+'</td>'+
+    const rowBg=c.stage==='dead'?'rgba(240,106,106,.10)':(c.stage==='error'?'rgba(224,138,0,.12)':'');
+    return '<tr'+(rowBg?' style="background:'+rowBg+'"':'')+'><td class="stick"'+(rowBg?' style="background:'+rowBg+'"':'')+'><b>'+esc(c.n)+'</b> <span title="Copy URL kênh" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyEnc(\''+encodeURIComponent(c.n).replace(/'/g,'%27')+'\')">📋</span>'+pin+sub+'</td>'+
       '<td class="c-niche" style="color:var(--muted)">'+esc(c.niche)+'</td>'+
       '<td class="c-shop">'+accChip(c.acc)+shopIc+'</td>'+
       '<td class="c-acct" style="white-space:nowrap;font-weight:600">'+(c.acct?esc(c.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+
-      '<td class="c-stage" style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+';color:'+stageColor(c.stage)+';font-weight:600" onchange="setChannelStage('+c.id+',this.value)"><option value="" style="color:var(--muted)">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
+      '<td class="c-stage" style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+'" onchange="setChannelStage('+c.id+',this.value)"><option value="">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
       '<td class="c-seller">'+esc(c.s)+'</td>'+
       '<td class="c-care" style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
       '<td class="num c-issue">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
@@ -1058,7 +1060,7 @@ function renderCh(){
       '<td class="num c-or">'+c.or+'</td>'+
       '<td class="num c-com" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
       '<td class="c-upd">'+((c.stage==='dead'||c.stage==='error')?'<span style="color:var(--muted);font-size:11px">— không theo dõi</span>':updChip(c.upd))+'</td>'+
-      '<td style="white-space:nowrap;position:sticky;right:0;background:var(--panel);box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"><span title="Báo vấn đề cho kênh này" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="drillIssue('+c.id+')">⚠️</span><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
+      '<td style="white-space:nowrap;position:sticky;right:0;background:'+(rowBg||'var(--panel)')+';box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"><span title="Báo vấn đề cho kênh này" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="drillIssue('+c.id+')">⚠️</span><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
   }).join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
   $('chEmpty').style.display=ch.length?'none':'block';
@@ -1794,7 +1796,7 @@ $('fileImport').onchange=e=>{if(e.target.files[0])importChannels(e.target.files[
 function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(v==='team')renderTeam();if(v==='log')renderLog();if(v==='cat')renderCat();if(v==='kpi')renderKPI();if(v==='perf')renderAll();if(v==='update')renderBulkUpd();if(v==='today')renderToday();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
 ['fSearch','fSeller','fNiche','fHealth','fStage'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',renderCh);});
-document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche')?1:-1;}renderCh();});
+document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche'||k=='stage'||k=='s'||k=='o')?1:-1;}renderCh();});
 $('hamb').onclick=()=>$('side').classList.toggle('collapsed');
 $('btnAddOrder').onclick=()=>{const f=$('orderForm');const show=f.style.display=='none';
   if(show){
