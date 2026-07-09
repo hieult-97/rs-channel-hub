@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.4</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.5</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -206,7 +206,6 @@
       <div class="nav-h" style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:14px 14px 4px;font-weight:700;opacity:.7">Vận hành</div>
       <a data-view="channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></svg> Kênh <span class="bell" id="navOverdue"></span></a>
       <a data-view="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4l1.5 5M14 4l1.5 5"/></svg> Order sản xuất <span class="bell" id="navOrders"></span></a>
-      <a data-view="update"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Cập nhật số liệu</a>
       <a data-view="issues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.2 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Vấn đề <span class="bell" id="navIssues"></span></a>
       <div class="nav-h" style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:14px 14px 4px;font-weight:700;opacity:.7">Báo cáo</div>
       <a data-view="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg> Tăng trưởng</a>
@@ -219,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.4</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.5</b></div>
   </aside>
 
   <main class="main">
@@ -314,6 +313,7 @@
           <div><label>URL shop <span style="color:var(--muted);font-weight:500">(Media lấy sản phẩm)</span></label><input class="field" id="ncShop" placeholder="https://shop... hoặc mã shop"></div>
           <div><label>Tên TK / Shop <span style="color:var(--muted);font-weight:500">(chọn từ danh mục)</span></label><select class="field" id="ncAccount" onchange="orderOptChange('account',this)"></select></div>
           <div><label>Ngày bàn giao</label><input class="field" id="ncHandover" type="date"></div>
+          <div><label>Ngày dừng bàn giao <span style="color:var(--muted);font-weight:500">(khi dừng/khóa kênh)</span></label><input class="field" id="ncStop" type="date"></div>
           <div><label>Nơi đăng nhập</label><input class="field" id="ncLogin" placeholder="Hidemium..."></div>
           <div><label>IP</label><input class="field" id="ncIp" placeholder="US"></div>
           <div><label>Proxy</label><input class="field" id="ncProxy" placeholder="ip:port:user:pass"></div>
@@ -328,6 +328,29 @@
           <input class="field" id="ncNewSeller" placeholder="(tùy chọn) tên seller mới" style="margin-top:10px;max-width:300px;font-size:13px;font-weight:500">
         </div>
       </div>
+      <details id="bulkPanel" class="card" style="margin-bottom:14px">
+        <summary style="cursor:pointer;font-weight:700;font-size:15px">⚡ Nhập nhanh số liệu (Follower/View/Video/Đơn/GMV) · Excel <span class="tag">bấm để mở / đóng</span></summary>
+        <div style="margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div class="sub">Ưu tiên nhập hằng ngày (tối đa 3 ngày/kênh) · hệ thống tự tính phần còn lại</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn ghost" id="btnSnapForm">⬇️ Tải form Excel</button>
+              <button class="btn ghost" id="btnSnapImport">⬆️ Nhập từ Excel</button>
+              <input type="file" id="snapFile" accept=".xlsx,.xls" style="display:none">
+              <button class="btn" id="btnBulkSave">💾 Lưu bảng</button>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="margin-top:10px"><table>
+            <thead><tr><th>Kênh</th><th class="num">Follower</th><th class="num">View kỳ</th><th class="num">Video</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th>Cập nhật</th></tr></thead>
+            <tbody id="bulkBody"></tbody></table>
+            <div class="empty" id="bulkEmpty" style="display:none">Chưa có kênh nào bạn phụ trách.</div>
+          </div>
+          <h3 style="margin-top:16px">Lịch sử cập nhật gần đây</h3>
+          <div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Kênh</th><th class="num">Follower</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th></th></tr></thead>
+          <tbody id="histBody"></tbody></table>
+          <div class="empty" id="histEmpty" style="display:none">Chưa có lần cập nhật nào.</div></div>
+        </div>
+      </details>
       <div class="filters">
         <input id="fSearch" placeholder="Tìm theo tên kênh...">
         <select id="fSeller"><option value="">Tất cả seller</option></select>
@@ -349,6 +372,8 @@
             <th class="sortable num c-or" data-k="or">Đơn <span class="ar"></span></th>
             <th class="sortable num c-com" data-k="com">GMV ($) <span class="ar"></span></th>
             <th class="sortable num c-upd" data-k="upd">Cập nhật <span class="ar"></span></th>
+            <th class="sortable c-hand" data-k="hand">Ngày bàn giao <span class="ar"></span></th>
+            <th class="sortable c-stop" data-k="stop">Ngày dừng <span class="ar"></span></th>
             <th style="position:sticky;right:0;background:var(--panel2);box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"></th>
           </tr></thead>
           <tbody id="chBody"></tbody>
@@ -420,31 +445,6 @@
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
         <div id="orderPager" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)"></div>
       </div></div>
-    </section>
-
-    <section class="view" id="update">
-      <div class="topbar"><div><h1>Cập nhật số liệu</h1><div class="sub">Ưu tiên nhập hằng ngày (tối đa 3 ngày/kênh) · hệ thống tự tính phần còn lại</div></div></div>
-      <div class="card" style="margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <h3>⚡ Nhập nhanh nhiều kênh <span class="tag">Gõ trực tiếp vào bảng, hoặc dùng Excel để nhập hàng loạt</span></h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn ghost" id="btnSnapForm">⬇️ Tải form Excel</button>
-            <button class="btn ghost" id="btnSnapImport">⬆️ Nhập từ Excel</button>
-            <input type="file" id="snapFile" accept=".xlsx,.xls" style="display:none">
-            <button class="btn" id="btnBulkSave">💾 Lưu bảng trên</button>
-          </div>
-        </div>
-        <div class="tbl-wrap" style="margin-top:10px"><table>
-          <thead><tr><th>Kênh</th><th class="num">Follower</th><th class="num">View kỳ</th><th class="num">Video</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th>Cập nhật</th></tr></thead>
-          <tbody id="bulkBody"></tbody></table>
-          <div class="empty" id="bulkEmpty" style="display:none">Chưa có kênh nào bạn phụ trách.</div>
-        </div>
-      </div>
-      <div class="card"><h3>Lịch sử cập nhật gần đây</h3>
-        <div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Kênh</th><th class="num">Follower</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th></th></tr></thead>
-        <tbody id="histBody"></tbody></table>
-        <div class="empty" id="histEmpty" style="display:none">Chưa có lần cập nhật nào.</div></div>
-      </div>
     </section>
 
     <section class="view" id="issues">
@@ -626,8 +626,8 @@ const $=id=>document.getElementById(id);
 let me=null;            // profile của user đang đăng nhập
 let ch=[], orders=[], issues=[], sellers=[], pendUsers=[], allUsers=[];
 let rawChannels=[], rawSnaps=[], rawMembers=[], asOf=null, editingId=null;
-const MENU_SECTIONS=[['dash','Tổng quan'],['today','Việc hôm nay'],['channels','Kênh'],['growth','Tăng trưởng'],['perf','Hiệu suất & GMV'],['orders','Order sản xuất'],['update','Cập nhật số liệu'],['issues','Vấn đề'],['alerts','Cảnh báo'],['kpi','KPI nhân sự'],['cat','Danh mục'],['log','Nhật ký'],['roles','Phân quyền']];
-const DEFAULT_ACCESS={Leader:['dash','today','channels','growth','perf','orders','update','issues','alerts','kpi','roles','cat'],Media:['dash','today','channels','growth','orders','update','issues'],Seller:['dash','today','channels','growth','orders','update','issues']};
+const MENU_SECTIONS=[['dash','Tổng quan'],['today','Việc hôm nay'],['channels','Kênh'],['growth','Tăng trưởng'],['perf','Hiệu suất & GMV'],['orders','Order sản xuất'],['issues','Vấn đề'],['alerts','Cảnh báo'],['kpi','KPI nhân sự'],['cat','Danh mục'],['log','Nhật ký'],['roles','Phân quyền']];
+const DEFAULT_ACCESS={Leader:['dash','today','channels','growth','perf','orders','issues','alerts','kpi','roles','cat'],Media:['dash','today','channels','growth','orders','issues'],Seller:['dash','today','channels','growth','orders','issues']};
 let roleAccess=null;
 async function loadRoleAccess(){try{const {data}=await sb.from('app_settings').select('value').eq('key','role_access').maybeSingle();roleAccess=(data&&data.value)?data.value:null;}catch(e){roleAccess=null;}
   if(!roleAccess)roleAccess={};['Leader','Media','Seller'].forEach(r=>{if(!Array.isArray(roleAccess[r]))roleAccess[r]=DEFAULT_ACCESS[r].slice();});}
@@ -641,7 +641,7 @@ window.saveRolePerms=async function(){const roles=['Leader','Media','Seller'],cf
   const {error}=await sb.from('app_settings').upsert({key:'role_access',value:cfg,updated_at:new Date().toISOString()},{onConflict:'key'});
   if(error)return topErr(/app_settings/.test(error.message||'')?'Hãy chạy patch-TONG-HOP.sql để bật cấu hình quyền.':error.message);
   roleAccess=cfg;await logAction('Lưu phân quyền menu','app_settings',JSON.stringify(cfg));showToast('Đã lưu ✓ (người dùng đăng nhập lại sẽ thấy menu mới)');};
-let sortK='com',sortDir=-1,obDismissed=false,toastT,healthChart=null,trendDrawn=false,obGoTarget='update',growthChart=null;
+let sortK='com',sortDir=-1,obDismissed=false,toastT,healthChart=null,trendDrawn=false,obGoTarget='channels',growthChart=null;
 
 // ====== HELPERS ======
 const fmtK=x=>{x=Number(x)||0;return x>=1000?(x/1000).toFixed(1)+'K':''+x;};
@@ -869,7 +869,7 @@ function buildCh(asOfDate){
     const care=(c.care&&String(c.care).trim())?String(c.care).trim():chOwnerOf(c.id);
     const _goal=Number(c.follower_goal)||0,pct=_goal?Math.round(f/_goal*100):0;
     const age=daysSince(c.created_at);// số ngày kênh đã được thêm vào tool
-    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',shop:c.shop_url||'',acct:c.account_name||'',stage:c.stage||'',videoN:(c.video_count!=null?Number(c.video_count):null),violations:Number(c.violations)||0,goal:_goal,pct,age,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(latest,prev,dDaily,upd,vidDaily)};
+    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',shop:c.shop_url||'',acct:c.account_name||'',stage:c.stage||'',videoN:(c.video_count!=null?Number(c.video_count):null),hand:c.handover_date||'',stop:c.stop_date||'',violations:Number(c.violations)||0,goal:_goal,pct,age,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(latest,prev,dDaily,upd,vidDaily)};
   });
 }
 function dashScope(){let r=ch;const se=$('dashSeller')?$('dashSeller').value:'',cn=$('dashChannel')?$('dashChannel').value:'',pl=$('dashPlatform')?$('dashPlatform').value:'',ni=$('dashNiche')?$('dashNiche').value:'';if(se)r=r.filter(c=>c.s===se);if(pl)r=r.filter(c=>c.plat===pl);if(ni)r=r.filter(c=>c.niche===ni);if(cn)r=r.filter(c=>String(c.id)===String(cn));return r;}
@@ -927,7 +927,7 @@ function renderAll(){
   // onboarding / getting-started
   const ob=$('onboard');
   if(ch.length===0){ob.style.display='flex';$('obTitle').textContent='Bắt đầu: chưa có kênh nào';$('obText').textContent='Thêm kênh bằng "Form mẫu → Nhập Excel" hoặc nút "+ Thêm kênh" để bắt đầu theo dõi.';$('obGo').textContent='Tới mục Kênh';obGoTarget='channels';}
-  else if(needToday>0&&!obDismissed){ob.style.display='flex';$('obTitle').textContent='Có '+needToday+' kênh cần cập nhật hôm nay';$('obText').textContent='Ưu tiên cập nhật hằng ngày để dữ liệu & cảnh báo chính xác.';$('obGo').textContent='Vào cập nhật ngay';obGoTarget='update';}
+  else if(needToday>0&&!obDismissed){ob.style.display='flex';$('obTitle').textContent='Có '+needToday+' kênh cần cập nhật hôm nay';$('obText').textContent='Ưu tiên cập nhật hằng ngày để dữ liệu & cảnh báo chính xác.';$('obGo').textContent='Vào cập nhật ngay';obGoTarget='channels';}
   else ob.style.display='none';
   // health
   const hc={g:sc.filter(c=>c.h=='g').length,a:sc.filter(c=>c.h=='a').length,r:sc.filter(c=>c.h=='r').length,n:sc.filter(c=>c.h=='n').length};
@@ -1023,8 +1023,8 @@ function renderAll(){
     $('userBody').innerHTML=allUsers.filter(p=>p.status==='approved').map(p=>'<tr><td><b>'+esc(p.full_name||'')+'</b></td><td>'+esc(p.email)+'</td><td><span class="chip blue">'+p.role+'</span></td><td><span class="chip ok">đã duyệt</span></td><td style="white-space:nowrap">'+(isSD()?('<select style="'+SELCSS+'" onchange="changeUserRole(\''+p.id+'\',this.value)">'+selOpts([['SD','SD'],['Leader','Leader'],['Media','Media'],['Seller','Seller']],p.role)+'</select>'+(p.id!==me.id?' <span title="Khóa người dùng" style="cursor:pointer;margin-left:6px" onclick="disableUser(\''+p.id+'\')">🚫</span>':'')):'<span style="color:var(--muted)">chỉ SD</span>')+'</td></tr>').join('');
   }
 }
-const CH_COLS=[['niche','Niche'],['shop','Shop'],['acct','Tên TK'],['stage','Giai đoạn'],['seller','Seller'],['care','Người Care'],['issue','Vấn đề đang mở'],['f','Follower'],['pct','% Mục tiêu'],['v','View'],['vid','Video'],['or','Đơn'],['com','GMV'],['upd','Cập nhật']];
-const CH_COLS_DEFHIDE=['f','pct','v','vid','or','com','upd'];  // mặc định ẩn nhóm số liệu GMV cho gọn
+const CH_COLS=[['niche','Niche'],['shop','Shop'],['acct','Tên TK'],['stage','Giai đoạn'],['seller','Seller'],['care','Người Care'],['issue','Vấn đề đang mở'],['f','Follower'],['pct','% Mục tiêu'],['v','View'],['vid','Video'],['or','Đơn'],['com','GMV'],['upd','Cập nhật'],['hand','Ngày bàn giao'],['stop','Ngày dừng bàn giao']];
+const CH_COLS_DEFHIDE=['f','pct','v','vid','or','com','upd','hand','stop'];  // mặc định ẩn nhóm số liệu GMV + 2 cột ngày cho gọn
 function chHidden(){try{const s=localStorage.getItem('rs_ch_hidden');return new Set(s?JSON.parse(s):CH_COLS_DEFHIDE);}catch(e){return new Set(CH_COLS_DEFHIDE);}}
 function applyColVis(){const hid=chHidden();CH_COLS.forEach(([k])=>{document.querySelectorAll('.c-'+k).forEach(el=>{el.style.display=hid.has(k)?'none':'';});});}
 window.openColChooser=function(){const hid=chHidden();
@@ -1062,6 +1062,8 @@ function renderCh(){
       '<td class="num c-or">'+c.or+'</td>'+
       '<td class="num c-com" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
       '<td class="c-upd">'+((c.stage==='dead'||c.stage==='error')?'<span style="color:var(--muted);font-size:11px">— không theo dõi</span>':updChip(c.upd))+'</td>'+
+      '<td class="c-hand" style="white-space:nowrap;font-size:12px">'+(c.hand?vnDate(c.hand):'<span style="color:var(--muted)">—</span>')+'</td>'+
+      '<td class="c-stop" style="white-space:nowrap;font-size:12px;color:var(--red)">'+(c.stop?vnDate(c.stop):'<span style="color:var(--muted)">—</span>')+'</td>'+
       '<td style="white-space:nowrap;position:sticky;right:0;background:'+(rowBg||'var(--panel)')+';box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"><span title="Báo vấn đề cho kênh này" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="drillIssue('+c.id+')">⚠️</span><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
   }).join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
@@ -1231,7 +1233,7 @@ $('btnSaveCh').onclick=async()=>{
   try{
     if(newSeller){const {data,error}=await sb.from('sellers').insert({name:newSeller}).select().single();if(error)throw error;sid=data.id;}
     const careList=[...document.querySelectorAll('#ncCare .careChk')].filter(c=>c.checked).map(c=>c.value);
-    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,shop_url:$('ncShop').value.trim()||null,account_name:($('ncAccount')&&$('ncAccount').value&&$('ncAccount').value!=='__add__')?$('ncAccount').value:null,stage:($('ncStage')&&$('ncStage').value)||null,video_count:($('ncVideoN')&&$('ncVideoN').value!=='')?Number($('ncVideoN').value):null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
+    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,stop_date:$('ncStop').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,shop_url:$('ncShop').value.trim()||null,account_name:($('ncAccount')&&$('ncAccount').value&&$('ncAccount').value!=='__add__')?$('ncAccount').value:null,stage:($('ncStage')&&$('ncStage').value)||null,video_count:($('ncVideoN')&&$('ncVideoN').value!=='')?Number($('ncVideoN').value):null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
     if(editingId){const {error}=await sb.from('channels').update(rec).eq('id',editingId);if(error)throw error;await logAction('Sửa kênh','channels',rec.name);showToast('Đã lưu thay đổi ✓');}
     else{const {error}=await sb.from('channels').insert(rec);if(error)throw error;await logAction('Thêm kênh','channels',rec.name);showToast('Đã thêm kênh ✓');}
     $('chForm').style.display='none';resetChForm();
@@ -1241,12 +1243,12 @@ $('btnSaveCh').onclick=async()=>{
 };
 function resetChForm(){editingId=null;$('chFormTitle').textContent='Thêm kênh';$('btnSaveCh').textContent='Lưu kênh';
   document.querySelectorAll('#ncCare .careChk').forEach(c=>c.checked=false);
-  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncShop','ncAccount','ncStage','ncVideoN','ncNote','ncGoal','ncNewSeller'].forEach(i=>{if($(i))$(i).value='';});}
+  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncStop','ncLogin','ncIp','ncProxy','ncPhone','ncShop','ncAccount','ncStage','ncVideoN','ncNote','ncGoal','ncNewSeller'].forEach(i=>{if($(i))$(i).value='';});}
 function editChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;editingId=id;
   $('chFormTitle').textContent='Sửa kênh: '+c.name;$('btnSaveCh').textContent='Lưu thay đổi';
   $('ncName').value=c.name||'';$('ncPlatform').value=c.platform||'TikTok';$('ncSeller').value=c.seller_id||'';{const careSet=new Set((c.care||'').split(',').map(x=>x.trim()).filter(Boolean));
    document.querySelectorAll('#ncCare .careChk').forEach(chk=>chk.checked=careSet.has(chk.value));
-   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncShop').value=c.shop_url||'';if($('ncAccount')){const s=$('ncAccount'),v=c.account_name||'';if(v&&![...s.options].some(op=>op.value===v))s.insertBefore(new Option(v,v),s.firstChild);s.value=v;}$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';if($('ncStage'))$('ncStage').value=c.stage||'';if($('ncVideoN'))$('ncVideoN').value=c.video_count!=null?c.video_count:'';$('ncNewSeller').value='';
+   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';if($('ncStop'))$('ncStop').value=c.stop_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncShop').value=c.shop_url||'';if($('ncAccount')){const s=$('ncAccount'),v=c.account_name||'';if(v&&![...s.options].some(op=>op.value===v))s.insertBefore(new Option(v,v),s.firstChild);s.value=v;}$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';if($('ncStage'))$('ncStage').value=c.stage||'';if($('ncVideoN'))$('ncVideoN').value=c.video_count!=null?c.video_count:'';$('ncNewSeller').value='';
   $('chForm').style.display='block';selectView('channels');try{$('chForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editChannel=editChannel;
 // ===== Drill-down: bấm KPI / chú thích sức khỏe → xổ danh sách kênh chi tiết =====
@@ -1260,7 +1262,7 @@ function showDrill(title,rowsHtml,footHtml){
   w.onclick=e=>{if(e.target===w)closeDrill();};
 }
 function drillGo(id){closeDrill();editChannel(id);}window.drillGo=drillGo;
-function drillUpd(id){closeDrill();selectView('update');setTimeout(()=>{const s=document.getElementById('updCh');if(s){s.value=id;s.dispatchEvent(new Event('change'));}},60);}window.drillUpd=drillUpd;
+function drillUpd(id){closeDrill();selectView('channels');setTimeout(()=>{const p=document.getElementById('bulkPanel');if(p){p.open=true;try{p.scrollIntoView({behavior:'smooth'});}catch(e){}}},60);}window.drillUpd=drillUpd;
 function drillView(v){closeDrill();selectView(v);}window.drillView=drillView;
 window.issuesByChannel=function(enc){window.gIssueFilterCh=decodeURIComponent(enc);selectView('issues');if(typeof renderAll==='function')renderAll();};
 window.clearIssueFilter=function(){window.gIssueFilterCh='';if(typeof renderAll==='function')renderAll();};
@@ -1322,12 +1324,12 @@ function drillKPI(key){
     case 'video':title='Video đăng theo kênh';list.sort((a,b)=>b.vid-a.vid);fmt=c=>c.vid+' video';break;
     case 'shop':title='Kênh đã bật shop';list=sc.filter(c=>c.acc=='shop');fmt=c=>'✓ Đã bật shop';break;
     case 'openiss':title='Kênh có vấn đề đang mở';list=sc.filter(c=>(window.gOpenByCh&&window.gOpenByCh[c.id])).sort((a,b)=>((window.gOpenByCh[b.id]||0)-(window.gOpenByCh[a.id]||0)));fmt=c=>'<span style="color:var(--red);font-weight:700">'+(window.gOpenByCh[c.id]||0)+' vấn đề</span>';act=c=>'closeDrill();issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')';foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
-    case 'update':title='Kênh cần cập nhật';list=sc.filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1)).sort((a,b)=>b.upd-a.upd);fmt=c=>(c.upd>=999?'<span style="color:var(--red)">chưa từng nhập</span>':'đã '+c.upd+' ngày');act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
+    case 'update':title='Kênh cần cập nhật';list=sc.filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1)).sort((a,b)=>b.upd-a.upd);fmt=c=>(c.upd>=999?'<span style="color:var(--red)">chưa từng nhập</span>':'đã '+c.upd+' ngày');act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'channels\')">Tới trang Kênh ›</button>';break;
     case 'attention':title='Kênh cần chú ý';list=sc.filter(c=>c.h=='r'||c.h=='a').sort((a,b)=>(a.h=='r'?0:1)-(b.h=='r'?0:1));builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
     case 'h_g':title='Kênh khỏe (Tốt)';list=sc.filter(c=>c.h=='g');fmt=c=>'🟢 Tốt';break;
     case 'h_a':title='Kênh chú ý';list=sc.filter(c=>c.h=='a');builder=problemRow;break;
     case 'h_r':title='Kênh cần chú ý gấp';list=sc.filter(c=>c.h=='r');builder=problemRow;foot='<button class="btn ghost" onclick="drillView(\'issues\')">Mở trang Vấn đề ›</button>';break;
-    case 'h_n':title='Kênh chưa có dữ liệu';list=sc.filter(c=>c.h=='n');fmt=c=>'<span style="color:var(--muted)">chưa nhập số liệu</span>';act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'update\')">Tới Cập nhật số liệu ›</button>';break;
+    case 'h_n':title='Kênh chưa có dữ liệu';list=sc.filter(c=>c.h=='n');fmt=c=>'<span style="color:var(--muted)">chưa nhập số liệu</span>';act=c=>'drillUpd('+c.id+')';foot='<button class="btn" onclick="drillView(\'channels\')">Tới trang Kênh ›</button>';break;
     default:return;
   }
   const genRow=c=>'<div class="drill-row" onclick="'+act(c)+'"><div class="drm"><b>'+esc(c.n)+'</b><small>'+esc(c.s)+(c.o&&c.o!=='—'?' · '+esc(c.o):'')+'</small></div><div class="drill-val">'+fmt(c)+'</div></div>';
@@ -1713,7 +1715,7 @@ function exportChannels(){
     'Đơn kỳ':c.or||0,'GMV (USD)':Math.round((c.com||0)*1000),'Δ follower':c.d||0,
     'Cập nhật (ngày)':c.upd>=999?'chưa':(c.upd||0),'Trạng thái':hLabel[c.h]||'',
     'Mail':rc.mail||'','URL shop':rc.shop_url||'','Nơi đăng nhập':rc.login_place||'','IP':rc.ip||'','Proxy':rc.proxy||'','Phone đăng nhập':rc.phone_login||'',
-    'Ngày bàn giao':vnDate(rc.handover_date)||'','Note':rc.note||''};});
+    'Ngày bàn giao':vnDate(rc.handover_date)||'','Ngày dừng bàn giao':vnDate(rc.stop_date)||'','Note':rc.note||''};});
   if(!rows.length)return showToast('Chưa có kênh để xuất');
   const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Kenh');
@@ -1771,6 +1773,7 @@ async function importChannels(file){
         const accRaw=String(pickVal(r,['Status','Trạng thái (shop/buff)','Trạng thái','acc'])).toLowerCase();
         const acc=accRaw.includes('shop')?'shop':'buff';
         const handover=parseDateAny(pickVal(r,['Ngày bàn giao','Ngay ban giao']));
+        const stopd=parseDateAny(pickVal(r,['Ngày dừng bàn giao','Ngay dung ban giao','Ngày dừng','Ngay dung']));
         const followers=Number(String(pickVal(r,['Followers','Follower','follower'])).replace(/[^\d.-]/g,''))||null;
         const rec={name,
           platform:String(pickVal(r,['Sàn','San','Platform','platform'])).trim()||'TikTok',
@@ -1785,6 +1788,7 @@ async function importChannels(file){
           stage:stageCode(pickVal(r,['Giai đoạn','Giai doan','stage'])),
           video_count:(()=>{const v=String(pickVal(r,['Số video','So video','video_count'])).replace(/[^\d]/g,'');return v===''?null:Number(v);})(),
           handover_date:handover,
+          stop_date:stopd,
           login_place:String(pickVal(r,['Nơi đăng nhập','Noi dang nhap'])).trim()||null,
           ip:String(pickVal(r,['IP','ip'])).trim()||null,
           proxy:String(pickVal(r,['Proxy','proxy'])).trim()||null,
@@ -1899,7 +1903,7 @@ $('btnAddCh').onclick=()=>{const f=$('chForm');const show=f.style.display=='none
   }
   f.style.display=show?'block':'none';};
 $('btnCancelCh').onclick=()=>{$('chForm').style.display='none';resetChForm();};
-$('obGo').onclick=()=>selectView(obGoTarget);
+$('obGo').onclick=()=>{selectView(obGoTarget);if(obGoTarget==='channels'){const p=document.getElementById('bulkPanel');if(p)p.open=true;}};
 $('dashSeller').onchange=renderAll;
 $('dashChannel').onchange=renderAll;
 $('dashPlatform').onchange=renderAll;
