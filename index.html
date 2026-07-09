@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.5</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.7</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.5</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.7</b></div>
   </aside>
 
   <main class="main">
@@ -328,29 +328,6 @@
           <input class="field" id="ncNewSeller" placeholder="(tùy chọn) tên seller mới" style="margin-top:10px;max-width:300px;font-size:13px;font-weight:500">
         </div>
       </div>
-      <details id="bulkPanel" class="card" style="margin-bottom:14px">
-        <summary style="cursor:pointer;font-weight:700;font-size:15px">⚡ Nhập nhanh số liệu (Follower/View/Video/Đơn/GMV) · Excel <span class="tag">bấm để mở / đóng</span></summary>
-        <div style="margin-top:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-            <div class="sub">Ưu tiên nhập hằng ngày (tối đa 3 ngày/kênh) · hệ thống tự tính phần còn lại</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn ghost" id="btnSnapForm">⬇️ Tải form Excel</button>
-              <button class="btn ghost" id="btnSnapImport">⬆️ Nhập từ Excel</button>
-              <input type="file" id="snapFile" accept=".xlsx,.xls" style="display:none">
-              <button class="btn" id="btnBulkSave">💾 Lưu bảng</button>
-            </div>
-          </div>
-          <div class="tbl-wrap" style="margin-top:10px"><table>
-            <thead><tr><th>Kênh</th><th class="num">Follower</th><th class="num">View kỳ</th><th class="num">Video</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th>Cập nhật</th></tr></thead>
-            <tbody id="bulkBody"></tbody></table>
-            <div class="empty" id="bulkEmpty" style="display:none">Chưa có kênh nào bạn phụ trách.</div>
-          </div>
-          <h3 style="margin-top:16px">Lịch sử cập nhật gần đây</h3>
-          <div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Kênh</th><th class="num">Follower</th><th class="num">Đơn</th><th class="num">GMV ($)</th><th></th></tr></thead>
-          <tbody id="histBody"></tbody></table>
-          <div class="empty" id="histEmpty" style="display:none">Chưa có lần cập nhật nào.</div></div>
-        </div>
-      </details>
       <div class="filters">
         <input id="fSearch" placeholder="Tìm theo tên kênh...">
         <select id="fSeller"><option value="">Tất cả seller</option></select>
@@ -767,7 +744,7 @@ async function afterLogin(){
    [...document.querySelectorAll('#nav > *')].forEach(el=>{if(el.classList.contains('nav-h')){flush();hdr=el;any=false;}else if(el.tagName==='A'&&el.style.display!=='none')any=true;});flush();}
   // chỉ admin được thêm/nhập kênh (RLS cũng chặn ở server)
   {const a=$('btnAddCh');if(a)a.style.display='';}                          // mọi người đã duyệt được thêm kênh
-  {const i=$('btnImport');if(i)i.style.display=isAdmin()?'':'none';}        // nhập Excel hàng loạt: admin
+  {const i=$('btnImport');if(i)i.style.display=(isAdmin()||me.role==='Media')?'':'none';}   // nhập Excel hàng loạt: admin + Media
   await loadData();
   loadOrderOpts();
   loadProducers();
@@ -1072,6 +1049,7 @@ function renderCh(){
   applyColVis();
 }
 function renderHist(){
+  if(!$('histBody'))return;
   const cName=id=>{const c=(rawChannels||[]).find(x=>x.id===id);return c?c.name:'—';};
   const rows=(rawSnaps||[]).slice().sort((a,b)=>{const ka=a.created_at||a.period_date||'',kb=b.created_at||b.period_date||'';return ka<kb?1:(ka>kb?-1:0);}).slice(0,20);
   $('histBody').innerHTML=rows.map(s=>'<tr><td style="white-space:nowrap">'+(s.created_at?vnDateTime(s.created_at):vnDate(s.period_date))+'</td><td>'+esc(cName(s.channel_id))+'</td><td class="num">'+fmtK(Number(s.followers)||0)+'</td><td class="num">'+(Number(s.orders)||0)+'</td><td class="num">$'+((Number(s.gmv_usd)||0)/1000).toFixed(1)+'K</td><td>'+((isAdmin()||s.created_by===me.id)?'<span title="Xóa lần cập nhật" style="cursor:pointer;font-size:13px" onclick="deleteSnapshot('+s.id+')">🗑️</span>':'')+'</td></tr>').join('');
@@ -1132,9 +1110,10 @@ if($('snapFile'))$('snapFile').onchange=e=>{if(e.target.files[0])importSnapshots
 function latestSnap(cid){let best=null;(rawSnaps||[]).forEach(s=>{if(s.channel_id!==cid)return;const k=String(s.period_date||'')+'|'+String(s.created_at||'');const bk=best?String(best.period_date||'')+'|'+String(best.created_at||''):'';if(!best||k>bk)best=s;});return best;}
 function renderBulkUpd(){if(!$('bulkBody'))return;
   const inp=(k,val)=>'<input data-k="'+k+'" type="number" value="'+(val===''||val==null?'':val)+'" oninput="this.closest(\'tr\').dataset.dirty=\'1\'" style="width:84px;background:var(--panel2);border:1.5px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--text);font-size:12.5px">';
-  $('bulkBody').innerHTML=(ch||[]).map(c=>{const ls=latestSnap(c.id);const lf=ls?Number(ls.followers)||0:'';
+  const list=(ch||[]).filter(c=>c.stage!=='dead'&&c.stage!=='error');  // bỏ kênh Dừng sản xuất / Lỗi-Bị khóa: không cần cập nhật
+  $('bulkBody').innerHTML=list.map(c=>{const ls=latestSnap(c.id);const lf=ls?Number(ls.followers)||0:'';
     return '<tr data-cid="'+c.id+'"><td style="white-space:nowrap"><b>'+esc(c.n)+'</b><div style="font-size:10.5px;color:var(--muted)">'+esc(c.s)+'</div></td><td class="num">'+inp('f',lf)+'</td><td class="num">'+inp('v','')+'</td><td class="num">'+inp('vid','')+'</td><td class="num">'+inp('or','')+'</td><td class="num">'+inp('gmv','')+'</td><td>'+updChip(c.upd)+'</td></tr>';}).join('');
-  $('bulkEmpty').style.display=(ch&&ch.length)?'none':'block';
+  $('bulkEmpty').style.display=list.length?'none':'block';
 }
 async function saveBulkUpd(){const trs=document.querySelectorAll('#bulkBody tr[data-dirty="1"]');if(!trs.length)return showToast('Chưa sửa ô nào');
   const today=todayStr();let ok=0,fail=0,lastErr='';
@@ -1761,7 +1740,9 @@ async function importChannels(file){
     if(!rows.length)return showToast('File trống (kiểm tra dòng tiêu đề ở hàng đầu)');
     const map={};sellers.forEach(s=>map[s.name.toLowerCase()]=s.id);
     const today=todayStr();
-    let ok=0,fail=0,seeded=0,lastErr='';
+    const exMap={};(rawChannels||[]).forEach(c=>{exMap[String(c.name||'').trim().toLowerCase()]=c;});  // kênh đã có → khớp theo URL/tên
+    const numOrNull=x=>{const v=String(x==null?'':x).replace(/[^\d.-]/g,'');return v===''?null:Number(v);};
+    let ok=0,upd=0,fail=0,seeded=0,lastErr='';
     for(const r of rows){
       try{
         const name=String(pickVal(r,['URL kênh','URL kenh','Tên kênh','Ten kenh','name'])).trim();if(!name)continue;
@@ -1795,15 +1776,29 @@ async function importChannels(file){
           phone_login:String(pickVal(r,['Phone đăng nhập','Phone dang nhap','Phone'])).trim()||null,
           note:String(pickVal(r,['Note','note','Ghi chú'])).trim()||null,
           follower_goal:Number(String(pickVal(r,['Mục tiêu follower','goal'])).replace(/[^\d.-]/g,''))||null};
-        const {data:cins,error}=await sb.from('channels').insert(rec).select('id').single();
-        if(error)throw error;ok++;
-        if(followers&&cins&&cins.id){
-          const {error:se}=await sb.from('snapshots').insert({channel_id:cins.id,period_date:handover||today,followers,created_by:me.id});
-          if(!se)seeded++;
+        const key=name.toLowerCase();const exist=exMap[key];let cid=null;
+        if(exist){  // KÊNH ĐÃ CÓ → cập nhật đè, chỉ đổi ô có dữ liệu trong file (ô trống giữ nguyên)
+          const patch={};Object.keys(rec).forEach(k=>{if(rec[k]!=null&&rec[k]!=='')patch[k]=rec[k];});delete patch.name;
+          const {error:ue}=await sb.from('channels').update(patch).eq('id',exist.id);if(ue)throw ue;cid=exist.id;upd++;
+        }else{      // KÊNH MỚI → thêm
+          const {data:cins,error}=await sb.from('channels').insert(rec).select('id').single();if(error)throw error;cid=cins&&cins.id;ok++;if(cid)exMap[key]={id:cid};
+        }
+        // Số liệu mới từ file → snapshot HÔM NAY (trùng thì cập nhật, chưa có thì thêm)
+        const views=numOrNull(pickVal(r,['View kỳ','View ky','Views','View','views']));
+        const videos=numOrNull(pickVal(r,['Video kỳ','Video ky','Videos','Video','videos']));
+        const orders=numOrNull(pickVal(r,['Đơn kỳ','Don ky','Đơn','Orders','orders']));
+        const gmv=numOrNull(pickVal(r,['GMV (USD)','GMV ($)','GMV','gmv']));
+        if(cid&&(followers!=null||views!=null||videos!=null||orders!=null||gmv!=null)){
+          const exs=(rawSnaps||[]).find(s=>s.channel_id===cid&&String(s.period_date)===today);
+          if(exs){const sp={};if(followers!=null)sp.followers=followers;if(views!=null)sp.views=views;if(videos!=null)sp.videos=videos;if(orders!=null)sp.orders=orders;if(gmv!=null)sp.gmv_usd=gmv;
+            const {error:se}=await sb.from('snapshots').update(sp).eq('id',exs.id);if(!se)seeded++;
+          }else{const ls=latestSnap(cid);
+            const sp={channel_id:cid,period_date:today,followers:(followers!=null?followers:(ls?Number(ls.followers)||0:0)),views:views||0,videos:videos||0,orders:orders||0,gmv_usd:gmv||0,created_by:me.id};
+            const {error:se}=await sb.from('snapshots').insert(sp);if(!se)seeded++;}
         }
       }catch(e){fail++;lastErr=e.message||String(e);}
     }
-    showToast('Nhập '+ok+' kênh'+(seeded?' · seed '+seeded+' follower':'')+(fail?' · '+fail+' lỗi':''));
+    showToast('Thêm '+ok+' · cập nhật '+upd+' kênh'+(seeded?' · '+seeded+' số liệu':'')+(fail?' · '+fail+' lỗi':''));
     if(fail){if(/schema cache|column|does not exist/i.test(lastErr))topErr('Thiếu cột trong database — hãy chạy file patch2-them-truong-kenh.sql trong Supabase rồi nhập lại. (Chi tiết: '+lastErr+')');else topErr('Một số dòng lỗi: '+lastErr);}
     if(ok)await loadData();
   }catch(e){topErr(e.message||String(e));}
