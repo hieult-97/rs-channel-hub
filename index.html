@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.8</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.9</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -219,7 +219,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.8</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.9</b></div>
   </aside>
 
   <main class="main">
@@ -654,7 +654,8 @@ const accChip=a=>a==='shop'?'<span class="chip ok">Đã bật shop</span>':'<spa
 const STAGES=[['trang','Trắng'],['nuoi','Đang nuôi'],['ready','Đủ điều kiện bàn giao'],['done','Đã bàn giao'],['error','Lỗi / Bị khóa'],['dead','Dừng sản xuất']];
 const stageLabel=s=>{const m={trang:'Trắng',nuoi:'Đang nuôi',ready:'Đủ điều kiện bàn giao',done:'Đã bàn giao',error:'Lỗi / Bị khóa',dead:'Dừng sản xuất'};return m[s]||'';};
 const stageCode=v=>{v=String(v||'').trim().toLowerCase();const m={'trắng':'trang','trang':'trang','đang nuôi':'nuoi','dang nuoi':'nuoi','nuoi':'nuoi','đủ điều kiện bàn giao':'ready','du dieu kien ban giao':'ready','đủ đk bàn giao':'ready','du dk ban giao':'ready','ready':'ready','đã bàn giao':'done','da ban giao':'done','done':'done','lỗi / bị khóa':'error','loi / bi khoa':'error','lỗi':'error','error':'error','bị khóa':'error','dừng sản xuất':'dead','dung san xuat':'dead','ngừng dùng':'dead','ngung dung':'dead','dead':'dead'};return m[v]||null;};
-const stageChip=s=>{const c={trang:['rgba(140,150,170,.18)','var(--muted)'],nuoi:['rgba(242,193,78,.16)','var(--amber)'],ready:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)'],error:['rgba(240,106,106,.18)','var(--red)'],dead:['rgba(90,95,110,.28)','#8b92a7']}[s];return c?'<span class="chip" style="background:'+c[0]+';color:'+c[1]+';font-weight:600">'+stageLabel(s)+'</span>':'<span style="color:var(--muted)">—</span>';};
+const stageColor=s=>({trang:'var(--muted)',nuoi:'var(--amber)',ready:'var(--brand)',done:'var(--green)',error:'#e08a00',dead:'var(--red)'}[s]||'var(--text)');
+const stageChip=s=>{const c={trang:['rgba(140,150,170,.18)','var(--muted)'],nuoi:['rgba(242,193,78,.16)','var(--amber)'],ready:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)'],error:['rgba(224,138,0,.18)','#e08a00'],dead:['rgba(240,106,106,.18)','var(--red)']}[s];return c?'<span class="chip" style="background:'+c[0]+';color:'+c[1]+';font-weight:600">'+stageLabel(s)+'</span>':'<span style="color:var(--muted)">—</span>';};
 function renderStageBlock(){const el=$('stageBlock');if(!el)return;const list=ch||[];
   const cnt={trang:0,nuoi:0,ready:0,done:0,error:0,dead:0,none:0};list.forEach(c=>{const s=c.stage||'';if(cnt[s]!=null)cnt[s]++;else cnt.none++;});
   const card=(label,val,code,color)=>'<div class="card kpi" style="cursor:pointer" title="Bấm xem danh sách kênh" onclick="drillStage(\''+code+'\')"><div class="label">'+label+'</div><div class="val" style="color:'+color+'">'+val+'</div></div>';
@@ -898,7 +899,8 @@ function renderAll(){
   const pc=(cur,prev)=>{if(!prev)return '';const p=(cur-prev)/prev*100;return ' · <span style="color:'+(p>=0?'var(--green)':'var(--red)')+'">'+(p>=0?'▲':'▼')+Math.abs(p).toFixed(0)+'% vs kỳ trước</span>';};
   // Kênh mới thêm trong ngày (age<1, chưa từng nhập) được ân hạn — không tính quá hạn
   const isFresh=c=>c.upd>=999&&c.age<1;
-  const overdue=sc.filter(c=>c.upd>3&&!isFresh(c)).length,needToday=sc.filter(c=>c.upd>=1&&!isFresh(c)).length;
+  const actv=c=>c.stage!=='dead'&&c.stage!=='error';  // kênh còn theo dõi (không dừng/lỗi)
+  const overdue=sc.filter(c=>c.upd>3&&!isFresh(c)&&actv(c)).length,needToday=sc.filter(c=>c.upd>=1&&!isFresh(c)&&actv(c)).length;
   const redCnt=sc.filter(c=>c.h=='r').length,amberCnt=sc.filter(c=>c.h=='a').length;
   const viewPerVid=totVid?Math.round(totV/totVid):0,conv=totV?(totOr/totV*1000):0;
   const shopCnt=sc.filter(c=>c.acc=='shop').length,shopPct=sc.length?Math.round(shopCnt/sc.length*100):0;
@@ -1034,7 +1036,7 @@ function renderCh(){
   fillSel('fSeller','Tất cả seller',[...new Set(ch.map(c=>c.s))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   fillSel('fNiche','Tất cả niche',[...new Set(ch.map(c=>c.niche))].filter(x=>x&&x!=='—').map(s=>({v:s,t:s})));
   let rows=ch.filter(c=>(!fS.value||c.n.toLowerCase().includes(fS.value.toLowerCase()))&&(!fSe.value||c.s===fSe.value)&&(!fN.value||c.niche===fN.value)&&(!fH||!fH.value||c.h===fH.value)&&(!fSt||!fSt.value||c.stage===fSt.value));
-  rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
+  rows.sort((a,b)=>{const ra=a.stage==='dead'?1:0,rb=b.stage==='dead'?1:0;if(ra!==rb)return ra-rb;let x=a[sortK],y=b[sortK];if(typeof x=='string')return x.localeCompare(y)*sortDir;return (x-y)*sortDir;});
   $('chBody').innerHTML=rows.map(c=>{
     const shopIc=c.shop?'<div style="margin-top:4px;white-space:nowrap">'+linkSnippet(c.shop,'Shop')+'</div>':'';
     const pin=window.gOpenIssues&&window.gOpenIssues.has(c.n)?' <span title="Đã có vấn đề ghi nhận đang mở" style="cursor:help">📌</span>':'';
@@ -1045,7 +1047,7 @@ function renderCh(){
       '<td class="c-niche" style="color:var(--muted)">'+esc(c.niche)+'</td>'+
       '<td class="c-shop">'+accChip(c.acc)+shopIc+'</td>'+
       '<td class="c-acct" style="white-space:nowrap;font-weight:600">'+(c.acct?esc(c.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+
-      '<td class="c-stage" style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+'" onchange="setChannelStage('+c.id+',this.value)"><option value="">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
+      '<td class="c-stage" style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+';color:'+stageColor(c.stage)+';font-weight:600" onchange="setChannelStage('+c.id+',this.value)"><option value="" style="color:var(--muted)">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
       '<td class="c-seller">'+esc(c.s)+'</td>'+
       '<td class="c-care" style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
       '<td class="num c-issue">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
@@ -1055,7 +1057,7 @@ function renderCh(){
       '<td class="num c-vid"'+(c.vid<=2?' style="color:var(--amber)"':'')+'>'+c.vid+'</td>'+
       '<td class="num c-or">'+c.or+'</td>'+
       '<td class="num c-com" title="≈ '+fmtVnd(c.com)+'">$'+c.com.toFixed(1)+'K</td>'+
-      '<td class="c-upd">'+updChip(c.upd)+'</td>'+
+      '<td class="c-upd">'+((c.stage==='dead'||c.stage==='error')?'<span style="color:var(--muted);font-size:11px">— không theo dõi</span>':updChip(c.upd))+'</td>'+
       '<td style="white-space:nowrap;position:sticky;right:0;background:var(--panel);box-shadow:-6px 0 8px -6px rgba(0,0,0,.15)"><span title="Báo vấn đề cho kênh này" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="drillIssue('+c.id+')">⚠️</span><span title="Sửa kênh" style="cursor:pointer;font-size:14px;margin-right:8px" onclick="editChannel('+c.id+')">✏️</span>'+(isSD()?'<span title="Xóa kênh (chỉ SD)" style="cursor:pointer;font-size:14px" onclick="deleteChannel('+c.id+')">🗑️</span>':'')+'</td></tr>';
   }).join('');
   $('chCount').textContent=rows.length+' / '+ch.length+' kênh';
@@ -1147,7 +1149,7 @@ function todayCounts(){const today=todayStr(),staff=isAdmin(),isM=me&&me.role===
   const ordWait=myOrders.filter(o=>o.scode==='wait');
   // "còn phải làm": Media = đơn chưa giao (idea/edit); Seller = đơn chờ nghiệm thu; còn lại = mọi đơn chưa Done
   const ordTodo=myOrders.filter(o=>isM?(o.scode==='idea'||o.scode==='edit'):(isS?o.scode==='wait':o.scode!=='done'));
-  const chUpd=(ch||[]).filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1));
+  const chUpd=(ch||[]).filter(c=>c.upd>=1&&!(c.upd>=999&&c.age<1)&&c.stage!=='dead'&&c.stage!=='error');
   const myIssues=(issues||[]).filter(i=>i.scode!=='done'&&(staff||i.who===me.full_name||i.reporter===me.full_name));
   return {ordDue,ordWait,ordTodo,chUpd,myIssues,staff,isS};}
 function renderToday(){if(!$('todayBody'))return;const t=todayCounts();
