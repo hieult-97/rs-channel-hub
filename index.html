@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.7</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.8</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.7</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.8</b></div>
   </aside>
 
   <main class="main">
@@ -1717,9 +1717,10 @@ function backupAll(){
 window.backupAll=backupAll;
 function downloadTemplate(){
   if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau.');
+  // Cột khớp đúng với file "Xuất Excel" → có thể sửa file xuất rồi nhập lại thẳng.
   const ws=XLSX.utils.json_to_sheet([
-    {'URL kênh':'@vidu_kenh_1','Sàn':'TikTok','Seller bàn giao':'Anna','Mail':'mail1@gmail.com','URL shop':'https://shop.tiktok.com/...','Ngày bàn giao':'01/06/2026','Người Care':'Hà','Status':'Đã bật shop','Violations':0,'Followers':1200,'Thị trường':'US','IP':'US','Nơi đăng nhập':'Hidemium','Proxy':'','Phone đăng nhập':'','Key/Niche/Ngách':'Clothing','Note':''},
-    {'URL kênh':'@vidu_kenh_2','Sàn':'Etsy','Seller bàn giao':'Bình','Mail':'mail2@gmail.com','URL shop':'USUSLCXEE3AD','Ngày bàn giao':'02/06/2026','Người Care':'Linh','Status':'Chưa bật shop','Violations':0,'Followers':800,'Thị trường':'US','IP':'US','Nơi đăng nhập':'Hidemium','Proxy':'','Phone đăng nhập':'','Key/Niche/Ngách':'Phone case','Note':''},
+    {'URL kênh':'@vidu_kenh_1','Sàn':'TikTok','Tên TK':'TTS61','Seller bàn giao':'Anna','Người Care':'Hà','Status':'Đã bật shop','Thị trường':'US','Key/Niche/Ngách':'Clothing','Giai đoạn':'Đang nuôi','Số video':5,'Mục tiêu follower':50000,'Followers':1200,'View kỳ':3000,'Video kỳ':5,'Đơn kỳ':2,'GMV (USD)':150,'Mail':'mail1@gmail.com','URL shop':'https://shop.tiktok.com/...','Nơi đăng nhập':'Hidemium','IP':'US','Proxy':'','Phone đăng nhập':'','Ngày bàn giao':'01/06/2026','Ngày dừng bàn giao':'','Note':''},
+    {'URL kênh':'@vidu_kenh_2','Sàn':'Etsy','Tên TK':'ETSY03','Seller bàn giao':'Bình','Người Care':'Linh','Status':'Chưa bật shop','Thị trường':'US','Key/Niche/Ngách':'Phone case','Giai đoạn':'Trắng','Số video':0,'Mục tiêu follower':30000,'Followers':800,'View kỳ':0,'Video kỳ':0,'Đơn kỳ':0,'GMV (USD)':0,'Mail':'mail2@gmail.com','URL shop':'USUSLCXEE3AD','Nơi đăng nhập':'Hidemium','IP':'US','Proxy':'','Phone đăng nhập':'','Ngày bàn giao':'02/06/2026','Ngày dừng bàn giao':'','Note':''},
   ]);
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Mau');
   XLSX.writeFile(wb,'RS-form-mau-nhap-kenh.xlsx');
