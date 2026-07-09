@@ -205,6 +205,7 @@
       <a data-view="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Việc hôm nay <span class="bell" id="navToday"></span></a>
       <a data-view="channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></svg> Kênh <span class="bell" id="navOverdue"></span></a>
       <a data-view="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg> Tăng trưởng</a>
+      <a data-view="perf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg> Hiệu suất &amp; GMV</a>
       <a data-view="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4l1.5 5M14 4l1.5 5"/></svg> Order sản xuất <span class="bell" id="navOrders"></span></a>
       <a data-view="update"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Cập nhật số liệu</a>
       <a data-view="issues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.2 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Vấn đề <span class="bell" id="navIssues"></span></a>
@@ -248,6 +249,23 @@
       <div class="onboard" id="onboard" style="display:none"><div class="ob-ic">👋</div><div><b id="obTitle"></b><p id="obText"></p></div><button class="btn go" id="obGo">Vào cập nhật ngay</button><span class="x" id="obX">✕</span></div>
       <div id="stageBlock" style="margin-bottom:16px"></div>
       <div class="grid kpis" id="kpis"></div>
+      <div class="card" style="margin-top:14px;padding:0"><div style="padding:13px 16px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">🎬 Kênh đang có order <span class="tag">loại · format · sản phẩm</span></h3><button class="btn ghost" id="btnOrderByCh2">⇩ Xuất Excel</button></div><div class="tbl-wrap" style="max-height:440px;overflow:auto">
+        <table><thead><tr><th>Kênh</th><th>TK</th><th class="num">Tổng</th><th class="num">Đang làm</th><th class="num">Chờ NT</th><th class="num">Done</th><th>Loại</th><th>Format</th><th>Sản phẩm</th></tr></thead>
+        <tbody id="ordByChBody"></tbody></table>
+        <div class="empty" id="ordByChEmpty" style="display:none">Chưa có order nào gắn kênh.</div></div>
+      </div>
+      <div class="grid row2b" style="margin-top:14px">
+        <div class="card"><h3>Cần chú ý ngay <span class="tag">cảnh báo cao</span></h3><div id="dashAlerts"></div></div>
+        <div class="card" id="mediaLoadCard" style="padding:0"><div style="padding:13px 16px 0"><h3>Tải việc theo người sản xuất <span class="tag">đơn chưa xong</span></h3></div><div class="tbl-wrap">
+          <table><thead><tr><th>Người sản xuất</th><th class="num">Đang làm</th><th class="num">Chờ nghiệm thu</th><th class="num">Quá hạn</th><th class="num">Tổng chưa xong</th></tr></thead>
+          <tbody id="mediaLoadBody"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="perf">
+      <div class="topbar"><div><h1>Hiệu suất &amp; GMV</h1><div class="sub">Follower · view · đơn · GMV · sức khỏe kênh — dùng khi team đã nuôi kênh ổn định</div></div></div>
+      <div class="grid kpis" id="kpisPerf"></div>
       <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
         <div class="card"><h3>Tỷ lệ kênh khỏe <span class="tag">🟢/tổng</span></h3><div class="gaugeWrap"><canvas id="gauge1"></canvas><div class="gaugeTxt" id="gauge1Txt"></div></div></div>
         <div class="card"><h3>Cập nhật đúng hạn <span class="tag">trong ngày</span></h3><div class="gaugeWrap"><canvas id="gauge2"></canvas><div class="gaugeTxt" id="gauge2Txt"></div></div></div>
@@ -257,14 +275,7 @@
         <div class="card"><h3>Đơn &amp; GMV theo tháng <span class="tag">từ dữ liệu thật</span></h3><canvas id="trend"></canvas></div>
         <div class="card"><h3>Sản lượng &amp; reach theo tháng <span class="tag">video · view</span></h3><canvas id="trend2"></canvas></div>
       </div>
-      <div class="grid row2b">
-        <div class="card"><h3>Top kênh theo GMV <span class="tag">kỳ này</span></h3><div class="tbl-wrap"><table><tbody id="topCh"></tbody></table></div></div>
-        <div class="card"><h3>Cần chú ý ngay <span class="tag">cảnh báo cao</span></h3><div id="dashAlerts"></div></div>
-      </div>
-      <div class="card" id="mediaLoadCard" style="margin-top:14px;padding:0"><div style="padding:13px 16px 0"><h3>Tải việc theo người sản xuất <span class="tag">đơn chưa xong</span></h3></div><div class="tbl-wrap">
-        <table><thead><tr><th>Người sản xuất</th><th class="num">Đang làm</th><th class="num">Chờ nghiệm thu</th><th class="num">Quá hạn</th><th class="num">Tổng chưa xong</th></tr></thead>
-        <tbody id="mediaLoadBody"></tbody></table></div>
-      </div>
+      <div class="card" style="margin-top:14px"><h3>Top kênh theo GMV <span class="tag">kỳ này</span></h3><div class="tbl-wrap"><table><tbody id="topCh"></tbody></table></div></div>
     </section>
 
     <section class="view" id="today">
@@ -604,8 +615,8 @@ const $=id=>document.getElementById(id);
 let me=null;            // profile của user đang đăng nhập
 let ch=[], orders=[], issues=[], sellers=[], pendUsers=[], allUsers=[];
 let rawChannels=[], rawSnaps=[], rawMembers=[], asOf=null, editingId=null;
-const MENU_SECTIONS=[['dash','Tổng quan'],['today','Việc hôm nay'],['channels','Kênh'],['growth','Tăng trưởng'],['orders','Order sản xuất'],['update','Cập nhật số liệu'],['issues','Vấn đề'],['alerts','Cảnh báo'],['bySeller','Theo seller'],['byOwner','Theo người quản lý'],['kpi','KPI nhân sự'],['team','Bảng tin'],['cat','Danh mục'],['log','Nhật ký'],['roles','Phân quyền']];
-const DEFAULT_ACCESS={Leader:['dash','today','channels','growth','orders','update','issues','alerts','bySeller','byOwner','kpi','roles','cat','team'],Media:['dash','today','channels','growth','orders','update','issues','team'],Seller:['dash','today','channels','growth','orders','update','issues','team']};
+const MENU_SECTIONS=[['dash','Tổng quan'],['today','Việc hôm nay'],['channels','Kênh'],['growth','Tăng trưởng'],['perf','Hiệu suất & GMV'],['orders','Order sản xuất'],['update','Cập nhật số liệu'],['issues','Vấn đề'],['alerts','Cảnh báo'],['bySeller','Theo seller'],['byOwner','Theo người quản lý'],['kpi','KPI nhân sự'],['team','Bảng tin'],['cat','Danh mục'],['log','Nhật ký'],['roles','Phân quyền']];
+const DEFAULT_ACCESS={Leader:['dash','today','channels','growth','perf','orders','update','issues','alerts','bySeller','byOwner','kpi','roles','cat','team'],Media:['dash','today','channels','growth','orders','update','issues','team'],Seller:['dash','today','channels','growth','orders','update','issues','team']};
 let roleAccess=null;
 async function loadRoleAccess(){try{const {data}=await sb.from('app_settings').select('value').eq('key','role_access').maybeSingle();roleAccess=(data&&data.value)?data.value:null;}catch(e){roleAccess=null;}
   if(!roleAccess)roleAccess={};['Leader','Media','Seller'].forEach(r=>{if(!Array.isArray(roleAccess[r]))roleAccess[r]=DEFAULT_ACCESS[r].slice();});}
@@ -879,19 +890,22 @@ function renderAll(){
   const totViol=sc.reduce((a,c)=>a+((window.gOpenByCh&&window.gOpenByCh[c.id])||0),0),violCh=sc.filter(c=>(window.gOpenByCh&&window.gOpenByCh[c.id])).length;
   const avgF=sc.length?Math.round(totF/sc.length):0;
   renderStageBlock();
+  const kcard=k=>'<div class="card kpi'+(k[3]?' clk" onclick="drillKPI(\''+k[3]+'\')"':'"')+'><div class="label">'+k[0]+'</div><div class="val">'+k[2]+'</div><div class="delta">'+k[1]+'</div></div>';
   $('kpis').innerHTML=[
    ['Tổng kênh<span class="help" title="Số kênh đang theo dõi trong phạm vi lọc hiện tại.">?</span>','TB '+fmtK(avgF)+' follower/kênh',sc.length.toLocaleString('vi'),'all'],
+   ['Đã bật shop<span class="help" title="Số kênh đã bật TikTok Shop / tổng kênh trong phạm vi lọc.">?</span>',shopPct+'% kênh đã mở shop',shopCnt+' /'+sc.length,'shop'],
+   ['Vấn đề đang mở<span class="help" title="Tổng số vấn đề/sự cố chưa đóng trên các kênh.">?</span>','<span style="color:var(--red)">'+violCh+'</span> kênh có vấn đề',totViol.toLocaleString('vi'),'openiss'],
+   ['Cần cập nhật<span class="help" title="Ưu tiên cập nhật hằng ngày. Quá 3 ngày chưa nhập = quá hạn.">?</span>','<span style="color:var(--red)">'+overdue+'</span> quá hạn (>3 ngày)',needToday+' /'+sc.length,'update'],
+   ['Kênh cần chú ý','<span style="color:var(--amber)">'+amberCnt+'</span> chú ý · <span style="color:var(--red)">'+redCnt+'</span> cần chú ý gấp',(amberCnt+redCnt)+' /'+sc.length,'attention'],
+  ].map(kcard).join('');
+  if($('kpisPerf'))$('kpisPerf').innerHTML=[
    ['Tổng follower','<span class="up">▲'+fmtK(totD)+'</span> tăng kỳ này',fmtK(totF),'follower'],
    ['Tổng view (kỳ)',totVid+' video đăng'+pc(totV,totVP),fmtK(totV),'view'],
    ['View TB / video<span class="help" title="Chất lượng nội dung: view trung bình mỗi video trong kỳ.">?</span>','sản lượng &amp; reach',fmtK(viewPerVid),'viewvid'],
    ['Đơn kỳ này',conv.toFixed(2)+' đơn/1K view'+pc(totOr,totOrP),totOr.toLocaleString('vi'),'orders'],
    ['GMV kỳ này<span class="help" title="Tổng giá trị đơn (USD) trong kỳ. Tự quy ra VND theo tỷ giá 26.000.">?</span>','≈ '+fmtVnd(totCom)+pc(totCom,totComP),'$'+totCom.toFixed(1)+'K','gmv'],
    ['Tổng video đăng','sản lượng media kỳ này',totVid.toLocaleString('vi'),'video'],
-   ['Đã bật shop<span class="help" title="Số kênh đã bật TikTok Shop / tổng kênh trong phạm vi lọc.">?</span>',shopPct+'% kênh đã mở shop',shopCnt+' /'+sc.length,'shop'],
-   ['Vấn đề đang mở<span class="help" title="Tổng số vấn đề/sự cố chưa đóng trên các kênh.">?</span>','<span style="color:var(--red)">'+violCh+'</span> kênh có vấn đề',totViol.toLocaleString('vi'),'openiss'],
-   ['Cần cập nhật<span class="help" title="Ưu tiên cập nhật hằng ngày. Quá 3 ngày chưa nhập = quá hạn.">?</span>','<span style="color:var(--red)">'+overdue+'</span> quá hạn (>3 ngày)',needToday+' /'+sc.length,'update'],
-   ['Kênh cần chú ý','<span style="color:var(--amber)">'+amberCnt+'</span> chú ý · <span style="color:var(--red)">'+redCnt+'</span> cần chú ý gấp',(amberCnt+redCnt)+' /'+sc.length,'attention'],
-  ].map(k=>'<div class="card kpi'+(k[3]?' clk" onclick="drillKPI(\''+k[3]+'\')"':'"')+'><div class="label">'+k[0]+'</div><div class="val">'+k[2]+'</div><div class="delta">'+k[1]+'</div></div>').join('');
+  ].map(kcard).join('');
   $('navOverdue').textContent=overdue||'';
   // onboarding / getting-started
   const ob=$('onboard');
@@ -940,7 +954,7 @@ function renderAll(){
   updateAlertBadge();
   renderCh();
   renderOrders();
-  renderMediaLoad();
+  renderMediaLoad();renderOrdersByChannel();
   // issues
   const isOverdue=i=>i.scode!=='done'&&i.due&&String(i.due)<todayStr();
   $('issueKpis').innerHTML=[['Mới',issues.filter(i=>i.st[0]=='open').length,'red'],['Đang xử lý',issues.filter(i=>i.st[0]=='doing').length,'amber'],['Chờ phản hồi',issues.filter(i=>i.st[0]=='waiting').length,'purple'],['Đã đóng',issues.filter(i=>i.st[0]=='done').length,'green'],['Trễ hạn xử lý',issues.filter(isOverdue).length,'red']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val" style="color:var(--'+k[2]+')">'+k[1]+'</div></div>').join('');
@@ -1498,6 +1512,13 @@ function renderMediaLoad(){if(!$('mediaLoadBody'))return;const today=todayStr();
   const rows=Object.keys(stat).sort((a,b)=>(stat[b].edit+stat[b].wait)-(stat[a].edit+stat[a].wait));
   $('mediaLoadBody').innerHTML=rows.map(n=>{const s=stat[n];const tot=s.edit+s.wait;return '<tr><td><b>'+esc(n)+'</b></td><td class="num">'+s.edit+'</td><td class="num">'+s.wait+'</td><td class="num"'+(s.over?' style="color:var(--red);font-weight:700"':'')+'>'+s.over+'</td><td class="num"><b>'+tot+'</b></td></tr>';}).join('')||'<tr><td class="empty" colspan="5">Không có đơn đang xử lý 🎉</td></tr>';}
 window.renderMediaLoad=renderMediaLoad;
+function renderOrdersByChannel(){if(!$('ordByChBody'))return;
+  const byCh={};(orders||[]).forEach(o=>{const key=o.chn||'(chưa gắn kênh)';const g=byCh[key]||(byCh[key]={tk:o.acct||'',n:0,edit:0,wait:0,done:0,types:new Set(),fmts:new Set(),prods:new Set()});g.n++;if(o.scode==='done')g.done++;else if(o.scode==='wait')g.wait++;else g.edit++;if(o.t&&o.t!=='—')g.types.add(o.t);if(o.format)g.fmts.add(o.format);if(o.p)g.prods.add(o.p);if(o.acct&&!g.tk)g.tk=o.acct;});
+  const keys=Object.keys(byCh).sort((a,b)=>byCh[b].n-byCh[a].n);
+  const trunc=(set,n)=>{const a=[...set];return a.length?a.slice(0,n).map(esc).join(', ')+(a.length>n?' +'+(a.length-n):''):'—';};
+  $('ordByChBody').innerHTML=keys.map(k=>{const g=byCh[k];return '<tr><td style="white-space:nowrap"><b>'+esc(k)+'</b></td><td style="white-space:nowrap;font-weight:600">'+(g.tk?esc(g.tk):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td><td class="num"><b>'+g.n+'</b></td><td class="num" style="color:var(--amber)">'+g.edit+'</td><td class="num" style="color:var(--brand)">'+g.wait+'</td><td class="num" style="color:var(--green)">'+g.done+'</td><td style="font-size:11.5px;max-width:150px;white-space:normal">'+trunc(g.types,3)+'</td><td style="font-size:11px;max-width:210px;white-space:normal;color:var(--muted)">'+trunc(g.fmts,2)+'</td><td style="font-size:11.5px;max-width:230px;white-space:normal">'+trunc(g.prods,3)+'</td></tr>';}).join('');
+  $('ordByChEmpty').style.display=keys.length?'none':'block';}
+window.renderOrdersByChannel=renderOrdersByChannel;
 window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o||!o.note)return;showDrill('📝 Note ý tưởng — '+esc(o.p),'<div style="padding:12px 14px;white-space:pre-wrap;line-height:1.6;font-size:13.5px">'+esc(o.note)+'</div>');};
 function imgGallery(s){const arr=imgSplit(s);if(!arr.length)return '';return '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'+arr.map(u=>'<img src="'+esc(u)+'" style="max-width:100%;max-height:70vh;border-radius:10px;cursor:pointer" onclick="window.open(this.src,\'_blank\')">').join('')+'</div>';}
 window.viewIssueImg=function(id){const i=issues.find(x=>String(x.id)===String(id));if(!i||!i.img)return;showDrill('🖼 Ảnh — '+esc(i.t),'<div style="padding:12px 14px">'+imgGallery(i.img)+'</div>');};
@@ -1700,7 +1721,7 @@ $('btnExport').onclick=exportChannels;
 $('btnTemplate').onclick=downloadTemplate;
 $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{if(e.target.files[0])importChannels(e.target.files[0]);e.target.value='';};
-function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(v==='team')renderTeam();if(v==='log')renderLog();if(v==='cat')renderCat();if(v==='kpi')renderKPI();if(v==='update')renderBulkUpd();if(v==='today')renderToday();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
+function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active',x.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id===v));if(v==='profile')renderProfile();if(v==='growth')renderGrowth();if(v==='team')renderTeam();if(v==='log')renderLog();if(v==='cat')renderCat();if(v==='kpi')renderKPI();if(v==='perf')renderAll();if(v==='update')renderBulkUpd();if(v==='today')renderToday();if(window.innerWidth<=760)$('side').classList.add('collapsed');window.scrollTo(0,0);}
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
 ['fSearch','fSeller','fNiche','fHealth','fStage'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',renderCh);});
 document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche')?1:-1;}renderCh();});
@@ -1734,6 +1755,7 @@ $('btnOrderByCh').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel 
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary.length?summary:[{'(trống)':''}]),'TheoKenh');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),'ChiTiet');
   XLSX.writeFile(wb,'RS-order-theo-kenh-'+todayStr()+'.xlsx');};
+if($('btnOrderByCh2'))$('btnOrderByCh2').onclick=$('btnOrderByCh').onclick;
 async function importOrderList(file){
   if(!window.XLSX&&!file.name.toLowerCase().endsWith('.txt'))return topErr('Thư viện Excel chưa tải xong, thử lại sau.');
   let rows=[];
