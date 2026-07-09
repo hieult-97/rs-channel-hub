@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.3</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v1.5</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -222,7 +222,7 @@
       <a data-view="team"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Bảng tin</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.3</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v1.5</b></div>
   </aside>
 
   <main class="main">
@@ -253,7 +253,7 @@
       <div id="stageBlock" style="margin-bottom:16px"></div>
       <div id="workBlock" style="margin-top:4px"></div>
       <div class="card" style="margin-top:14px;padding:0"><div style="padding:13px 16px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h3 style="margin:0">🎬 Kênh đang có order <span class="tag">loại · format · sản phẩm</span></h3><button class="btn ghost" id="btnOrderByCh2">⇩ Xuất Excel</button></div><div class="tbl-wrap" style="max-height:440px;overflow:auto">
-        <table><thead><tr><th>Kênh</th><th>TK</th><th>Kiểu order</th><th class="num">Số lượng</th><th class="num">Tổng đơn</th><th class="num">Đang làm</th><th class="num">Chờ nghiệm thu</th><th class="num">Done</th><th>Format</th><th>Sản phẩm</th></tr></thead>
+        <table><thead><tr><th>Kênh</th><th>TK</th><th>Order gần nhất</th><th>Kiểu order</th><th class="num">Số lượng</th><th class="num">Tổng đơn</th><th class="num">Đang làm</th><th class="num">Chờ nghiệm thu</th><th class="num">Done</th></tr></thead>
         <tbody id="ordByChBody"></tbody></table>
         <div class="empty" id="ordByChEmpty" style="display:none">Chưa có order nào gắn kênh.</div></div>
       </div>
@@ -1038,7 +1038,7 @@ function renderCh(){
       '<td style="color:var(--muted)">'+esc(c.niche)+'</td>'+
       '<td>'+accChip(c.acc)+shopIc+'</td>'+
       '<td style="white-space:nowrap;font-weight:600">'+(c.acct?esc(c.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+
-      '<td style="white-space:nowrap">'+stageChip(c.stage)+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
+      '<td style="white-space:nowrap">'+((isAdmin()||me.role==='Media'||me.role==='Seller')?'<select style="'+SELCSS+'" onchange="setChannelStage('+c.id+',this.value)"><option value="">— chọn —</option>'+STAGES.map(s=>'<option value="'+s[0]+'"'+(c.stage===s[0]?' selected':'')+'>'+s[1]+'</option>').join('')+'</select>':stageChip(c.stage))+(c.videoN!=null?'<div style="font-size:10.5px;color:'+(c.videoN>=10?'var(--green)':'var(--muted)')+'">'+c.videoN+'/10 video</div>':'')+'</td>'+
       '<td>'+esc(c.s)+'</td>'+
       '<td style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
       '<td class="num">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
@@ -1149,6 +1149,11 @@ function renderToday(){if(!$('todayBody'))return;const t=todayCounts();
   let html='';
   const roleGuide={Media:'Cập nhật số liệu kênh hằng ngày · Làm & trả order đúng hạn · Báo/sửa vấn đề.',Seller:'Nhập số liệu kênh phụ trách · Tạo order sản xuất · Duyệt nghiệm thu order · Báo vấn đề ở kênh.',SD:'Theo dõi Tổng quan · Duyệt người dùng & phân quyền · Đặt KPI · Soát vấn đề & cảnh báo.',Leader:'Theo dõi đội · Duyệt nghiệm thu · Soát KPI & vấn đề.'}[me&&me.role]||'';
   if(roleGuide)html+='<div class="card" style="margin-bottom:14px;border-left:3px solid var(--brand)"><b style="font-size:13px">👋 Bạn là '+(me&&me.role||'')+' — việc chính:</b><div style="font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.6">'+roleGuide+'</div></div>';
+  // Nhắc nhập liệu còn thiếu
+  {const chNoStage=(ch||[]).filter(c=>!c.stage).length;const ordNoKind=(orders||[]).filter(o=>!o.worktype&&o.scode!=='done').length;const nudges=[];
+   if(chNoStage)nudges.push('<div class="alert lo" style="cursor:pointer" onclick="selectView(\'channels\')"><div class="ic">📊</div><div><b>'+chNoStage+' kênh chưa phân giai đoạn</b><div class="who">Vào Kênh → chọn Giai đoạn (Trắng/Đang nuôi/…) ngay trên bảng</div></div></div>');
+   if(ordNoKind)nudges.push('<div class="alert lo" style="cursor:pointer" onclick="selectView(\'orders\')"><div class="ic">🎬</div><div><b>'+ordNoKind+' order chưa chọn kiểu</b><div class="who">Vào Order → chọn Kiểu order (Ảnh/Video/…) ngay trên dòng</div></div></div>');
+   if(nudges.length)html+='<div class="card" style="margin-bottom:14px;border-left:3px solid var(--amber)"><b style="font-size:13px">📝 Cần bổ sung dữ liệu</b><div style="margin-top:8px">'+nudges.join('')+'</div></div>';}
   html+=card('⏰ Order tới hạn / quá hạn ('+t.ordDue.length+')',[...t.ordDue].sort((a,b)=>String(a.deadline).localeCompare(String(b.deadline))).slice(0,15).map(o=>{const rem=daysLeft(o.deadline);const tag=rem<0?'trễ '+(-rem)+' ngày':rem===0?'hôm nay':'còn '+rem+' ngày';return li(esc(o.p),'Deadline '+vnDate(o.deadline)+' · '+tag+(o.who&&o.who!=='—'?' · '+esc(o.who):''),'orders');}),'Không có order tới hạn 🎉');
   if(t.staff||t.isS)html+=card('✅ Order chờ nghiệm thu ('+t.ordWait.length+')',t.ordWait.slice(0,15).map(o=>li(esc(o.p),'Người làm: '+esc(o.who)+' · seller '+esc(o.s),'orders')),'Không có order chờ nghiệm thu');
   html+=card('📝 Kênh cần cập nhật ('+t.chUpd.length+')',[...t.chUpd].sort((a,b)=>b.upd-a.upd).slice(0,15).map(c=>li(esc(c.n),(c.upd>=999?'chưa từng nhập':'đã '+c.upd+' ngày chưa nhập')+' · '+esc(c.o),'update')),'Mọi kênh đã cập nhật 🎉');
@@ -1420,6 +1425,8 @@ window.setOrderStatus=(id,v)=>{const o=orders.find(x=>String(x.id)===String(id))
   else if(v==='idea'||v==='edit')patch.delivered_at=null;     // quay về sản xuất → bỏ mốc giao
   updRow('orders',id,patch);};
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
+window.setChannelStage=(id,v)=>updRow('channels',id,{stage:v||null});
+window.setOrderWork=(id,v)=>updRow('orders',id,{work_type:v||null});
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.setOrderCap=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const cur=o?(o[field]||''):'';const label=field==='title'?'Title (caption giao seller)':'Hashtag';const v=prompt('Sửa '+label+' (bỏ trống để xóa):',cur);if(v===null)return;updRow('orders',id,{[field]:v.trim()||null});};
 // Popup "Trả đơn": Media nhập Title + Hashtag (nhiều dòng) + link nghiệm thu, lưu xong chuyển "Chờ nghiệm thu".
@@ -1501,7 +1508,12 @@ function renderOrders(){if(!$('orderBody'))return;
       else if(rem===0)badge='<div style="font-size:10.5px;color:var(--amber);font-weight:700">hôm nay</div>';
       else badge='<div style="font-size:10.5px;color:var(--red);font-weight:700">trễ '+(-rem)+' ngày ⚠</div>';
       dlCell='<div'+(orderOverdue(o)?' style="color:var(--red);font-weight:700"':'')+'>'+vnDate(o.deadline)+'</div>'+badge;}
-    const kindLine=(o.worktype||o.qty)?'<div style="font-size:10.5px;color:var(--brand);font-weight:600">🎬 '+esc(o.worktype||'—')+(o.qty?' <span style="color:var(--text)">×'+o.qty+'</span>':'')+'</div>':'';
+    const canProdK=isAdmin()||me.role==='Media';
+    const wOpts=(orderOpts&&orderOpts.worktype)?orderOpts.worktype:[];
+    const wList=(o.worktype&&!wOpts.includes(o.worktype))?[o.worktype].concat(wOpts):wOpts;
+    const kindLine=canProdK
+      ?'<div style="display:flex;align-items:center;gap:5px;margin:2px 0"><select style="'+SELCSS+';font-size:10.5px;max-width:130px" onchange="setOrderWork('+o.id+',this.value)"><option value="">🎬 chọn kiểu…</option>'+wList.map(w=>'<option'+(o.worktype===w?' selected':'')+'>'+esc(w)+'</option>').join('')+'</select>'+(o.qty?'<span style="font-size:10.5px;color:var(--muted)">×'+o.qty+'</span>':'')+'</div>'
+      :((o.worktype||o.qty)?'<div style="font-size:10.5px;color:var(--brand);font-weight:600">🎬 '+esc(o.worktype||'—')+(o.qty?' ×'+o.qty:'')+'</div>':'');
     const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+kindLine+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
     const nowISO=new Date().toISOString();
     const shortDT=x=>x?vnDateTime(x).replace(/\/\d{4} /,' '):'—';
@@ -1532,12 +1544,22 @@ function renderMediaLoad(){if(!$('mediaLoadBody'))return;const today=todayStr();
   $('mediaLoadBody').innerHTML=rows.map(n=>{const s=stat[n];const tot=s.edit+s.wait;return '<tr><td><b>'+esc(n)+'</b></td><td class="num">'+s.edit+'</td><td class="num">'+s.wait+'</td><td class="num"'+(s.over?' style="color:var(--red);font-weight:700"':'')+'>'+s.over+'</td><td class="num"><b>'+tot+'</b></td></tr>';}).join('')||'<tr><td class="empty" colspan="5">Không có đơn đang xử lý 🎉</td></tr>';}
 window.renderMediaLoad=renderMediaLoad;
 function renderOrdersByChannel(){if(!$('ordByChBody'))return;
-  const byCh={};(orders||[]).forEach(o=>{const key=o.chn||'(chưa gắn kênh)';const g=byCh[key]||(byCh[key]={tk:o.acct||'',n:0,qty:0,edit:0,wait:0,done:0,works:new Set(),fmts:new Set(),prods:new Set()});g.n++;g.qty+=(o.qty||1);if(o.scode==='done')g.done++;else if(o.scode==='wait')g.wait++;else g.edit++;if(o.worktype)g.works.add(o.worktype);if(o.format)g.fmts.add(o.format);if(o.p)g.prods.add(o.p);if(o.acct&&!g.tk)g.tk=o.acct;});
+  const byCh={};(orders||[]).forEach(o=>{const key=o.chn||'(chưa gắn kênh)';const g=byCh[key]||(byCh[key]={tk:o.acct||'',n:0,qty:0,edit:0,wait:0,done:0,works:new Set(),fmts:new Set(),prods:new Set(),days:new Set(),last:''});g.n++;g.qty+=(o.qty||1);if(o.scode==='done')g.done++;else if(o.scode==='wait')g.wait++;else g.edit++;if(o.worktype)g.works.add(o.worktype);if(o.format)g.fmts.add(o.format);if(o.p)g.prods.add(o.p);if(o.acct&&!g.tk)g.tk=o.acct;if(o.cAt){g.days.add(vnDateTime(o.cAt).slice(0,10));if(o.cAt>g.last)g.last=o.cAt;}});
   const keys=Object.keys(byCh).sort((a,b)=>byCh[b].qty-byCh[a].qty);
   const trunc=(set,n)=>{const a=[...set];return a.length?a.slice(0,n).map(esc).join(', ')+(a.length>n?' +'+(a.length-n):''):'—';};
-  $('ordByChBody').innerHTML=keys.map(k=>{const g=byCh[k];return '<tr><td style="white-space:nowrap"><b>'+esc(k)+'</b></td><td style="white-space:nowrap;font-weight:600">'+(g.tk?esc(g.tk):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td><td style="font-size:11.5px;max-width:150px;white-space:normal;color:var(--brand);font-weight:600">'+trunc(g.works,3)+'</td><td class="num"><b>'+g.qty+'</b></td><td class="num">'+g.n+'</td><td class="num" style="color:var(--amber)">'+g.edit+'</td><td class="num" style="color:var(--brand)">'+g.wait+'</td><td class="num" style="color:var(--green)">'+g.done+'</td><td style="font-size:11px;max-width:210px;white-space:normal;color:var(--muted)">'+trunc(g.fmts,2)+'</td><td style="font-size:11.5px;max-width:230px;white-space:normal">'+trunc(g.prods,3)+'</td></tr>';}).join('');
+  $('ordByChBody').innerHTML=keys.map(k=>{const g=byCh[k];const dateCell=g.last?'<span>'+vnDateTime(g.last).slice(0,10)+'</span> <span style="color:var(--brand);font-size:10.5px">🔎 '+g.days.size+' ngày</span>':'—';return '<tr><td style="white-space:nowrap"><b>'+esc(k)+'</b></td><td style="white-space:nowrap;font-weight:600">'+(g.tk?esc(g.tk):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td><td style="white-space:nowrap;cursor:pointer;font-size:11.5px" title="Bấm xem order theo từng ngày" onclick="drillOrdDays(\''+encodeURIComponent(k).replace(/\x27/g,"%27")+'\')">'+dateCell+'</td><td style="font-size:11.5px;max-width:150px;white-space:normal;color:var(--brand);font-weight:600">'+trunc(g.works,3)+'</td><td class="num"><b>'+g.qty+'</b></td><td class="num">'+g.n+'</td><td class="num" style="color:var(--amber)">'+g.edit+'</td><td class="num" style="color:var(--brand)">'+g.wait+'</td><td class="num" style="color:var(--green)">'+g.done+'</td></tr>';}).join('');
   $('ordByChEmpty').style.display=keys.length?'none':'block';}
 window.renderOrdersByChannel=renderOrdersByChannel;
+window.drillOrdDays=function(enc){const chn=decodeURIComponent(enc);const list=(orders||[]).filter(o=>(o.chn||'(chưa gắn kênh)')===chn);
+  const byDay={};list.forEach(o=>{const d=o.cAt?vnDateTime(o.cAt).slice(0,10):(o.d||'—');const g=byDay[d]||(byDay[d]={n:0,qty:0});g.n++;g.qty+=(o.qty||1);});
+  const days=Object.keys(byDay).sort((a,b)=>b.split('/').reverse().join('').localeCompare(a.split('/').reverse().join('')));
+  const rows=days.map(d=>'<tr><td style="white-space:nowrap">'+d+'</td><td class="num">'+byDay[d].n+'</td><td class="num"><b>'+byDay[d].qty+'</b></td></tr>').join('')||'<tr><td colspan="3" class="empty" style="padding:12px">Không có order</td></tr>';
+  const fmts=[...new Set(list.map(o=>o.format).filter(Boolean))],prods=[...new Set(list.map(o=>o.p).filter(Boolean))],works=[...new Set(list.map(o=>o.worktype).filter(Boolean))];
+  const info='<div style="padding:8px 12px 6px;font-size:12.5px;line-height:1.6">'
+    +(works.length?'<div><b>Kiểu order:</b> <span style="color:var(--brand)">'+esc(works.join(', '))+'</span></div>':'')
+    +(fmts.length?'<div><b>Format:</b> <span style="color:var(--muted)">'+esc(fmts.join(', '))+'</span></div>':'')
+    +(prods.length?'<div><b>Sản phẩm:</b> '+esc(prods.join(', '))+'</div>':'')+'</div>';
+  showDrill('📅 Order theo ngày — '+esc(chn)+' ('+list.length+' order)',info+'<div class="tbl-wrap" style="padding:6px"><table><thead><tr><th>Ngày order</th><th class="num">Số order</th><th class="num">Tổng số lượng</th></tr></thead><tbody>'+rows+'</tbody></table></div>');};
 function renderProdByDay(){const el=$('prodDayBody');if(!el)return;
   const byDay={};(orders||[]).forEach(o=>{if(!o.deliveredAt)return;const day=vnDateTime(o.deliveredAt).slice(0,10);const g=byDay[day]||(byDay[day]={n:0,qty:0});g.n++;g.qty+=(o.qty||1);});
   const days=Object.keys(byDay).sort((a,b)=>b.split('/').reverse().join('').localeCompare(a.split('/').reverse().join(''))).slice(0,14);
