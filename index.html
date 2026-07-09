@@ -293,6 +293,7 @@
           <div><label>Thị trường</label><input class="field" id="ncMarket" placeholder="US"></div>
           <div><label>Mail</label><input class="field" id="ncMail" placeholder="mail@..."></div>
           <div><label>URL shop <span style="color:var(--muted);font-weight:500">(Media lấy sản phẩm)</span></label><input class="field" id="ncShop" placeholder="https://shop... hoặc mã shop"></div>
+          <div><label>Tên TK / Shop <span style="color:var(--muted);font-weight:500">(vd TTS61)</span></label><input class="field" id="ncAccount" placeholder="TTS61..."></div>
           <div><label>Ngày bàn giao</label><input class="field" id="ncHandover" type="date"></div>
           <div><label>Nơi đăng nhập</label><input class="field" id="ncLogin" placeholder="Hidemium..."></div>
           <div><label>IP</label><input class="field" id="ncIp" placeholder="US"></div>
@@ -318,7 +319,7 @@
           <thead><tr>
             <th class="sortable stick" data-k="n">Kênh <span class="ar"></span></th>
             <th class="sortable" data-k="niche">Niche <span class="ar"></span></th>
-            <th>Shop</th><th>Seller</th><th>Người Care</th><th class="num">Vấn đề mở</th>
+            <th>Shop</th><th>Tên TK</th><th>Seller</th><th>Người Care</th><th class="num">Vấn đề mở</th>
             <th class="sortable num" data-k="f">Follower <span class="ar"></span></th>
             <th class="sortable num" data-k="pct">% MT <span class="ar"></span></th>
             <th class="sortable num" data-k="v">View <span class="ar"></span></th>
@@ -387,7 +388,7 @@
         <input id="ofSearch" placeholder="Tìm mã / sản phẩm / seller..." oninput="renderOrders()" style="min-width:240px">
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Mã order</th><th>Seller</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>Thời gian</th><th></th></tr></thead>
+        <table><thead><tr><th>Mã order</th><th>Seller</th><th>Tên TK</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>Thời gian</th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
       </div></div>
@@ -758,7 +759,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',acct:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).account_name||''):'',img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||'',img:i.image_url||''};});
@@ -809,7 +810,7 @@ function buildCh(asOfDate){
     const care=(c.care&&String(c.care).trim())?String(c.care).trim():chOwnerOf(c.id);
     const _goal=Number(c.follower_goal)||0,pct=_goal?Math.round(f/_goal*100):0;
     const age=daysSince(c.created_at);// số ngày kênh đã được thêm vào tool
-    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',shop:c.shop_url||'',violations:Number(c.violations)||0,goal:_goal,pct,age,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(latest,prev,dDaily,upd,vidDaily)};
+    return {id:c.id,n:c.name,plat:c.platform||'—',s:chSellerName(c.seller_id),o:care||'—',niche:c.niche||'—',acc:c.acc_status||'buff',market:c.market||'—',shop:c.shop_url||'',acct:c.account_name||'',violations:Number(c.violations)||0,goal:_goal,pct,age,f,d,v,vid,or,com,orP,comP,vP,upd,h:healthRule(latest,prev,dDaily,upd,vidDaily)};
   });
 }
 function dashScope(){let r=ch;const se=$('dashSeller')?$('dashSeller').value:'',cn=$('dashChannel')?$('dashChannel').value:'',pl=$('dashPlatform')?$('dashPlatform').value:'',ni=$('dashNiche')?$('dashNiche').value:'';if(se)r=r.filter(c=>c.s===se);if(pl)r=r.filter(c=>c.plat===pl);if(ni)r=r.filter(c=>c.niche===ni);if(cn)r=r.filter(c=>String(c.id)===String(cn));return r;}
@@ -974,6 +975,7 @@ function renderCh(){
     return '<tr><td class="stick"><b>'+esc(c.n)+'</b> <span title="Copy URL kênh" style="cursor:pointer;color:var(--muted);font-size:11px" onclick="copyEnc(\''+encodeURIComponent(c.n).replace(/'/g,'%27')+'\')">📋</span>'+pin+sub+'</td>'+
       '<td style="color:var(--muted)">'+esc(c.niche)+'</td>'+
       '<td>'+accChip(c.acc)+shopIc+'</td>'+
+      '<td style="white-space:nowrap;font-weight:600">'+(c.acct?esc(c.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+
       '<td>'+esc(c.s)+'</td>'+
       '<td style="font-size:12px;color:var(--muted);max-width:160px;white-space:normal">'+esc(c.o)+'</td>'+
       '<td class="num">'+((window.gOpenByCh&&window.gOpenByCh[c.id])?'<span style="color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline" title="Xem vấn đề của kênh" onclick="issuesByChannel(\''+encodeURIComponent(c.n).replace(/\x27/g,"%27")+'\')">'+window.gOpenByCh[c.id]+'</span>':'<span style="color:var(--muted)">0</span>')+'</td>'+
@@ -1148,7 +1150,7 @@ $('btnSaveCh').onclick=async()=>{
   try{
     if(newSeller){const {data,error}=await sb.from('sellers').insert({name:newSeller}).select().single();if(error)throw error;sid=data.id;}
     const careList=[...document.querySelectorAll('#ncCare .careChk')].filter(c=>c.checked).map(c=>c.value);
-    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,shop_url:$('ncShop').value.trim()||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
+    const rec={name:$('ncName').value.trim(),platform:$('ncPlatform').value,seller_id:sid,care:careList.join(', ')||null,niche:$('ncNiche').value.trim()||null,acc_status:$('ncAcc').value,market:$('ncMarket').value.trim()||null,mail:$('ncMail').value.trim()||null,handover_date:$('ncHandover').value||null,login_place:$('ncLogin').value.trim()||null,ip:$('ncIp').value.trim()||null,proxy:$('ncProxy').value.trim()||null,phone_login:$('ncPhone').value.trim()||null,shop_url:$('ncShop').value.trim()||null,account_name:($('ncAccount')&&$('ncAccount').value.trim())||null,note:$('ncNote').value.trim()||null,follower_goal:Number($('ncGoal').value)||null};
     if(editingId){const {error}=await sb.from('channels').update(rec).eq('id',editingId);if(error)throw error;await logAction('Sửa kênh','channels',rec.name);showToast('Đã lưu thay đổi ✓');}
     else{const {error}=await sb.from('channels').insert(rec);if(error)throw error;await logAction('Thêm kênh','channels',rec.name);showToast('Đã thêm kênh ✓');}
     $('chForm').style.display='none';resetChForm();
@@ -1158,12 +1160,12 @@ $('btnSaveCh').onclick=async()=>{
 };
 function resetChForm(){editingId=null;$('chFormTitle').textContent='Thêm kênh';$('btnSaveCh').textContent='Lưu kênh';
   document.querySelectorAll('#ncCare .careChk').forEach(c=>c.checked=false);
-  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncShop','ncNote','ncGoal','ncNewSeller'].forEach(i=>$(i).value='');}
+  ['ncName','ncCare','ncNiche','ncMarket','ncMail','ncHandover','ncLogin','ncIp','ncProxy','ncPhone','ncShop','ncAccount','ncNote','ncGoal','ncNewSeller'].forEach(i=>{if($(i))$(i).value='';});}
 function editChannel(id){const c=(rawChannels||[]).find(x=>String(x.id)===String(id));if(!c)return;editingId=id;
   $('chFormTitle').textContent='Sửa kênh: '+c.name;$('btnSaveCh').textContent='Lưu thay đổi';
   $('ncName').value=c.name||'';$('ncPlatform').value=c.platform||'TikTok';$('ncSeller').value=c.seller_id||'';{const careSet=new Set((c.care||'').split(',').map(x=>x.trim()).filter(Boolean));
    document.querySelectorAll('#ncCare .careChk').forEach(chk=>chk.checked=careSet.has(chk.value));
-   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncShop').value=c.shop_url||'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
+   careSet.forEach(nm=>{if(![...document.querySelectorAll('#ncCare .careChk')].some(c2=>c2.value===nm)){const d=document.createElement('span');d.innerHTML=careChip(nm,true);$('ncCare').appendChild(d.firstChild);}});}$('ncNiche').value=c.niche||'';$('ncAcc').value=c.acc_status||'buff';$('ncMarket').value=c.market||'';$('ncMail').value=c.mail||'';$('ncHandover').value=c.handover_date||'';$('ncLogin').value=c.login_place||'';$('ncIp').value=c.ip||'';$('ncProxy').value=c.proxy||'';$('ncPhone').value=c.phone_login||'';$('ncShop').value=c.shop_url||'';if($('ncAccount'))$('ncAccount').value=c.account_name||'';$('ncNote').value=c.note||'';$('ncGoal').value=c.follower_goal!=null?c.follower_goal:'';$('ncNewSeller').value='';
   $('chForm').style.display='block';selectView('channels');try{$('chForm').scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editChannel=editChannel;
 // ===== Drill-down: bấm KPI / chú thích sức khỏe → xổ danh sách kênh chi tiết =====
@@ -1451,7 +1453,7 @@ function renderOrders(){if(!$('orderBody'))return;
       dur2='<div style="font-size:10.5px;color:var(--muted)">⏳ media đang làm '+(durTxt(o.cAt,nowISO)||'—')+'</div>';
     }
     const tCell='<td style="white-space:nowrap;cursor:pointer" title="Bấm xem chi tiết thời gian từng chặng" onclick="viewOrderTime('+o.id+')"><div style="font-size:11.5px">🆕 '+shortDT(o.cAt)+' <span style="color:var(--brand);font-size:10px">🔎</span></div>'+dur2+'</td>';
-    return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td>'+o.s+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+tCell+'<td>'+act+'</td></tr>';}).join('');
+    return '<tr><td style="white-space:nowrap;font-family:monospace;font-size:11.5px;color:var(--muted)">'+(o.code||window.gOrderCode[o.id]||'')+'</td><td>'+o.s+'</td><td style="white-space:nowrap;font-weight:600">'+(o.acct?esc(o.acct):'<span style="color:var(--muted);font-weight:400">—</span>')+'</td>'+prodCell+'<td>'+whoCell+'</td><td style="white-space:nowrap">'+dlCell+'</td><td>'+stCell+'</td><td>'+ngCell+'</td>'+tCell+'<td>'+act+'</td></tr>';}).join('');
   $('orderEmpty').style.display=list.length?'none':'block';
 }
 window.renderOrders=renderOrders;
@@ -1509,9 +1511,11 @@ function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)r
   const f=$('orderForm');f.style.display='block';
   if($('orFormTitle'))$('orFormTitle').textContent='Sửa order: '+o.p;
   if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu thay đổi';
+  // gán value cho select, tự chèn option nếu giá trị cũ không có trong danh mục (tránh mất dữ liệu khi lưu)
+  const setSel=(id,val)=>{const sel=$(id);if(!sel)return;val=val||'';if(val&&![...sel.options].some(op=>op.value===val))sel.insertBefore(new Option(val,val),sel.firstChild);sel.value=val;};
   $('orSeller').value=o.seller_id||'';if($('orChannel'))$('orChannel').value=o.channel_id||'';
-  $('orProduct').value=o.p||'';$('orType').value=(o.t&&o.t!=='—')?o.t:'';$('orProducer').value=(o.who&&o.who!=='—')?o.who:'';
-  $('orCombo').value=o.combo||'';$('orFormat').value=o.format||'';$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min=o.cdate||'';
+  $('orProduct').value=o.p||'';setSel('orType',(o.t&&o.t!=='—')?o.t:'');setSel('orProducer',(o.who&&o.who!=='—')?o.who:'');
+  setSel('orCombo',o.combo||'');setSel('orFormat',o.format||'');$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min=o.cdate||'';
   $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';$('orNote').value=o.note||'';
   imgSet('order',o.img);
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
@@ -1531,32 +1535,6 @@ window.linkSeller=(id,sid)=>{if(!isSD())return topErr('Chỉ SD được gán se
 function selOpts(opts,cur){return opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('');}
 const SELCSS='background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 6px;font-size:12px';
 async function ensureSeller(name){name=(name||'Seller').trim();const {data:ex}=await sb.from('sellers').select('id').eq('name',name).maybeSingle();if(ex)return ex.id;const {data:ns,error}=await sb.from('sellers').insert({name}).select('id').single();if(error)throw error;return ns.id;}
-// Nạp danh mục Loại/Combo/Format vào form tạo order (kèm tùy chọn "+ Thêm mới")
-async function loadOrderOpts(){try{
-  const {data,error}=await sb.from('order_options').select('kind,label').order('label');
-  if(error)throw error;
-  const g={type:[],combo:[],format:[]};(data||[]).forEach(o=>{if(g[o.kind])g[o.kind].push(o.label);});
-  const fill=(id,kind)=>{const sel=$(id);if(!sel)return;const cur=sel.value;
-    sel.innerHTML='<option value="">— không chọn —</option>'+g[kind].map(l=>'<option>'+esc(l)+'</option>').join('')+'<option value="__add__">＋ Thêm mới…</option>';
-    if(cur&&g[kind].includes(cur))sel.value=cur;};
-  fill('orType','type');fill('orCombo','combo');fill('orFormat','format');
-}catch(e){}}
-window.orderOptChange=async function(kind,sel){
-  if(!sel||sel.value!=='__add__')return;
-  const lbl={type:'loại sản phẩm',combo:'combo',format:'format'}[kind]||kind;
-  const v=(prompt('Thêm '+lbl+' mới:')||'').trim();
-  if(!v){sel.value='';return;}
-  try{const {error}=await sb.from('order_options').insert({kind,label:v});if(error)throw error;
-    await loadOrderOpts();sel.value=v;showToast('Đã thêm ✓');
-  }catch(e){topErr(e.message||String(e));sel.value='';}
-};
-// Nạp danh sách người sản xuất (thành viên đã duyệt, không phải Seller) vào form
-async function loadProducers(){try{
-  const {data,error}=await sb.from('profiles').select('full_name,role,status');
-  if(error)throw error;
-  mediaNames=[...new Set((data||[]).filter(p=>p.status==='approved'&&p.full_name&&p.role!=='Seller').map(p=>p.full_name))].sort();
-  const sel=$('orProducer');if(sel){const cur=sel.value;sel.innerHTML='<option value="">— chưa gán —</option>'+mediaNames.map(n=>'<option>'+esc(n)+'</option>').join('');if(cur&&mediaNames.includes(cur))sel.value=cur;}
-}catch(e){}}
 async function syncSellers(){if(!isSD())return;try{
   const {data:profs}=await sb.from('profiles').select('id,full_name,role,seller_id').eq('role','Seller');
   const {data:srows}=await sb.from('sellers').select('id,name');const rows=srows||[];let changed=false;
@@ -1586,7 +1564,7 @@ function exportChannels(){
   if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau vài giây.');
   const byId={};ch.forEach(c=>byId[c.id]=c);
   const rows=(rawChannels||[]).map(rc=>{const c=byId[rc.id]||{};return {
-    'URL kênh':rc.name,'Sàn':rc.platform||'','Seller bàn giao':chSellerName(rc.seller_id),'Người Care':rc.care||'',
+    'URL kênh':rc.name,'Sàn':rc.platform||'','Tên TK':rc.account_name||'','Seller bàn giao':chSellerName(rc.seller_id),'Người Care':rc.care||'',
     'Status':rc.acc_status==='shop'?'Đã bật shop':'Chưa/buff','Thị trường':rc.market||'','Key/Niche/Ngách':rc.niche||'',
     'Followers':c.f||'','Mục tiêu follower':rc.follower_goal||'','% mục tiêu':c.goal?c.pct+'%':'','View kỳ':c.v||0,'Video kỳ':c.vid||0,
     'Đơn kỳ':c.or||0,'GMV (USD)':Math.round((c.com||0)*1000),'Δ follower':c.d||0,
@@ -1603,7 +1581,7 @@ function backupAll(){
   if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong, thử lại sau vài giây.');
   const wb=XLSX.utils.book_new();
   const chN={};(rawChannels||[]).forEach(rc=>chN[rc.id]=rc.name);
-  const chRows=(rawChannels||[]).map(rc=>({'URL kênh':rc.name,'Sàn':rc.platform||'','Seller':chSellerName(rc.seller_id),'Người Care':rc.care||'','Status':rc.acc_status==='shop'?'Đã bật shop':'Chưa/buff','Thị trường':rc.market||'','Niche':rc.niche||'','Mục tiêu follower':rc.follower_goal||'','Mail':rc.mail||'','URL shop':rc.shop_url||'','Ngày bàn giao':vnDate(rc.handover_date)||'','Note':rc.note||''}));
+  const chRows=(rawChannels||[]).map(rc=>({'URL kênh':rc.name,'Sàn':rc.platform||'','Tên TK':rc.account_name||'','Seller':chSellerName(rc.seller_id),'Người Care':rc.care||'','Status':rc.acc_status==='shop'?'Đã bật shop':'Chưa/buff','Thị trường':rc.market||'','Niche':rc.niche||'','Mục tiêu follower':rc.follower_goal||'','Mail':rc.mail||'','URL shop':rc.shop_url||'','Ngày bàn giao':vnDate(rc.handover_date)||'','Note':rc.note||''}));
   const orRows=(orders||[]).map(o=>({'Mã order':o.code||window.gOrderCode[o.id]||'','Ngày order':o.d,'Seller':o.s,'Sản phẩm':o.p,'Kênh sản xuất':o.chn||'','Người sản xuất':(o.who&&o.who!=='—')?o.who:'','Deadline':vnDate(o.deadline)||'','Trạng thái':o.st[1],'Nghiệm thu':o.accepted?'Done':'Chưa','Time order':o.cAt?vnDateTime(o.cAt):'','Time giao':o.deliveredAt?vnDateTime(o.deliveredAt):'','Time done':o.doneAt?vnDateTime(o.doneAt):'','TG media (order→giao)':durTxt(o.cAt,o.deliveredAt),'TG duyệt (giao→done)':durTxt(o.deliveredAt,o.doneAt),'Title':o.title||'','Hashtag':o.hashtag||'','Link nghiệm thu':o.dlink||'','Link sản phẩm':o.plink||'','Trả lại (lần)':o.rework||0,'Lý do trả lại':o.reject||''}));
   const snRows=(rawSnaps||[]).map(s=>({'Ngày':vnDate(s.period_date),'Kênh':chN[s.channel_id]||s.channel_id,'Follower':s.followers||0,'View kỳ':s.views||0,'Video':s.videos||0,'Đơn':s.orders||0,'GMV (USD)':s.gmv_usd||0,'Nhập lúc':s.created_at?vnDateTime(s.created_at):''}));
   const isRows=(issues||[]).map(i=>({'Tiêu đề':i.t,'Loại':i.type||'','Nguồn':i.src||'','Kênh':i.ch||'','Mức độ':i.sev[1],'Trạng thái':i.st[1],'Người phát hiện':i.reporter||'','Người xử lý':i.who||'','Hạn xử lý':vnDate(i.due)||'','Ảnh':i.img?'có':''}));
@@ -1660,6 +1638,7 @@ async function importChannels(file){
           market:String(pickVal(r,['Thị trường','Thi truong','Market','market'])).trim()||null,
           mail:String(pickVal(r,['Mail','mail','Email'])).trim()||null,
           shop_url:String(pickVal(r,['URL shop','URL Shop','Url shop','Shop','shop_url'])).trim()||null,
+          account_name:String(pickVal(r,['Tên TK','Ten TK','Tên TK / Shop','TK','account_name'])).trim()||null,
           handover_date:handover,
           login_place:String(pickVal(r,['Nơi đăng nhập','Noi dang nhap'])).trim()||null,
           ip:String(pickVal(r,['IP','ip'])).trim()||null,
