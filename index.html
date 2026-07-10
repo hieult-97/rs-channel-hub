@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.8</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.9</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.8</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.9</b></div>
   </aside>
 
   <main class="main">
@@ -417,7 +417,7 @@
         <input id="ofSearch" placeholder="Tìm mã / sản phẩm / seller..." oninput="renderOrders()" style="min-width:240px">
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
-        <table><thead><tr><th>Mã order</th><th>Seller</th><th>Tên TK</th><th>Sản phẩm</th><th>Người sản xuất</th><th>Deadline</th><th>Trạng thái đơn</th><th>Trả đơn</th><th>Thời gian</th><th></th></tr></thead>
+        <table><thead><tr><th class="sortable" data-sk="code">Mã order <span class="ar"></span></th><th class="sortable" data-sk="s">Seller <span class="ar"></span></th><th class="sortable" data-sk="acct">Tên TK <span class="ar"></span></th><th class="sortable" data-sk="p">Sản phẩm <span class="ar"></span></th><th class="sortable" data-sk="who">Người sản xuất <span class="ar"></span></th><th class="sortable" data-sk="deadline">Deadline <span class="ar"></span></th><th class="sortable" data-sk="scode">Trạng thái đơn <span class="ar"></span></th><th>Trả đơn</th><th class="sortable" data-sk="time">Thời gian <span class="ar"></span></th><th></th></tr></thead>
         <tbody id="orderBody"></tbody></table>
         <div class="empty" id="orderEmpty" style="display:none">Chưa có order nào.</div>
         <div id="orderPager" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)"></div>
@@ -1475,9 +1475,23 @@ function renderOrders(){if(!$('orderBody'))return;
     if(fQ){const hay=((o.code||window.gOrderCode[o.id]||'')+' '+(o.p||'')+' '+(o.s||'')+' '+(o.worktype||'')).toLowerCase();if(!hay.includes(fQ))return false;}
     return true;};
   let list=orders.filter(inFilter);
-  // Sắp xếp ưu tiên: (0) Chưa trả/đang làm lên đầu — tránh miss; (1) Chờ nghiệm thu; (2) Done xuống cuối. Trong nhóm: deadline gấp trước.
-  const rank=o=>o.scode==='done'?2:(notDelivered(o)?0:1);
-  list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;if(ra<2){const da=a.deadline||'9999-99-99',db=b.deadline||'9999-99-99';if(da!==db)return da<db?-1:1;}return (b.id||0)-(a.id||0);});
+  if(window.gOrdSortK){  // Người dùng bấm tiêu đề cột → sắp theo cột đó
+    const k=window.gOrdSortK,dir=window.gOrdSortDir||1;
+    const sv=o=>{switch(k){
+      case 'code':return o.code||window.gOrderCode[o.id]||'';
+      case 's':return o.s||'';case 'acct':return o.acct||'';case 'p':return o.p||'';
+      case 'who':return (o.who&&o.who!=='—')?o.who:'';
+      case 'deadline':return o.deadline||'9999-99-99';
+      case 'scode':return ({idea:0,edit:1,wait:2,done:3}[o.scode]??9);
+      case 'time':return o.cAt||o.cdate||'';default:return '';}};
+    list=list.slice().sort((a,b)=>{const x=sv(a),y=sv(b);
+      if(typeof x==='number'||typeof y==='number')return ((x||0)-(y||0))*dir||((a.id||0)-(b.id||0));
+      return String(x).localeCompare(String(y))*dir||((a.id||0)-(b.id||0));});
+  }else{
+    // Mặc định: (0) Chưa trả/đang làm lên đầu; (1) Chờ nghiệm thu; (2) Done xuống cuối. Trong nhóm: deadline gấp trước.
+    const rank=o=>o.scode==='done'?2:(notDelivered(o)?0:1);
+    list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;if(ra<2){const da=a.deadline||'9999-99-99',db=b.deadline||'9999-99-99';if(da!==db)return da<db?-1:1;}return (b.id||0)-(a.id||0);});
+  }
   // Phân trang
   const total=list.length,ps=window.gOrderPageSize||20,pages=Math.max(1,Math.ceil(total/ps));
   if(!window.gOrderPage||window.gOrderPage>pages)window.gOrderPage=Math.min(window.gOrderPage||1,pages);
@@ -1814,6 +1828,13 @@ function selectView(v){document.querySelectorAll('.nav a').forEach(x=>x.classLis
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>selectView(a.dataset.view));
 ['fSearch','fSeller','fNiche','fHealth','fStage'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',renderCh);});
 document.querySelectorAll('#channels th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sortK)sortDir*=-1;else{sortK=k;sortDir=(k=='n'||k=='niche'||k=='stage'||k=='s'||k=='o')?1:-1;}renderCh();});
+// Bảng Order: bấm tiêu đề để sắp xếp (A→Z → Z→A → bỏ sắp xếp về mặc định)
+function updOrdArrows(){document.querySelectorAll('#orders th.sortable').forEach(th=>{const a=th.querySelector('.ar');if(a)a.textContent=(th.dataset.sk===window.gOrdSortK)?((window.gOrdSortDir||1)<0?'▼':'▲'):'';});}
+document.querySelectorAll('#orders th.sortable').forEach(th=>th.onclick=()=>{const k=th.dataset.sk;
+  if(window.gOrdSortK!==k){window.gOrdSortK=k;window.gOrdSortDir=1;}
+  else if((window.gOrdSortDir||1)===1){window.gOrdSortDir=-1;}
+  else{window.gOrdSortK=null;window.gOrdSortDir=1;}
+  window.gOrderPage=1;renderOrders();updOrdArrows();});
 $('hamb').onclick=()=>$('side').classList.toggle('collapsed');
 $('btnAddOrder').onclick=()=>{const f=$('orderForm');const show=f.style.display=='none';
   if(show){
