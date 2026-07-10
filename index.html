@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v2.9</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v3.0</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v2.9</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v3.0</b></div>
   </aside>
 
   <main class="main">
@@ -415,6 +415,7 @@
         <select id="ofSeller" onchange="renderOrders()"><option value="">Mọi seller</option></select>
         <select id="ofWork" onchange="renderOrders()"><option value="">Mọi kiểu order</option></select>
         <input id="ofSearch" placeholder="Tìm mã / sản phẩm / seller..." oninput="renderOrders()" style="min-width:240px">
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;padding:0 6px"><input type="checkbox" id="ofDup" onchange="window.gOrderPage=1;renderOrders()"> 🔁 Chỉ SP trùng (gom để làm 1 lượt)</label>
       </div>
       <div class="card" style="padding:0"><div class="tbl-wrap">
         <table><thead><tr><th class="sortable" data-sk="code">Mã order <span class="ar"></span></th><th class="sortable" data-sk="s">Seller <span class="ar"></span></th><th class="sortable" data-sk="acct">Tên TK <span class="ar"></span></th><th class="sortable" data-sk="p">Sản phẩm <span class="ar"></span></th><th class="sortable" data-sk="who">Người sản xuất <span class="ar"></span></th><th class="sortable" data-sk="deadline">Deadline <span class="ar"></span></th><th class="sortable" data-sk="scode">Trạng thái đơn <span class="ar"></span></th><th>Trả đơn</th><th class="sortable" data-sk="time">Thời gian <span class="ar"></span></th><th></th></tr></thead>
@@ -1475,7 +1476,15 @@ function renderOrders(){if(!$('orderBody'))return;
     if(fQ){const hay=((o.code||window.gOrderCode[o.id]||'')+' '+(o.p||'')+' '+(o.s||'')+' '+(o.worktype||'')).toLowerCase();if(!hay.includes(fQ))return false;}
     return true;};
   let list=orders.filter(inFilter);
-  if(window.gOrdSortK){  // Người dùng bấm tiêu đề cột → sắp theo cột đó
+  // Đếm sản phẩm trùng trong danh sách đang lọc (để gợi ý làm 1 lượt)
+  const pkey=o=>String(o.p||'').trim().toLowerCase();
+  const pcount={};list.forEach(o=>{const k=pkey(o);if(k)pcount[k]=(pcount[k]||0)+1;});
+  const dupOn=$('ofDup')&&$('ofDup').checked;
+  if(dupOn)list=list.filter(o=>pcount[pkey(o)]>=2);
+  if(dupOn){  // Gom SP giống nhau sát nhau: nhóm lớn trước, cùng nhóm thì cạnh nhau; chưa trả lên trước
+    const rankD=o=>o.scode==='done'?1:0;
+    list=list.slice().sort((a,b)=>{const na=pcount[pkey(a)],nb=pcount[pkey(b)];if(na!==nb)return nb-na;const pk=pkey(a).localeCompare(pkey(b));if(pk!==0)return pk;const rd=rankD(a)-rankD(b);if(rd!==0)return rd;return (a.id||0)-(b.id||0);});
+  }else if(window.gOrdSortK){  // Người dùng bấm tiêu đề cột → sắp theo cột đó
     const k=window.gOrdSortK,dir=window.gOrdSortDir||1;
     const sv=o=>{switch(k){
       case 'code':return o.code||window.gOrderCode[o.id]||'';
@@ -1528,7 +1537,9 @@ function renderOrders(){if(!$('orderBody'))return;
     const kindLine=canProdK
       ?'<div style="display:flex;align-items:center;gap:5px;margin:2px 0"><select style="'+SELCSS+';font-size:10.5px;max-width:130px" onchange="setOrderWork('+o.id+',this.value)"><option value="">🎬 chọn kiểu…</option>'+wList.map(w=>'<option'+(o.worktype===w?' selected':'')+'>'+esc(w)+'</option>').join('')+'</select>'+(o.qty?'<span style="font-size:10.5px;color:var(--muted)">×'+o.qty+'</span>':'')+'</div>'
       :((o.worktype||o.qty)?'<div style="font-size:10.5px;color:var(--brand);font-weight:600">🎬 '+esc(o.worktype||'—')+(o.qty?' ×'+o.qty:'')+'</div>':'');
-    const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+kindLine+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
+    const dupN=pcount[pkey(o)]||0;
+    const dupBadge=dupN>1?'<div style="font-size:10px;color:var(--brand);font-weight:700" title="Có '+dupN+' order cùng sản phẩm này — có thể làm 1 lượt">🔁 '+dupN+' đơn cùng SP</div>':'';
+    const prodCell='<td style="max-width:230px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px" title="'+esc(o.p)+'"><b>'+esc(o.p)+'</b></div>'+dupBadge+kindLine+(o.reject?'<div style="font-size:10.5px;color:var(--red);white-space:normal">↩ Trả lại: '+esc(o.reject)+'</div>':'')+'<span style="cursor:pointer;color:var(--brand);font-size:11.5px" onclick="viewOrderDetail('+o.id+')">🔎 Chi tiết</span></td>';
     const nowISO=new Date().toISOString();
     const shortDT=x=>x?vnDateTime(x).replace(/\/\d{4} /,' '):'—';
     // Phân nhánh theo TRẠNG THÁI THẬT (scode), không theo việc có mốc giờ hay chưa.
