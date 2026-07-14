@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v3.4</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v3.7</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v3.4</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v3.7</b></div>
   </aside>
 
   <main class="main">
@@ -389,7 +389,7 @@
         <h3 id="orFormTitle">Tạo order sản xuất</h3>
         <div class="form">
           <div><label>Seller</label><select class="field" id="orSeller"></select></div>
-          <div><label>Kênh sản xuất cho <span style="color:var(--red);font-weight:600">* bắt buộc (hoặc chọn Tên TK)</span></label><select class="field" id="orChannel"></select></div>
+          <div><label>Kênh sản xuất cho <span style="color:var(--red);font-weight:600">* bắt buộc (hoặc chọn Tên TK)</span></label><select class="field" id="orChannel" onchange="onOrderChannelPick(this.value)"></select></div>
           <div><label>Tên TK / Shop <span style="color:var(--muted);font-weight:500">(dùng khi chưa có kênh — thay cho kênh)</span></label><select class="field" id="orAccount" onchange="orderOptChange('account',this)"></select></div>
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
           <div><label>Kiểu order <span style="color:var(--muted);font-weight:500">(Ảnh/Video/Quay/Live)</span></label><select class="field" id="orWorkType" onchange="orderOptChange('worktype',this)"></select></div>
@@ -809,6 +809,7 @@ async function loadData(){
     try{await backfillOrderCodes();}catch(e){}// gán mã cố định cho order chưa có (SD)
     try{await backfillIssueChannels();}catch(e){}// lưu tên kênh cho vấn đề cũ (SD)
     rebuild();
+    try{await autoCancelDeadOrders();}catch(e){}   // kênh Dừng/Lỗi → tự hủy order đang mở
   }catch(e){topErr(e.message||String(e));}
 }
 let rawSellerMap={};
@@ -1432,22 +1433,11 @@ window.setOrderStatus=(id,v)=>{const o=orders.find(x=>String(x.id)===String(id))
   else if(v==='idea'||v==='edit')patch.delivered_at=null;     // quay về sản xuất → bỏ mốc giao
   updRow('orders',id,patch);};
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
-window.setChannelStage=async(id,v)=>{
-  await updRow('channels',id,{stage:v||null});
-  if(v==='dead'||v==='error'){   // Dừng SX / Lỗi-Bị khóa (acc die) → đề nghị hủy order chưa xong của kênh
-    const c=(rawChannels||[]).find(x=>x.id===id)||{};const acct=c.account_name||'';
-    const open=(orders||[]).filter(o=>(o.channel_id===id||(acct&&o.acct===acct))&&!isCancel(o)&&o.scode!=='done');
-    if(open.length){
-      const lbl=v==='dead'?'Dừng sản xuất':'Lỗi / Bị khóa';
-      if(confirm('Kênh chuyển "'+lbl+'". Có '+open.length+' order chưa xong của kênh này.\n\nHủy tất cả các order đó (Hủy – lỗi kênh)?')){
-        const reason='Kênh '+lbl+' (acc die) '+todayStr();let ok=0;
-        for(const o of open){try{const {error}=await sb.from('orders').update({status:'cancel',cancel_reason:reason,accepted:false,done_at:null,delivered_at:null}).eq('id',o.id);if(!error)ok++;}catch(e){}}
-        await logAction('Hủy order theo kênh','orders',ok+' order');
-        showToast('Đã hủy '+ok+' order của kênh');
-        await loadData();
-      }
-    }
-  }
+window.setChannelStage=(id,v)=>updRow('channels',id,{stage:v||null});  // đổi giai đoạn; nếu Dừng/Lỗi → autoCancelDeadOrders (chạy trong loadData) tự hủy order
+// Chọn kênh ở form order → tự điền Tên TK đã gắn với kênh đó
+window.onOrderChannelPick=(id)=>{const s=$('orAccount');if(!s)return;
+  const c=(ch||[]).find(x=>String(x.id)===String(id));const acc=(c&&c.acct)?c.acct:'';
+  if(acc){if(![...s.options].some(op=>op.value===acc))s.add(new Option(acc,acc),s.options[s.options.length-1]);s.value=acc;}
 };
 window.setOrderWork=(id,v)=>updRow('orders',id,{work_type:v||null});
 // Order đang mở thuộc kênh Dừng SX / Lỗi (khớp theo channel_id hoặc Tên TK) — để dọn các order kẹt từ trước
@@ -1457,12 +1447,31 @@ function deadChannelOpenOrders(){
   const badAcct=new Set(bad.map(c=>c.account_name).filter(Boolean));
   return (orders||[]).filter(o=>!isCancel(o)&&o.scode!=='done'&&((o.channel_id&&badId.has(o.channel_id))||(o.acct&&badAcct.has(o.acct))));
 }
+// Hủy 1 order an toàn: nếu DB thiếu cột cancel_reason thì tự thử lại không kèm cột đó.
+async function cancelOrderRow(id,reason){
+  let {error}=await sb.from('orders').update({status:'cancel',cancel_reason:reason,accepted:false,done_at:null,delivered_at:null}).eq('id',id);
+  if(error&&/cancel_reason/i.test(error.message||'')){({error}=await sb.from('orders').update({status:'cancel',accepted:false,done_at:null,delivered_at:null}).eq('id',id));}
+  return error;
+}
+// TỰ ĐỘNG: hủy mọi order đang mở thuộc kênh Dừng SX / Lỗi (chạy sau mỗi lần tải dữ liệu).
+async function autoCancelDeadOrders(){
+  if(window.gAutoCancelBusy||window.gAutoCancelFailed)return;
+  if(!(me&&(isAdmin()||me.role==='Media'||me.role==='Seller')))return;
+  const open=deadChannelOpenOrders();if(!open.length)return;
+  window.gAutoCancelBusy=true;let ok=0,lastErr='';
+  for(const o of open){const e=await cancelOrderRow(o.id,'Kênh dừng/lỗi (acc die) '+todayStr());if(e)lastErr=e.message||String(e);else ok++;}
+  window.gAutoCancelBusy=false;
+  if(ok){await logAction('Tự hủy order (kênh lỗi/dừng)','orders',ok+' order');showToast('Đã tự hủy '+ok+' order (kênh dừng/lỗi)');await loadData();}
+  else if(lastErr){window.gAutoCancelFailed=true;topErr('Chưa tự hủy được order kênh lỗi/dừng — nhiều khả năng chưa chạy patch-order-cancel.sql. (Chi tiết: '+lastErr+')');}
+}
 window.cancelDeadChannelOrders=async()=>{
   const open=deadChannelOpenOrders();
   if(!open.length)return showToast('Không có order nào thuộc kênh dừng/lỗi');
   if(!confirm('Có '+open.length+' order đang mở thuộc kênh Dừng SX / Lỗi.\n\nHủy tất cả (Hủy – lỗi kênh)?'))return;
-  let ok=0;for(const o of open){try{const {error}=await sb.from('orders').update({status:'cancel',cancel_reason:'Kênh dừng/lỗi (acc die) '+todayStr(),accepted:false,done_at:null,delivered_at:null}).eq('id',o.id);if(!error)ok++;}catch(e){}}
-  await logAction('Hủy order theo kênh lỗi/dừng','orders',ok+' order');showToast('Đã hủy '+ok+' order');await loadData();
+  let ok=0,lastErr='';for(const o of open){const e=await cancelOrderRow(o.id,'Kênh dừng/lỗi (acc die) '+todayStr());if(e)lastErr=e.message||String(e);else ok++;}
+  await logAction('Hủy order theo kênh lỗi/dừng','orders',ok+' order');
+  if(lastErr){if(/status/i.test(lastErr)&&/check|constraint|invalid/i.test(lastErr))topErr('Cột "status" của bảng orders đang chặn giá trị "cancel". Mở dòng gỡ ràng buộc trong patch-order-cancel.sql rồi chạy lại. (Chi tiết: '+lastErr+')');else topErr('Một số order lỗi khi hủy: '+lastErr);}
+  showToast('Đã hủy '+ok+'/'+open.length+' order');await loadData();
 };
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.setOrderCap=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const cur=o?(o[field]||''):'';const label=field==='title'?'Title (caption giao seller)':'Hashtag';const v=prompt('Sửa '+label+' (bỏ trống để xóa):',cur);if(v===null)return;updRow('orders',id,{[field]:v.trim()||null});};
