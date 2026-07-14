@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v3.3</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v3.4</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v3.3</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v3.4</b></div>
   </aside>
 
   <main class="main">
@@ -381,6 +381,7 @@
           <button class="btn ghost" id="btnOrderImport">⤴ Nhập file</button>
           <button class="btn ghost" id="btnOrderExport">⇩ Xuất Excel</button>
           <button class="btn ghost" id="btnOrderByCh">📊 Báo cáo theo kênh</button>
+          <button class="btn ghost" id="btnCancelDead" style="display:none;color:var(--red);border-color:var(--red)" onclick="cancelDeadChannelOrders()">🚫 Hủy order kênh lỗi/dừng</button>
           <button class="btn" id="btnAddOrder">+ Tạo order</button>
           <input type="file" id="orderListFile" accept=".xlsx,.xls,.csv,.txt" style="display:none">
         </div></div>
@@ -1434,7 +1435,8 @@ window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||nul
 window.setChannelStage=async(id,v)=>{
   await updRow('channels',id,{stage:v||null});
   if(v==='dead'||v==='error'){   // Dừng SX / Lỗi-Bị khóa (acc die) → đề nghị hủy order chưa xong của kênh
-    const open=(orders||[]).filter(o=>o.channel_id===id&&!isCancel(o)&&o.scode!=='done');
+    const c=(rawChannels||[]).find(x=>x.id===id)||{};const acct=c.account_name||'';
+    const open=(orders||[]).filter(o=>(o.channel_id===id||(acct&&o.acct===acct))&&!isCancel(o)&&o.scode!=='done');
     if(open.length){
       const lbl=v==='dead'?'Dừng sản xuất':'Lỗi / Bị khóa';
       if(confirm('Kênh chuyển "'+lbl+'". Có '+open.length+' order chưa xong của kênh này.\n\nHủy tất cả các order đó (Hủy – lỗi kênh)?')){
@@ -1448,6 +1450,20 @@ window.setChannelStage=async(id,v)=>{
   }
 };
 window.setOrderWork=(id,v)=>updRow('orders',id,{work_type:v||null});
+// Order đang mở thuộc kênh Dừng SX / Lỗi (khớp theo channel_id hoặc Tên TK) — để dọn các order kẹt từ trước
+function deadChannelOpenOrders(){
+  const bad=(rawChannels||[]).filter(c=>c.stage==='dead'||c.stage==='error');
+  const badId=new Set(bad.map(c=>c.id));
+  const badAcct=new Set(bad.map(c=>c.account_name).filter(Boolean));
+  return (orders||[]).filter(o=>!isCancel(o)&&o.scode!=='done'&&((o.channel_id&&badId.has(o.channel_id))||(o.acct&&badAcct.has(o.acct))));
+}
+window.cancelDeadChannelOrders=async()=>{
+  const open=deadChannelOpenOrders();
+  if(!open.length)return showToast('Không có order nào thuộc kênh dừng/lỗi');
+  if(!confirm('Có '+open.length+' order đang mở thuộc kênh Dừng SX / Lỗi.\n\nHủy tất cả (Hủy – lỗi kênh)?'))return;
+  let ok=0;for(const o of open){try{const {error}=await sb.from('orders').update({status:'cancel',cancel_reason:'Kênh dừng/lỗi (acc die) '+todayStr(),accepted:false,done_at:null,delivered_at:null}).eq('id',o.id);if(!error)ok++;}catch(e){}}
+  await logAction('Hủy order theo kênh lỗi/dừng','orders',ok+' order');showToast('Đã hủy '+ok+' order');await loadData();
+};
 window.setDeliveryLink=function(id){const o=orders.find(x=>String(x.id)===String(id));const cur=o?o.dlink:'';const v=prompt('Dán link bài đã làm (để nghiệm thu). Bỏ trống để xóa:',cur||'');if(v===null)return;updRow('orders',id,{delivery_link:v.trim()||null});};
 window.setOrderCap=function(id,field){const o=orders.find(x=>String(x.id)===String(id));const cur=o?(o[field]||''):'';const label=field==='title'?'Title (caption giao seller)':'Hashtag';const v=prompt('Sửa '+label+' (bỏ trống để xóa):',cur);if(v===null)return;updRow('orders',id,{[field]:v.trim()||null});};
 // Popup "Trả đơn": Media nhập Title + Hashtag (nhiều dòng) + link nghiệm thu, lưu xong chuyển "Chờ nghiệm thu".
@@ -1481,6 +1497,7 @@ window.saveDeliver=async function(id){
 function renderOrders(){if(!$('orderBody'))return;
   const oc={idea:['rgba(91,140,255,.16)','var(--brand)'],edit:['rgba(242,193,78,.16)','var(--amber)'],wait:['rgba(91,140,255,.16)','var(--brand)'],done:['rgba(62,207,142,.16)','var(--green)'],cancel:['rgba(240,106,106,.16)','var(--red)'],cancelx:['rgba(150,150,150,.18)','var(--muted)']};
   const overdueOrders=orders.filter(orderOverdue).length;
+  {const deadN=deadChannelOpenOrders().length;const b=$('btnCancelDead');if(b){b.style.display=deadN?'':'none';b.textContent='🚫 Hủy order kênh lỗi/dừng ('+deadN+')';}}
   $('orderKpis').innerHTML=[['Order',orders.length,''],['Đang làm',orders.filter(o=>o.st[0]=='edit').length,'amber'],['Chờ nghiệm thu',orders.filter(o=>o.st[0]=='wait').length,'brand'],['Done',orders.filter(o=>o.st[0]=='done').length,'green'],['Trễ hạn',overdueOrders,'red'],['Đã hủy',orders.filter(isCancel).length,'']].map(k=>'<div class="card kpi"><div class="label">'+k[0]+'</div><div class="val"'+(k[2]?' style="color:var(--'+k[2]+')"':'')+'>'+k[1]+'</div></div>').join('');
   window.gProducerNames=[...new Set([...(mediaNames||[]),...orders.map(o=>o.who).filter(x=>x&&x!=='—')])].sort();
   // Mã order = YYYYMMDD + STT theo ngày (theo thứ tự tạo)
