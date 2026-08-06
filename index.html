@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.2</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.3</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.2</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.3</b></div>
   </aside>
 
   <main class="main">
@@ -669,6 +669,9 @@ function vnDate(s){const p=String(s||'').slice(0,10).split('-');return (p.length
 function daysLeft(dateStr){if(!dateStr)return null;return Math.round((new Date(String(dateStr).slice(0,10)+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);}
 // "Chưa giao": media còn phải làm (Ý tưởng/Đang làm). Khi đã chuyển Chờ nghiệm thu / Done = đã giao.
 function isCancel(o){return o.scode==='cancel'||o.scode==='cancelx';}  // cancel=lỗi kênh, cancelx=lý do khác
+// Nhật ký "xong hôm nay": mỗi mục "YYYY-MM-DD|Người bấm|ISO", nối bằng ';'. Vẫn đọc được định dạng cũ (chỉ ngày, nối bằng ',').
+function parseDailyLog(s){if(!s)return [];return String(s).split(/[;,]/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split('|');return {d:(p[0]||'').trim(),who:(p[1]||'').trim(),at:(p[2]||'').trim()};}).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x.d));}
+function stringifyDailyLog(arr){return arr.map(x=>[x.d,x.who||'',x.at||''].join('|')).join(';');}
 function notDelivered(o){return o.scode==='idea'||o.scode==='edit';}
 // Trễ hạn = chưa giao mà quá deadline (không tính đơn đang chờ seller nghiệm thu; đơn đã hủy cũng không tính).
 function orderOverdue(o){return o.deadline&&notDelivered(o)&&!isCancel(o)&&String(o.deadline)<todayStr();}
@@ -800,7 +803,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done'],cancel:['cancel','Hủy – lỗi kênh'],cancelx:['cancelx','Hủy – lý do khác']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',acctOwn:o.account_name||'',acct:o.account_name||(o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).account_name||''):''),worktype:o.work_type||'',qty:(o.qty!=null?Number(o.qty):null),img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',cancelReason:o.cancel_reason||'',posted:!!o.posted,postedAt:o.posted_at||'',cadence:o.cadence||'once',dailyDates:(o.daily_log?String(o.daily_log).split(',').filter(Boolean):[]),st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',acctOwn:o.account_name||'',acct:o.account_name||(o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).account_name||''):''),worktype:o.work_type||'',qty:(o.qty!=null?Number(o.qty):null),img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',cancelReason:o.cancel_reason||'',posted:!!o.posted,postedAt:o.posted_at||'',cadence:o.cadence||'once',dailyLog:parseDailyLog(o.daily_log),dailyDates:parseDailyLog(o.daily_log).map(x=>x.d),st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||'',img:i.image_url||''};});
@@ -1180,7 +1183,10 @@ $('btnSaveOrder').onclick=async()=>{
   {const oc=editingOrderId?(orders.find(x=>String(x.id)===String(editingOrderId))||{}).cdate:todayStr();if(row.deadline&&oc&&row.deadline<oc)return showToast('Deadline không được trước ngày order ('+vnDate(oc)+')');}
   $('btnSaveOrder').disabled=true;
   let error;
-  if(editingOrderId){({error}=await sb.from('orders').update(row).eq('id',editingOrderId));}
+  if(editingOrderId){  // đơn duy trì: đưa về "Đang làm (duy trì)" nếu đang ở bước không dùng nữa
+    const cur=orders.find(x=>String(x.id)===String(editingOrderId));
+    if(row.cadence!=='once'&&cur&&(cur.scode==='idea'||cur.scode==='wait'))row.status='edit';
+    ({error}=await sb.from('orders').update(row).eq('id',editingOrderId));}
   else{if(!row.deadline)row.deadline=addDays(todayStr(),1);row.status='edit';row.created_by=me.id;const td=todayStr().replace(/-/g,'');row.order_code=odCode(td,nextOrderSeq(td));({error}=await sb.from('orders').insert(row));}
   $('btnSaveOrder').disabled=false;
   if(error)return topErr(error.message);
@@ -1440,7 +1446,21 @@ window.setOrderStatus=(id,v)=>{const o=orders.find(x=>String(x.id)===String(id))
   updRow('orders',id,patch);};
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setOrderPosted=(id,val)=>updRow('orders',id,{posted:!!val,posted_at:val?new Date().toISOString():null});  // seller đánh dấu đã/chưa đăng video
-window.setOrderDailyDone=(id)=>{const o=orders.find(x=>String(x.id)===String(id));if(!o)return;const t=todayStr();let ds=(o.dailyDates||[]).slice();ds=ds.includes(t)?ds.filter(d=>d!==t):ds.concat(t);updRow('orders',id,{daily_log:ds.join(',')||null});};  // order duy trì: đánh dấu xong theo ngày
+// Order duy trì: đánh dấu / bỏ đánh dấu "xong hôm nay" — ghi kèm người bấm + giờ
+window.setOrderDailyDone=(id)=>{const o=orders.find(x=>String(x.id)===String(id));if(!o)return;const t=todayStr();
+  let arr=(o.dailyLog||[]).slice();
+  arr=arr.some(x=>x.d===t)?arr.filter(x=>x.d!==t):arr.concat({d:t,who:(me.full_name||me.email||''),at:new Date().toISOString()});
+  arr.sort((a,b)=>a.d<b.d?-1:1);
+  updRow('orders',id,{daily_log:stringifyDailyLog(arr)||null});};
+// Popup lịch sử: cả seller và media cùng xem ngày nào xong, ai đánh dấu, lúc mấy giờ
+window.viewDailyLog=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
+  const arr=(o.dailyLog||[]).slice().sort((a,b)=>a.d<b.d?1:-1);   // mới nhất trước
+  const cadLbl={daily:'Hằng ngày',weekly:'Duy trì 1 tuần',ongoing:'Duy trì đến khi dừng'}[o.cadence]||'Một lần';
+  const rows=arr.length?arr.map(x=>'<div style="display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--line)"><span style="font-weight:700">'+(x.d===todayStr()?'📅 Hôm nay · ':'')+vnDate(x.d)+'</span><span style="text-align:right;font-size:12.5px">'+(x.who?esc(x.who):'<span style="color:var(--muted)">không rõ người bấm</span>')+(x.at?'<div style="font-size:11px;color:var(--muted)">'+vnDateTime(x.at)+'</div>':'')+'</span></div>').join(''):'<div class="empty" style="padding:14px">Chưa có ngày nào được đánh dấu xong.</div>';
+  const canDaily=isAdmin()||me.role==='Media'||me.role==='Seller';
+  const doneToday=arr.some(x=>x.d===todayStr());
+  const btn=canDaily?'<div style="margin-top:14px"><button class="btn'+(doneToday?' ghost':'')+'" onclick="setOrderDailyDone('+o.id+');closeDrill()">'+(doneToday?'↩ Bỏ đánh dấu hôm nay':'☐ Đánh dấu xong hôm nay')+'</button></div>':'';
+  showDrill('🔁 Lịch sử duy trì — '+esc(o.code||o.p),'<div style="padding:14px 16px;font-size:13.5px"><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tần suất: <b style="color:var(--brand)">'+cadLbl+'</b> · Tổng đã làm: <b>'+arr.length+' ngày</b> · Sản phẩm: '+esc(o.p||'')+'</div>'+rows+btn+'</div>');};
 window.setChannelStage=(id,v)=>updRow('channels',id,{stage:v||null});  // đổi giai đoạn; nếu Dừng/Lỗi → autoCancelDeadOrders (chạy trong loadData) tự hủy order
 // Chọn kênh ở form order → tự điền Tên TK đã gắn với kênh đó
 window.onOrderChannelPick=(id)=>{const s=$('orAccount');if(!s)return;
@@ -1577,19 +1597,25 @@ function renderOrders(){if(!$('orderBody'))return;
     // Media kéo tối đa đến "Chờ nghiệm thu"; Seller/Admin mới chốt "Done".
     const mediaOnly=me.role==='Media'&&!isAdmin();
     const canStatus=isAdmin()||me.role==='Media'||me.role==='Seller';
-    const stList=(mediaOnly?[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu']]:[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']]).concat([['cancel','Hủy – lỗi kênh'],['cancelx','Hủy – lý do khác']]);
+    const isCad=o.cadence&&o.cadence!=='once';
+    // Đơn duy trì: bỏ bước "Ý tưởng/Chờ nghiệm thu" — chỉ Đang làm (duy trì) → Done (kết thúc quy trình).
+    const stList=(isCad?[['edit','🔁 Đang làm (duy trì)'],['done','Done – kết thúc']]
+      :(mediaOnly?[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu']]:[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']])
+    ).concat([['cancel','Hủy – lỗi kênh'],['cancelx','Hủy – lý do khác']]);
+    if(!stList.some(s=>s[0]===o.scode))stList.unshift([o.scode,o.st[1]]);  // đơn cũ đang ở trạng thái ngoài danh sách → vẫn hiện đúng
     // Order duy trì (daily/weekly/ongoing): nhãn tần suất + nút "Xong hôm nay" (done theo ngày). "Done" ở dropdown = kết thúc cả quy trình.
     let cadLine='';
-    if(o.cadence&&o.cadence!=='once'&&o.scode!=='done'&&!isCancel(o)){
+    if(isCad&&o.scode!=='done'&&!isCancel(o)){
       const cadLbl={daily:'🔁 Hằng ngày',weekly:'🔁 Duy trì 1 tuần',ongoing:'🔁 Duy trì'}[o.cadence]||'🔁 Duy trì';
       const doneToday=(o.dailyDates||[]).includes(todayStr()),nDays=(o.dailyDates||[]).length;
       const canDaily=isAdmin()||me.role==='Media'||me.role==='Seller';
       cadLine='<div style="margin-top:5px;font-size:10px;color:var(--brand);font-weight:700">'+cadLbl+'</div>'
         +(canDaily
           ?(doneToday
-            ?'<div style="font-size:10.5px;color:var(--green);font-weight:600;cursor:pointer" title="Bỏ đánh dấu xong hôm nay" onclick="setOrderDailyDone('+o.id+')">✅ Hôm nay xong'+(nDays?' · '+nDays+'n':'')+'</div>'
-            :'<div style="font-size:10.5px;color:var(--amber);font-weight:700;cursor:pointer" title="Đánh dấu đã làm hôm nay" onclick="setOrderDailyDone('+o.id+')">☐ Xong hôm nay'+(nDays?' · đã '+nDays+'n':'')+'</div>')
-          :'<div style="font-size:10.5px;color:var(--muted)">'+(doneToday?'✅ hôm nay xong':'chưa xong hôm nay')+(nDays?' · '+nDays+'n':'')+'</div>');
+            ?'<div style="font-size:10.5px;color:var(--green);font-weight:600;cursor:pointer" title="Bỏ đánh dấu xong hôm nay" onclick="setOrderDailyDone('+o.id+')">✅ Hôm nay xong</div>'
+            :'<div style="font-size:10.5px;color:var(--amber);font-weight:700;cursor:pointer" title="Đánh dấu đã làm hôm nay" onclick="setOrderDailyDone('+o.id+')">☐ Xong hôm nay</div>')
+          :'<div style="font-size:10.5px;color:var(--muted)">'+(doneToday?'✅ hôm nay xong':'chưa xong hôm nay')+'</div>')
+        +'<div style="font-size:10.5px;color:var(--brand);cursor:pointer;text-decoration:underline" title="Xem lịch sử: ngày nào xong, ai đánh dấu" onclick="viewDailyLog('+o.id+')">📜 Lịch sử · '+nDays+' ngày</div>';
     }
     const stCell=((mediaOnly&&o.scode==='done')?'<span class="chip" style="background:'+oc.done[0]+';color:'+oc.done[1]+'">Done</span>':(canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts(stList,o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>')+(isCancel(o)&&o.cancelReason?'<div style="font-size:10px;color:var(--muted);max-width:150px;white-space:normal">💬 '+esc(o.cancelReason)+'</div>':''))+cadLine;
     const delDisp=o.dlink?'<span style="white-space:nowrap"><span title="Xem link bài làm" style="cursor:pointer;color:var(--green);font-size:11px;font-weight:600" onclick="openOrderLink('+o.id+',\'dlink\')">✅ Bài làm</span> <span title="Copy link nghiệm thu" style="cursor:pointer;font-size:11px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'dlink\')">📋</span></span>':'';
@@ -1719,7 +1745,7 @@ function imgGallery(s){const arr=imgSplit(s);if(!arr.length)return '';return '<d
 window.viewIssueImg=function(id){const i=issues.find(x=>String(x.id)===String(id));if(!i||!i.img)return;showDrill('🖼 Ảnh — '+esc(i.t),'<div style="padding:12px 14px">'+imgGallery(i.img)+'</div>');};
 window.viewOrderDetail=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
   const cadTxt={daily:'Hằng ngày (duy trì)',weekly:'Duy trì 1 tuần',ongoing:'Duy trì đến khi dừng'}[o.cadence]||'';
-  const fields=[['Sản phẩm',o.p],['Loại',o.t],['Combo',o.combo],['Format',o.format],['Kênh sản xuất',o.chn],['Tần suất',cadTxt],['Số ngày đã làm',(o.dailyDates&&o.dailyDates.length)?o.dailyDates.length+' ngày ('+o.dailyDates.join(', ')+')':''],['Kênh tham khảo',o.ref],['Link sản phẩm',o.plink],['Lý do trả lại',o.reject],['Note ý tưởng',o.note]].filter(r=>r[1]&&r[1]!=='—');
+  const fields=[['Sản phẩm',o.p],['Loại',o.t],['Combo',o.combo],['Format',o.format],['Kênh sản xuất',o.chn],['Tần suất',cadTxt],['Số ngày đã làm',(o.dailyLog&&o.dailyLog.length)?o.dailyLog.length+' ngày — '+o.dailyLog.map(x=>vnDate(x.d)+(x.who?' ('+x.who+')':'')).join(' · '):''],['Kênh tham khảo',o.ref],['Link sản phẩm',o.plink],['Lý do trả lại',o.reject],['Note ý tưởng',o.note]].filter(r=>r[1]&&r[1]!=='—');
   let html='<div style="padding:12px 16px">';
   fields.forEach(r=>{html+='<div style="margin-bottom:9px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+r[0]+'</div><div style="font-size:13.5px;word-break:break-word;white-space:pre-wrap">'+esc(r[1])+'</div></div>';});
   const capBlock=(lbl,txt,field)=>!txt?'':'<div style="margin-bottom:11px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+lbl+' <span style="cursor:pointer;color:var(--brand);text-transform:none;font-weight:600" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span></div><div style="font-size:13.5px;white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:4px">'+esc(txt)+'</div></div>';
