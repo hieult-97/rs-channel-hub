@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.0</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.2</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.0</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.2</b></div>
   </aside>
 
   <main class="main">
@@ -394,6 +394,7 @@
           <div><label>Tên sản phẩm</label><input class="field" id="orProduct" placeholder="Funny Goose Tee..."></div>
           <div><label>Kiểu order <span style="color:var(--muted);font-weight:500">(Ảnh/Video/Quay/Live)</span></label><select class="field" id="orWorkType" onchange="orderOptChange('worktype',this)"></select></div>
           <div><label>Số lượng <span style="color:var(--muted);font-weight:500">(vd 5 video)</span></label><input class="field" id="orQty" type="number" min="1" placeholder="1"></div>
+          <div><label>Tần suất <span style="color:var(--muted);font-weight:500">(order duy trì)</span></label><select class="field" id="orCadence"><option value="once">Một lần</option><option value="daily">Hằng ngày (duy trì)</option><option value="weekly">Duy trì 1 tuần</option><option value="ongoing">Duy trì đến khi dừng</option></select></div>
           <div><label>Loại <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orType" onchange="orderOptChange('type',this)"></select></div>
           <div><label>Người sản xuất <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orProducer"></select></div>
           <div><label>Combo <span style="color:var(--muted);font-weight:500">(không bắt buộc)</span></label><select class="field" id="orCombo" onchange="orderOptChange('combo',this)"></select></div>
@@ -799,7 +800,7 @@ async function loadData(){
     try{const m=await sb.from('channel_members').select('channel_id, profiles(full_name)');if(!m.error)members=m.data||[];}catch(e){}
     rawChannels=chR.data||[]; rawSnaps=snR.data||[]; rawMembers=members;
     orders=(orR.data||[]).map(o=>{const stMap={idea:['idea','Ý tưởng'],edit:['edit','Đang làm'],wait:['wait','Chờ nghiệm thu'],done:['done','Done'],cancel:['cancel','Hủy – lỗi kênh'],cancelx:['cancelx','Hủy – lý do khác']};
-      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',acctOwn:o.account_name||'',acct:o.account_name||(o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).account_name||''):''),worktype:o.work_type||'',qty:(o.qty!=null?Number(o.qty):null),img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',cancelReason:o.cancel_reason||'',posted:!!o.posted,postedAt:o.posted_at||'',st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
+      return {id:o.id,scode:o.status||'edit',accepted:!!o.accepted,cdate:String(o.created_at||'').slice(0,10),d:vnDate(o.created_at),cAt:o.created_at||'',doneAt:o.done_at||'',deliveredAt:o.delivered_at||'',seller_id:o.seller_id||null,s:chSellerName(o.seller_id),p:o.product,t:o.ptype||'—',combo:o.combo||'',format:o.format||'',who:o.producer||'—',deadline:o.deadline||'',rework:Number(o.rework)||0,channel_id:o.channel_id||null,chn:o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).name||''):'',acctOwn:o.account_name||'',acct:o.account_name||(o.channel_id?((rawChannels.find(x=>x.id===o.channel_id)||{}).account_name||''):''),worktype:o.work_type||'',qty:(o.qty!=null?Number(o.qty):null),img:o.image_url||'',plink:o.product_link||'',dlink:o.delivery_link||'',code:o.order_code||'',title:o.title||'',hashtag:o.hashtag||'',reject:o.reject_reason||'',cancelReason:o.cancel_reason||'',posted:!!o.posted,postedAt:o.posted_at||'',cadence:o.cadence||'once',dailyDates:(o.daily_log?String(o.daily_log).split(',').filter(Boolean):[]),st:stMap[o.status]||['edit','Đang làm'],ng:o.accepted?'Đã duyệt':'',note:o.note||'',ref:o.ref_channel||''};});
     issues=(isR.data||[]).map(i=>{const sevMap={hi:['hi','Cao'],mid:['mid','TB'],lo:['lo','Thấp']},stMap={open:['open','Mới'],doing:['doing','Đang xử lý'],waiting:['waiting','Chờ phản hồi'],done:['done','Đã đóng']};
       const c=rawChannels.find(x=>x.id===i.channel_id);
       return {id:i.id,scode:i.status||'open',t:i.title,src:i.source||'—',channel_id:i.channel_id||null,channel_name:i.channel_name||null,ch:i.channel_name||(c?c.name:'—'),s:chSellerName(i.seller_id),sev:sevMap[i.severity]||['mid','TB'],sevCode:i.severity||'mid',st:stMap[i.status]||['open','Mới'],who:i.assignee||'',reporter:i.reporter||'—',due:i.due_date||'',type:i.issue_type||'',img:i.image_url||''};});
@@ -1172,6 +1173,7 @@ $('btnSaveOrder').onclick=async()=>{
     ptype:$('orType').value.trim(),producer:$('orProducer').value.trim(),combo:$('orCombo').value.trim(),format:$('orFormat').value.trim(),
     ref_channel:$('orRef').value.trim()||null,product_link:($('orProductLink')&&$('orProductLink').value.trim())||null,account_name:($('orAccount')&&$('orAccount').value&&$('orAccount').value!=='__add__')?$('orAccount').value:null,work_type:($('orWorkType')&&$('orWorkType').value&&$('orWorkType').value!=='__add__')?$('orWorkType').value:null,qty:($('orQty')&&$('orQty').value!=='')?Math.max(1,Number($('orQty').value)||1):null,note:$('orNote').value.trim()||null,
     channel_id:$('orChannel')&&$('orChannel').value?Number($('orChannel').value):null,image_url:imgJoin('order'),
+    cadence:($('orCadence')&&$('orCadence').value)||'once',
     deadline:$('orDeadline').value||null};
   if(!row.product)return showToast('Nhập tên sản phẩm');
   if(!row.channel_id&&!row.account_name)return showToast('Chọn Kênh sản xuất, hoặc chọn Tên TK nếu kênh chưa có');
@@ -1438,6 +1440,7 @@ window.setOrderStatus=(id,v)=>{const o=orders.find(x=>String(x.id)===String(id))
   updRow('orders',id,patch);};
 window.setOrderProducer=(id,v)=>updRow('orders',id,{producer:(v||'').trim()||null});
 window.setOrderPosted=(id,val)=>updRow('orders',id,{posted:!!val,posted_at:val?new Date().toISOString():null});  // seller đánh dấu đã/chưa đăng video
+window.setOrderDailyDone=(id)=>{const o=orders.find(x=>String(x.id)===String(id));if(!o)return;const t=todayStr();let ds=(o.dailyDates||[]).slice();ds=ds.includes(t)?ds.filter(d=>d!==t):ds.concat(t);updRow('orders',id,{daily_log:ds.join(',')||null});};  // order duy trì: đánh dấu xong theo ngày
 window.setChannelStage=(id,v)=>updRow('channels',id,{stage:v||null});  // đổi giai đoạn; nếu Dừng/Lỗi → autoCancelDeadOrders (chạy trong loadData) tự hủy order
 // Chọn kênh ở form order → tự điền Tên TK đã gắn với kênh đó
 window.onOrderChannelPick=(id)=>{const s=$('orAccount');if(!s)return;
@@ -1575,7 +1578,20 @@ function renderOrders(){if(!$('orderBody'))return;
     const mediaOnly=me.role==='Media'&&!isAdmin();
     const canStatus=isAdmin()||me.role==='Media'||me.role==='Seller';
     const stList=(mediaOnly?[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu']]:[['idea','Ý tưởng'],['edit','Đang làm'],['wait','Chờ nghiệm thu'],['done','Done']]).concat([['cancel','Hủy – lỗi kênh'],['cancelx','Hủy – lý do khác']]);
-    const stCell=(mediaOnly&&o.scode==='done')?'<span class="chip" style="background:'+oc.done[0]+';color:'+oc.done[1]+'">Done</span>':(canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts(stList,o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>')+(isCancel(o)&&o.cancelReason?'<div style="font-size:10px;color:var(--muted);max-width:150px;white-space:normal">💬 '+esc(o.cancelReason)+'</div>':'');
+    // Order duy trì (daily/weekly/ongoing): nhãn tần suất + nút "Xong hôm nay" (done theo ngày). "Done" ở dropdown = kết thúc cả quy trình.
+    let cadLine='';
+    if(o.cadence&&o.cadence!=='once'&&o.scode!=='done'&&!isCancel(o)){
+      const cadLbl={daily:'🔁 Hằng ngày',weekly:'🔁 Duy trì 1 tuần',ongoing:'🔁 Duy trì'}[o.cadence]||'🔁 Duy trì';
+      const doneToday=(o.dailyDates||[]).includes(todayStr()),nDays=(o.dailyDates||[]).length;
+      const canDaily=isAdmin()||me.role==='Media'||me.role==='Seller';
+      cadLine='<div style="margin-top:5px;font-size:10px;color:var(--brand);font-weight:700">'+cadLbl+'</div>'
+        +(canDaily
+          ?(doneToday
+            ?'<div style="font-size:10.5px;color:var(--green);font-weight:600;cursor:pointer" title="Bỏ đánh dấu xong hôm nay" onclick="setOrderDailyDone('+o.id+')">✅ Hôm nay xong'+(nDays?' · '+nDays+'n':'')+'</div>'
+            :'<div style="font-size:10.5px;color:var(--amber);font-weight:700;cursor:pointer" title="Đánh dấu đã làm hôm nay" onclick="setOrderDailyDone('+o.id+')">☐ Xong hôm nay'+(nDays?' · đã '+nDays+'n':'')+'</div>')
+          :'<div style="font-size:10.5px;color:var(--muted)">'+(doneToday?'✅ hôm nay xong':'chưa xong hôm nay')+(nDays?' · '+nDays+'n':'')+'</div>');
+    }
+    const stCell=((mediaOnly&&o.scode==='done')?'<span class="chip" style="background:'+oc.done[0]+';color:'+oc.done[1]+'">Done</span>':(canStatus?'<select style="'+SELCSS+'" onchange="setOrderStatus('+o.id+',this.value)">'+selOpts(stList,o.scode)+'</select>':'<span class="chip" style="background:'+oc[o.st[0]][0]+';color:'+oc[o.st[0]][1]+'">'+o.st[1]+'</span>')+(isCancel(o)&&o.cancelReason?'<div style="font-size:10px;color:var(--muted);max-width:150px;white-space:normal">💬 '+esc(o.cancelReason)+'</div>':''))+cadLine;
     const delDisp=o.dlink?'<span style="white-space:nowrap"><span title="Xem link bài làm" style="cursor:pointer;color:var(--green);font-size:11px;font-weight:600" onclick="openOrderLink('+o.id+',\'dlink\')">✅ Bài làm</span> <span title="Copy link nghiệm thu" style="cursor:pointer;font-size:11px;color:var(--muted)" onclick="copyOrderLink('+o.id+',\'dlink\')">📋</span></span>':'';
     const canProd0=isAdmin()||me.role==='Media';
     const delBtn=canProd0?'<span style="cursor:pointer;color:var(--brand);font-size:11px;white-space:nowrap;font-weight:600" onclick="openDeliver('+o.id+')">📦 '+((o.title||o.hashtag||o.dlink)?'Sửa trả đơn':'Trả đơn')+'</span>':'';
@@ -1585,7 +1601,8 @@ function renderOrders(){if(!$('orderBody'))return;
     const canEditCase=isAdmin()||me.role==='Seller';
     const whoCell=canProducer?'<select style="'+SELCSS+';width:140px" onchange="setOrderProducer('+o.id+',this.value)">'+producerOpts(o.who)+'</select>':((o.who&&o.who!=='—')?esc(o.who):'<span style="color:var(--muted)">—</span>');
     const editBtn=canEditCase?'<span title="Sửa order (case)" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="editOrder('+o.id+')">✏️</span>':'';
-    const act=editBtn+(isAdmin()?'<span title="Đánh dấu trả lại / làm lại (+1, giảm chất lượng KPI)" style="cursor:pointer;margin-right:10px" onclick="reworkOrder('+o.id+')">↩'+(o.rework?'<sup style="color:var(--red)">'+o.rework+'</sup>':'')+'</span><span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'');
+    const cloneBtn=(isAdmin()||me.role==='Seller'||me.role==='Media')?'<span title="Nhân bản order này" style="cursor:pointer;font-size:14px;margin-right:10px" onclick="cloneOrder('+o.id+')">⧉</span>':'';
+    const act=editBtn+cloneBtn+(isAdmin()?'<span title="Đánh dấu trả lại / làm lại (+1, giảm chất lượng KPI)" style="cursor:pointer;margin-right:10px" onclick="reworkOrder('+o.id+')">↩'+(o.rework?'<sup style="color:var(--red)">'+o.rework+'</sup>':'')+'</span><span title="Xóa order" style="cursor:pointer" onclick="deleteOrder('+o.id+')">🗑️</span>':'');
     let dlCell='<span style="color:var(--muted)">—</span>';
     if(o.deadline){const rem=daysLeft(o.deadline),delivered=!notDelivered(o);let badge='';
       if(o.scode==='done')badge='';
@@ -1701,7 +1718,8 @@ window.viewOrderNote=function(id){const o=orders.find(x=>String(x.id)===String(i
 function imgGallery(s){const arr=imgSplit(s);if(!arr.length)return '';return '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'+arr.map(u=>'<img src="'+esc(u)+'" style="max-width:100%;max-height:70vh;border-radius:10px;cursor:pointer" onclick="window.open(this.src,\'_blank\')">').join('')+'</div>';}
 window.viewIssueImg=function(id){const i=issues.find(x=>String(x.id)===String(id));if(!i||!i.img)return;showDrill('🖼 Ảnh — '+esc(i.t),'<div style="padding:12px 14px">'+imgGallery(i.img)+'</div>');};
 window.viewOrderDetail=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
-  const fields=[['Sản phẩm',o.p],['Loại',o.t],['Combo',o.combo],['Format',o.format],['Kênh sản xuất',o.chn],['Kênh tham khảo',o.ref],['Link sản phẩm',o.plink],['Lý do trả lại',o.reject],['Note ý tưởng',o.note]].filter(r=>r[1]&&r[1]!=='—');
+  const cadTxt={daily:'Hằng ngày (duy trì)',weekly:'Duy trì 1 tuần',ongoing:'Duy trì đến khi dừng'}[o.cadence]||'';
+  const fields=[['Sản phẩm',o.p],['Loại',o.t],['Combo',o.combo],['Format',o.format],['Kênh sản xuất',o.chn],['Tần suất',cadTxt],['Số ngày đã làm',(o.dailyDates&&o.dailyDates.length)?o.dailyDates.length+' ngày ('+o.dailyDates.join(', ')+')':''],['Kênh tham khảo',o.ref],['Link sản phẩm',o.plink],['Lý do trả lại',o.reject],['Note ý tưởng',o.note]].filter(r=>r[1]&&r[1]!=='—');
   let html='<div style="padding:12px 16px">';
   fields.forEach(r=>{html+='<div style="margin-bottom:9px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+r[0]+'</div><div style="font-size:13.5px;word-break:break-word;white-space:pre-wrap">'+esc(r[1])+'</div></div>';});
   const capBlock=(lbl,txt,field)=>!txt?'':'<div style="margin-bottom:11px"><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">'+lbl+' <span style="cursor:pointer;color:var(--brand);text-transform:none;font-weight:600" onclick="copyOrderLink('+o.id+',\''+field+'\')">📋 Copy</span></div><div style="font-size:13.5px;white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:4px">'+esc(txt)+'</div></div>';
@@ -1751,10 +1769,28 @@ function editOrder(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)r
   $('orProduct').value=o.p||'';setSel('orType',(o.t&&o.t!=='—')?o.t:'');setSel('orProducer',(o.who&&o.who!=='—')?o.who:'');
   setSel('orCombo',o.combo||'');setSel('orFormat',o.format||'');setSel('orAccount',o.acctOwn||'');setSel('orWorkType',o.worktype||'');if($('orQty'))$('orQty').value=o.qty!=null?o.qty:'';$('orDeadline').value=o.deadline||'';if($('orDeadline'))$('orDeadline').min=o.cdate||'';
   $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';$('orNote').value=o.note||'';
+  if($('orCadence'))$('orCadence').value=o.cadence||'once';
   imgSet('order',o.img);
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}}
 window.editOrder=editOrder;
+// Nhân bản order: mở form Tạo order điền sẵn từ order cũ (order mới, deadline để trống → tự đặt hôm nay+1)
+window.cloneOrder=function(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
+  resetOrderForm();                 // editingOrderId=null → sẽ TẠO MỚI, không sửa order gốc
+  const f=$('orderForm');f.style.display='block';
+  if($('orFormTitle'))$('orFormTitle').textContent='Nhân bản order — từ: '+(o.p||'');
+  if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';
+  const setSel=(id,val)=>{const sel=$(id);if(!sel)return;val=val||'';if(val&&![...sel.options].some(op=>op.value===val))sel.insertBefore(new Option(val,val),sel.firstChild);sel.value=val;};
+  $('orSeller').value=o.seller_id||'';if($('orChannel'))$('orChannel').value=o.channel_id||'';
+  $('orProduct').value=o.p||'';setSel('orType',(o.t&&o.t!=='—')?o.t:'');setSel('orProducer',(o.who&&o.who!=='—')?o.who:'');
+  setSel('orCombo',o.combo||'');setSel('orFormat',o.format||'');setSel('orAccount',o.acctOwn||'');setSel('orWorkType',o.worktype||'');
+  if($('orQty'))$('orQty').value=o.qty!=null?o.qty:'';
+  $('orRef').value=o.ref||'';if($('orProductLink'))$('orProductLink').value=o.plink||'';$('orNote').value=o.note||'';
+  if($('orCadence'))$('orCadence').value=o.cadence||'once';
+  try{f.scrollIntoView({behavior:'smooth'});}catch(e){}
+  showToast('Đã điền sẵn từ order cũ — chỉnh nếu cần rồi bấm Lưu');
+};
 function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel','orAccount','orWorkType','orQty'].forEach(i=>{if($(i))$(i).value='';});
+  if($('orCadence'))$('orCadence').value='once';
   if($('orDeadline')){$('orDeadline').min=todayStr();$('orDeadline').value=addDays(todayStr(),1);}}  // mặc định +24 giờ, vẫn sửa dài hơn được
 window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
 window.deleteSnapshot=(id)=>delRow('snapshots',id,'Xóa lần cập nhật này? (số liệu sẽ tính lại theo lần trước)');
@@ -1948,7 +1984,7 @@ $('btnOrderTemplate').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Ex
     {'Seller':'Tạ Huệ','Kênh':'','Title':'Mama Goose Shirt','Loại sản phẩm':'Clothing - T-shirt','Combo':'','Format':'','Người sản xuất':'Linh','Kênh tham khảo':'@ref_kenh hoặc link','Link sản phẩm':'','Link nghiệm thu':'','Nghiệm thu':'Done','Note':'Không theo combo, làm theo kênh tham khảo','Đối tượng':'Nữ','Deadline':''}
   ]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-form-mau-order.xlsx');};
 $('btnOrderExport').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel chưa tải xong.');
-  const rows=orders.map(o=>({'Mã order':o.code||(window.gOrderCode&&window.gOrderCode[o.id])||'','Ngày':o.d,'Seller':o.s,'Kênh':o.chn||'','Tên TK':o.acct||'','Kiểu order':o.worktype||'','Số lượng':o.qty||1,'Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Caption Title':o.title||'','Hashtag':o.hashtag||'','Kênh tham khảo':o.ref||'','Link sản phẩm':o.plink||'','Link nghiệm thu':o.dlink||'','Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Đăng bài':o.posted?'Đã đăng':'Chưa','Ngày đăng':o.postedAt?vnDateTime(o.postedAt):'','Lý do hủy':o.cancelReason||'','Deadline':vnDate(o.deadline)||'','Note ý tưởng':o.note||''}));
+  const rows=orders.map(o=>({'Mã order':o.code||(window.gOrderCode&&window.gOrderCode[o.id])||'','Ngày':o.d,'Seller':o.s,'Kênh':o.chn||'','Tên TK':o.acct||'','Kiểu order':o.worktype||'','Số lượng':o.qty||1,'Title':o.p,'Loại sản phẩm':o.t,'Combo':o.combo,'Format':o.format,'Người sản xuất':o.who,'Caption Title':o.title||'','Hashtag':o.hashtag||'','Kênh tham khảo':o.ref||'','Link sản phẩm':o.plink||'','Link nghiệm thu':o.dlink||'','Trạng thái':o.st[1],'Nghiệm thu':o.ng||'Chưa','Tần suất':({daily:'Hằng ngày',weekly:'Duy trì 1 tuần',ongoing:'Duy trì'}[o.cadence]||''),'Số ngày đã làm':(o.dailyDates?o.dailyDates.length:0),'Đăng bài':o.posted?'Đã đăng':'Chưa','Ngày đăng':o.postedAt?vnDateTime(o.postedAt):'','Lý do hủy':o.cancelReason||'','Deadline':vnDate(o.deadline)||'','Note ý tưởng':o.note||''}));
   if(!rows.length)return showToast('Chưa có order để xuất');
   const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Order');XLSX.writeFile(wb,'RS-order-'+new Date().toISOString().slice(0,10)+'.xlsx');};
 // Báo cáo order theo kênh: 2 sheet (tổng hợp theo kênh + chi tiết)
