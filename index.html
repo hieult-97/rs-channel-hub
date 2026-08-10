@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.4</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.5</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.4</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.5</b></div>
   </aside>
 
   <main class="main">
@@ -2332,13 +2332,12 @@ async function loadProducers(){try{const {data}=await sb.rpc('list_members');con
   mediaNames=meds.map(m=>m.full_name||'').filter(Boolean);
   $('orProducer').innerHTML='<option value="">— chọn người sản xuất —</option>'+meds.map(m=>'<option>'+esc(m.full_name||'')+'</option>').join('');
   if(me&&me.role==='Media'&&me.full_name)$('orProducer').value=me.full_name;
-  // Người Care: gộp đủ 3 nguồn để không sót ai —
-  // (1) mọi tài khoản trong hệ thống, (2) tên seller trong danh mục, (3) tên đang được gán care ở các kênh.
-  const careSet=new Set();
-  all.forEach(m=>{if(m.full_name)careSet.add(String(m.full_name).trim());});
-  (sellers||[]).forEach(s=>{if(s&&s.name)careSet.add(String(s.name).trim());});
-  (rawChannels||[]).forEach(c=>String(c.care||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(n=>careSet.add(n)));
-  const careNames=[...careSet].filter(Boolean).sort((a,b)=>a.localeCompare(b,'vi'));
+  // Người Care: CHỈ tài khoản Media + Seller đang hoạt động (bỏ SD/Leader và nhân sự cũ đã xóa).
+  const careNames=all
+    .filter(m=>m.full_name&&(m.role==='Media'||m.role==='Seller')&&(!m.status||m.status==='approved'))
+    .map(m=>String(m.full_name).trim())
+    .filter((n,i,a2)=>n&&a2.indexOf(n)===i)
+    .sort((a,b)=>a.localeCompare(b,'vi'));
   const chF=$('chForm');
   if(!(chF&&chF.style.display!=='none'))   // đang mở form sửa kênh thì không vẽ lại (tránh mất ô đã tick)
     $('ncCare').innerHTML=careNames.map(n=>careChip(n,false)).join('')||'<span style="color:var(--muted)">Chưa có thành viên nào</span>';
