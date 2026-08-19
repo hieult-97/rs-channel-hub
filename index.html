@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.5</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.6</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.5</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.6</b></div>
   </aside>
 
   <main class="main">
@@ -253,10 +253,10 @@
         <tbody id="ordByChBody"></tbody></table>
         <div class="empty" id="ordByChEmpty" style="display:none">Chưa có order nào gắn kênh.</div></div>
       </div>
-      <div class="card" style="margin-top:14px;padding:0"><div style="padding:13px 16px 0"><h3 style="margin:0">📅 Năng suất giao theo ngày <span class="tag">order &amp; số lượng media đã giao</span></h3></div><div class="tbl-wrap" style="max-height:300px;overflow:auto">
+      <div class="card" style="margin-top:14px;padding:0"><div style="padding:13px 16px 0"><h3 style="margin:0">📅 Năng suất giao theo ngày <span class="tag">đơn thường: ngày media giao · đơn duy trì: ngày tick "Xong hôm nay"</span></h3></div><div class="tbl-wrap" style="max-height:300px;overflow:auto">
         <table><thead><tr><th>Ngày sản xuất (media giao)</th><th class="num">Số order</th><th class="num">Tổng số lượng</th></tr></thead>
         <tbody id="prodDayBody"></tbody></table>
-        <div class="empty" id="prodDayEmpty" style="display:none">Chưa có order nào được media giao (kéo sang "Chờ nghiệm thu" để tính).</div></div>
+        <div class="empty" id="prodDayEmpty" style="display:none">Chưa có dữ liệu. Đơn thường: tính khi kéo sang "Chờ nghiệm thu". Đơn duy trì: tính theo ngày tick "Xong hôm nay".</div></div>
       </div>
       <div style="font-size:12.5px;font-weight:800;color:var(--text);margin:22px 0 10px;border-left:3px solid var(--brand);padding:2px 0 2px 10px">⚙️ Vận hành &amp; cảnh báo</div>
       <div class="grid kpis" id="kpis"></div>
@@ -1723,7 +1723,12 @@ window.drillOrdDays=function(enc){const chn=decodeURIComponent(enc);const list=(
     +(prods.length?'<div><b>Sản phẩm:</b> '+esc(prods.join(', '))+'</div>':'')+'</div>';
   showDrill('📅 Order theo ngày — '+esc(chn)+' ('+list.length+' order)',info+'<div class="tbl-wrap" style="padding:6px"><table><thead><tr><th>Ngày order</th><th class="num">Số order</th><th class="num">Tổng số lượng</th></tr></thead><tbody>'+rows+'</tbody></table></div>');};
 function renderProdByDay(){const el=$('prodDayBody');if(!el)return;
-  const byDay={};(orders||[]).forEach(o=>{if(!o.deliveredAt)return;const day=vnDateTime(o.deliveredAt).slice(0,10);const g=byDay[day]||(byDay[day]={n:0,qty:0});g.n++;g.qty+=(o.qty||1);});
+  const byDay={};(orders||[]).forEach(o=>{
+    if(isCancel(o))return;
+    const add=(day)=>{const g=byDay[day]||(byDay[day]={n:0,qty:0});g.n++;g.qty+=(o.qty||1);};
+    if(o.cadence&&o.cadence!=='once'){(o.dailyLog||[]).forEach(x=>add(vnDate(x.d)));return;}  // đơn duy trì: tính theo mỗi ngày đã tick "Xong hôm nay"
+    if(o.deliveredAt)add(vnDateTime(o.deliveredAt).slice(0,10));                               // đơn thường: tính theo ngày media giao
+  });
   const days=Object.keys(byDay).sort((a,b)=>b.split('/').reverse().join('').localeCompare(a.split('/').reverse().join(''))).slice(0,14);
   el.innerHTML=days.map(d=>'<tr><td style="white-space:nowrap">'+d+'</td><td class="num">'+byDay[d].n+'</td><td class="num"><b>'+byDay[d].qty+'</b></td></tr>').join('');
   if($('prodDayEmpty'))$('prodDayEmpty').style.display=days.length?'none':'block';}
@@ -2020,7 +2025,13 @@ $('btnOrderByCh').onclick=()=>{if(!window.XLSX)return topErr('Thư viện Excel 
   const dOnly=x=>x?vnDateTime(x).slice(0,10):'';  // ngày theo giờ VN
   const detail=list.map(o=>({'Mã order':o.code||(window.gOrderCode&&window.gOrderCode[o.id])||'','Kênh':o.chn||'(chưa gắn)','Tên TK':o.acct||'','Kiểu order':o.worktype||'','Số lượng':o.qty||1,'Seller':o.s,'Sản phẩm':o.p,'Loại':(o.t&&o.t!=='—')?o.t:'','Combo':o.combo||'','Format':o.format||'','Người sản xuất':(o.who&&o.who!=='—')?o.who:'','Ngày order':dOnly(o.cAt),'Ngày giao (sản xuất xong)':dOnly(o.deliveredAt),'Ngày done':dOnly(o.doneAt),'Trạng thái':o.st[1],'Đăng bài':o.posted?'Đã đăng':'Chưa','Ngày đăng':dOnly(o.postedAt),'Deadline':vnDate(o.deadline)||''}));
   // Năng suất theo NGÀY GIAO (ngày media sản xuất xong) × người sản xuất
-  const byDay={};list.forEach(o=>{if(!o.deliveredAt)return;const day=dOnly(o.deliveredAt),who=(o.who&&o.who!=='—')?o.who:'(chưa gán)',key=day+'||'+who;const g=byDay[key]||(byDay[key]={day,who,n:0,qty:0});g.n++;g.qty+=(o.qty||1);});
+  const byDay={};list.forEach(o=>{
+    if(isCancel(o))return;
+    const who=(o.who&&o.who!=='—')?o.who:'(chưa gán)';
+    const add=(day)=>{const key=day+'||'+who;const g=byDay[key]||(byDay[key]={day,who,n:0,qty:0});g.n++;g.qty+=(o.qty||1);};
+    if(o.cadence&&o.cadence!=='once'){(o.dailyLog||[]).forEach(x=>add(vnDate(x.d)));return;}  // đơn duy trì: theo ngày đã tick xong
+    if(o.deliveredAt)add(dOnly(o.deliveredAt));
+  });
   const daySum=Object.values(byDay).sort((a,b)=>{const ra=a.day.split('/').reverse().join(''),rb=b.day.split('/').reverse().join('');return rb.localeCompare(ra)||a.who.localeCompare(b.who);}).map(g=>({'Ngày sản xuất':g.day,'Người sản xuất':g.who,'Số order':g.n,'Tổng số lượng (video/ảnh)':g.qty}));
   const byCh={};list.forEach(o=>{if(isCancel(o))return;const k=o.chn||'(chưa gắn kênh)';const g=byCh[k]||(byCh[k]={tk:o.acct||'',n:0,qty:0,edit:0,wait:0,done:0,posted:0,prods:new Set(),fmts:new Set(),works:new Set()});g.n++;g.qty+=(o.qty||1);if(o.scode==='done')g.done++;else if(o.scode==='wait')g.wait++;else g.edit++;if(o.posted)g.posted++;if(o.p)g.prods.add(o.p);if(o.format)g.fmts.add(o.format);if(o.worktype)g.works.add(o.worktype);if(o.acct&&!g.tk)g.tk=o.acct;});
   const summary=Object.keys(byCh).sort().map(k=>{const g=byCh[k];return {'Kênh':k,'Tên TK':g.tk,'Kiểu order':[...g.works].join(' | '),'Tổng SL':g.qty,'Tổng order':g.n,'Đang làm':g.edit,'Chờ nghiệm thu':g.wait,'Done':g.done,'Đã đăng':g.posted,'Chưa đăng':g.n-g.posted,'Số sản phẩm khác nhau':g.prods.size,'Format đã dùng':[...g.fmts].join(' | ')};});
