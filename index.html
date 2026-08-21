@@ -197,7 +197,7 @@
 
 <div class="app" id="app" style="display:none">
   <aside class="side collapsed" id="side">
-    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.6</span></small></div>
+    <div class="logo"><div class="dot">R</div><div><b>Channel Hub</b><small>RS · <span style="color:var(--brand)">v4.7</span></small></div>
       <button class="hamb" id="hamb">☰</button></div>
     <div class="user"><div class="av" id="uAv" style="cursor:pointer">?</div><div id="uClick" style="cursor:pointer"><b id="uName">—</b><small id="uRole">—</small></div><div style="margin-left:auto;display:flex;gap:10px"><div class="out" id="btnTheme" title="Đổi màu Sáng/Tối" style="cursor:pointer">◐</div><div class="out" id="btnOut" title="Đăng xuất" style="cursor:pointer">⎋</div></div></div>
     <nav class="nav" id="nav">
@@ -218,7 +218,7 @@
       <a data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg> Nhật ký</a>
       <a data-view="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Hồ sơ</a>
     </nav>
-    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.6</b></div>
+    <div class="note">RS Channel Hub · phiên bản <b id="appVer" style="color:var(--brand)">v4.7</b></div>
   </aside>
 
   <main class="main">
@@ -996,7 +996,7 @@ function renderAll(){
   renderBulkUpd();renderToday();
   $('isChannel').innerHTML=opt(ch);
   if($('orChannel'))$('orChannel').innerHTML='<option value="">— không chọn —</option>'+ch.map(x=>'<option value="'+x.id+'">'+esc(x.n)+(x.acct?' · '+esc(x.acct):'')+'</option>').join('');
-  $('orSeller').innerHTML=sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
+  $('orSeller').innerHTML='<option value="">— chọn seller —</option>'+sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
   $('ncSeller').innerHTML='<option value="">— chọn seller —</option>'+sellers.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
   // admin tables
   if(isAdmin()){
@@ -1181,6 +1181,7 @@ $('btnSaveOrder').onclick=async()=>{
     deadline:$('orDeadline').value||null};
   if(!row.product)return showToast('Nhập tên sản phẩm');
   if(!row.channel_id&&!row.account_name)return showToast('Chọn Kênh sản xuất, hoặc chọn Tên TK nếu kênh chưa có');
+  if(!row.seller_id&&!confirm('Chưa chọn Seller.\n\nOrder không gán seller sẽ KHÔNG hiện với tài khoản seller và không lọc được theo tên khi tải báo cáo.\n\nVẫn lưu?'))return;
   {const oc=editingOrderId?(orders.find(x=>String(x.id)===String(editingOrderId))||{}).cdate:todayStr();if(row.deadline&&oc&&row.deadline<oc)return showToast('Deadline không được trước ngày order ('+vnDate(oc)+')');}
   $('btnSaveOrder').disabled=true;
   let error;
@@ -1821,7 +1822,7 @@ window.cloneOrder=function(id){const o=orders.find(x=>String(x.id)===String(id))
   try{f.scrollIntoView({behavior:'smooth'});}catch(e){}
   showToast('Đã điền sẵn từ order cũ — chỉnh nếu cần rồi bấm Lưu');
 };
-function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel','orAccount','orWorkType','orQty'].forEach(i=>{if($(i))$(i).value='';});
+function resetOrderForm(){editingOrderId=null;if($('orFormTitle'))$('orFormTitle').textContent='Tạo order sản xuất';if($('btnSaveOrder'))$('btnSaveOrder').textContent='Lưu order (lẻ)';clearOrderImg();if($('orSeller'))$('orSeller').value='';['orProduct','orType','orProducer','orCombo','orFormat','orDeadline','orRef','orProductLink','orNote','orChannel','orAccount','orWorkType','orQty'].forEach(i=>{if($(i))$(i).value='';});
   if($('orCadence'))$('orCadence').value='once';
   if($('orDeadline')){$('orDeadline').min=todayStr();$('orDeadline').value=addDays(todayStr(),1);}}  // mặc định +24 giờ, vẫn sửa dài hơn được
 window.deleteOrder=(id)=>delRow('orders',id,'Xóa order này?');
